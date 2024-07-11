@@ -20,7 +20,7 @@ jobs:
           port: ${{ secrets.SSH_PORT_TEST }}
           script: |
             cd "${{secrets.TEST_FOLDER}}"
-            git pull origin main
+            git pull origin development
             echo "${{ secrets.DOT_ENV_TEST }}" > core/.env
             sudo docker stop backend_smart_evolution
             docker rm -f backend_smart_evolution
