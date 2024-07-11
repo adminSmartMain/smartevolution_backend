@@ -22,7 +22,5 @@ jobs:
             cd "${{secrets.TEST_FOLDER}}"
             git pull origin development
             echo "${{ secrets.DOT_ENV_TEST }}" > core/.env
-            sudo docker stop backend_smart_evolution
-            sudo docker rm -f backend_smart_evolution
             sudo docker compose --env-file docker.env up --build -d 
             exit

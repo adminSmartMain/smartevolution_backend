@@ -2,4 +2,4 @@
 __pycache__
 smart_env
 **/node_modules/
-*.env*
+.env*
