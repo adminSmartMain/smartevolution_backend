@@ -1,0 +1,28 @@
+name: Build & Deploy Testing
+
+on:
+  push:
+    branches:
+      - development
+
+jobs:
+  deploy_to_droplet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    name: Deploy to Droplet
+    steps:
+      - name: Connect with SSH and Deploy
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST_TEST }}
+          username: ${{ secrets.SSH_USERNAME_TEST }}
+          key: ${{ secrets.SSH_KEY_TEST }}
+          port: ${{ secrets.SSH_PORT_TEST }}
+          script: |
+            cd "${{secrets.TEST_FOLDER}}"
+            git pull origin main
+            echo "${{ secrets.DOT_ENV_TEST }}" > .env
+            sudo docker stop backend_smart_evolution
+            docker rm -f backend_smart_evolution
+            sudo docker compose --env-file docker.env up --build -d
+            exit

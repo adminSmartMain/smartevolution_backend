@@ -1,0 +1,15 @@
+from .broker.index import BrokerSerializer
+from .client.index import (ClientSerializer, ClientReadOnlySerializer, ClientByIdSerializer)
+from .contact.index import ContactSerializer
+from .legalRepresentative.index import LegalRepresentativeSerializer
+from .account.index import AccountSerializer, AccountReadOnlySerializer
+from .request.index import RequestSerializer
+from .riskProfile.index import RiskProfileSerializer, RiskProfileReadOnlySerializer
+from .financialProfile.index import FinancialProfileSerializer, FinancialProfileReadOnlySerializer, FinancialProfileUpdateSerializer, FinancialProfilePeriodSerializer
+from .financialProfile.financialSituation.assets.index import AssetsSerializer
+from .financialProfile.financialSituation.passives.index import PassivesSerializer
+from .financialProfile.financialSituation.patrimony.index import PatrimonySerializer
+from .financialProfile.financialSituation.stateOfResult.index import StateOfResultSerializer
+from .financialCentral.index import FinancialCentralSerializer, FinancialCentralReadOnlySerializer
+from .overview.index import OverviewSerializer
+from .selfManagement.index import LegalCLientSerializer, LegalClientReadOnlySerializer, NaturalClientSerializer, NaturalClientReadOnlySerializer, LegalClientDocumentsSerializer, NaturalClientDocumentsSerializer

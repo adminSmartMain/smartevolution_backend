@@ -1,0 +1,4232 @@
+[
+    {
+        "id": "df544566-1b5f-449f-aaa4-cb470f3ebc53",
+        "opId": 325,
+        "description": "COMPENSACION OP 219 FRA 78",
+        "amount": 9274230,
+        "date": "2021-07-26",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "02dc5b9a-ab4d-4770-b7d1-a794df9ea735",
+        "opId": 328,
+        "description": "COMPENSACION OP 283\t\t FRA 297",
+        "amount": 113515621,
+        "date": "2021-07-27",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "79c07d66-06e1-4312-a474-7e3ec583c8dc",
+        "opId": 328,
+        "description": "INTERESES \tFRA 297",
+        "amount": 1000282,
+        "date": "2021-07-27",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "2bff7d88-b396-4ba1-88f8-8cf1aea75847",
+        "opId": 316,
+        "description": "COMPENSACION OP 260 FRA 265",
+        "amount": 11251872,
+        "date": "2021-07-19",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "bc079ae9-1951-43b4-8d55-d1dedbc117f8",
+        "opId": 316,
+        "description": "COMPENSACION OP 260 FRA 276",
+        "amount": 5103302,
+        "date": "2021-07-19",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "53e1c2f3-247b-459c-8578-0f65a0baed73",
+        "opId": 316,
+        "description": "COMPENSACION OP 260 FRA 283",
+        "amount": 37506240,
+        "date": "2021-07-19",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "10a278fa-499d-453f-827a-7392f59bb2c7",
+        "opId": 316,
+        "description": "INTERESES DIAS ADICIONALES FRAS 265-276-283",
+        "amount": 754576,
+        "date": "2021-07-19",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "ac8127be-df1f-4a77-b521-088b799f079d",
+        "opId": 316,
+        "description": "INTERESES DIAS ADICIONALES FRA 281-282",
+        "amount": 63237,
+        "date": "2021-07-19",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "05c0a567-dd82-4cf2-a7a2-51b6f1d8db48",
+        "opId": 317,
+        "description": "DIFERENCIA POR COBRAR OP 316",
+        "amount": 2261777,
+        "date": "2021-07-19",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "fa34f238-b4a5-4d1a-91b5-b2f00d913141",
+        "opId": 317,
+        "description": "COMPENSACION OP 260 FRA 289",
+        "amount": 40934762,
+        "date": "2021-07-19",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "17aaa9f0-5506-4c41-91cc-83b8dce7c572",
+        "opId": 317,
+        "description": "INTERESES OP 260 FRA 289",
+        "amount": 573479,
+        "date": "2021-07-19",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "55b1b0ee-c2ea-4ddf-8cb4-bbb1dbc09f84",
+        "opId": 330,
+        "description": "MENOR VALOR PAGADO SIERRACOL 17175-176",
+        "amount": 267146,
+        "date": "2021-07-27",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "b6fabb25-7a22-4d18-88ee-6510eaab0c20",
+        "opId": 335,
+        "description": "COMPENSACION OP 283 FRA 297",
+        "amount": 73908827,
+        "date": "2021-07-30",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "bb72de0c-2e8e-4196-ba51-65610c38d275",
+        "opId": 335,
+        "description": "COMPENSACION OP 298 FRA 322",
+        "amount": 98900632,
+        "date": "2021-07-30",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "f86be2f1-b6b2-4d95-8e29-10bdb2834864",
+        "opId": 335,
+        "description": "INTERESES DIAS ADICIONALES FRA 297",
+        "amount": 145917,
+        "date": "2021-07-30",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "42dc1cbd-0915-4093-a24e-dcfcdda9fe67",
+        "opId": 339,
+        "description": "COMPENSACION OP 265 FRA 492",
+        "amount": 25564146,
+        "date": "2021-07-30",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "9772250d-9e29-4a97-a966-c6ab7adac5b4",
+        "opId": 339,
+        "description": "COMPENSACION OP 291 FRA 1255",
+        "amount": 13000000,
+        "date": "2021-07-30",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "0d851198-2a29-4a88-bc15-3ea850207a5b",
+        "opId": 339,
+        "description": "INTERESES DIAS ADICIONALES  OP 265 FRA 492",
+        "amount": 453151,
+        "date": "2021-07-30",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "9cf519bb-f041-43ce-85dc-5218493f0f81",
+        "opId": 348,
+        "description": "FACTURA CORRETAJE 235 AGOSTO 2-2021",
+        "amount": 1019331,
+        "date": "2021-08-13",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "970f0620-2145-40b7-984b-ef482f572c91",
+        "opId": 338,
+        "description": "COMPENSACION RECAUDO MASIVO",
+        "amount": 928311878,
+        "date": "2021-07-30",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "3594f646-d53c-4da7-9a05-1267aa471907",
+        "opId": 338,
+        "description": "INTERESES MORA RECAUDO MASIVO",
+        "amount": 1052136,
+        "date": "2021-07-30",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "bde1b0b8-e270-4ae4-b545-11dda0b3d7d0",
+        "opId": 338,
+        "description": "SALDO PENDIENTE OP 331",
+        "amount": 61644293,
+        "date": "2021-07-30",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "eac29cb0-b14c-44be-a84f-f9d555810759",
+        "opId": 338,
+        "description": "REINTEGRO PAGOS ANTICIPADOS",
+        "amount": -60836654,
+        "date": "2021-07-30",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "fec88289-5501-48a4-a4b4-7905049e863c",
+        "opId": 347,
+        "description": "COMPENSACION OP 249 FRA 1 VIA 40 EXPRESS",
+        "amount": 53000000,
+        "date": "2021-08-13",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "f63d1e5a-a30b-40df-a405-668418433951",
+        "opId": 347,
+        "description": "INTERESES OP 249 FRA 1 VIA 40 EXPRESS",
+        "amount": 338213,
+        "date": "2021-08-13",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "49337d50-190b-4762-9f64-ab92598d02ef",
+        "opId": 349,
+        "description": "COMPENSACION FACTURAS OP 280-293",
+        "amount": 88507223,
+        "date": "2021-08-18",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "26cb35b0-0f49-4ee3-8490-fe27ccd004fc",
+        "opId": 349,
+        "description": "INTERESES FACTURAS OP 280-293",
+        "amount": 443785,
+        "date": "2021-08-18",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "baba15db-7feb-48a2-b07b-9541ef6429c8",
+        "opId": 353,
+        "description": "COMPENSACION OP 304 PRIMER ANTICIPO JULIO 1",
+        "amount": 105809355,
+        "date": "2021-08-19",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "77e8e3cb-9dbe-4ed9-847c-7f2e86376737",
+        "opId": 353,
+        "description": "INTERESES ADICIONALES 9 DIAS VENCIDO PRIMER ANTICIPO OP 304",
+        "amount": 391350,
+        "date": "2021-08-19",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "67bcd94e-4a82-4d9f-b648-2d73f9dcd730",
+        "opId": 353,
+        "description": "COMPENSACION OP 337 SEGUNDO ANTICIPO JULIO 30",
+        "amount": 407864506,
+        "date": "2021-08-19",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "61f14b5f-776b-42c6-9c4b-4869c3ba8a35",
+        "opId": 354,
+        "description": "COMPENSACION OP 298 FRA 322-2",
+        "amount": 52809205,
+        "date": "2021-08-20",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "ac5d4231-dac1-4688-b818-10ae583ffb71",
+        "opId": 354,
+        "description": "INTERESES OP 298 FRA 322-2",
+        "amount": 528454,
+        "date": "2021-08-20",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "ef05aab3-2e31-47d9-bfc2-cbd1351c5a21",
+        "opId": 355,
+        "description": "INTERESES OP 255 FRA 1713",
+        "amount": 216734,
+        "date": "2021-08-20",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "e1118eca-8db5-4131-aff1-45e19bf6a5f4",
+        "opId": 358,
+        "description": "MAYOR VALOR GIRADO APLICACI\u00d3N PAGO DERSA",
+        "amount": 11734902,
+        "date": "2021-08-23",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "4a356c4f-8ce8-4da2-89db-440c291e6fb9",
+        "opId": 359,
+        "description": "COMPENSACION FRA 255 DETERGENTES",
+        "amount": 65250057,
+        "date": "2021-08-25",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "5f62c681-172f-4a2d-88dd-4e5b1dc25821",
+        "opId": 362,
+        "description": "COMPENSACION FRAS INDEPENDENCE DRILLING S.A.",
+        "amount": 145302427,
+        "date": "2021-08-27",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "fb16ccf5-7123-46ec-b33e-18af56561326",
+        "opId": 363,
+        "description": "COMPENSACION FRAS SIEMEMS",
+        "amount": 39438550,
+        "date": "2021-08-27",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "4fc3cd53-7846-4b83-8cf8-4bb8cc5ab6ac",
+        "opId": 364,
+        "description": "COMPENSACION FRA 13497 ECOPETROL",
+        "amount": 112903516,
+        "date": "2021-08-27",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "fb2b4e22-5f7e-493d-9e65-d7b41889d169",
+        "opId": 361,
+        "description": "MENOR VALOR PAGADO SIERRACOL",
+        "amount": 296776,
+        "date": "2021-08-27",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "0d053bbc-48a6-4346-aed4-300bf7cc9291",
+        "opId": 365,
+        "description": "SALDO PENDIENTE DE PAGO OPERACI\u00d3N 277",
+        "amount": 786009,
+        "date": "2021-08-30",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "1f9873db-fd16-42bd-9a9f-666dab253607",
+        "opId": 367,
+        "description": "COMPENSACION OP 293 FRA 4286-4320",
+        "amount": 13561743,
+        "date": "2021-08-31",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "10c44ca2-f38b-47ba-b1f7-960196019e9f",
+        "opId": 367,
+        "description": "INTERESES OP 293 FRAS 4286-4320",
+        "amount": 130125,
+        "date": "2021-08-31",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "62b653d9-e71f-495b-9e1d-6132d98df450",
+        "opId": 373,
+        "description": "COMPENSACION OP 321 FRA OC2609255",
+        "amount": 102600000,
+        "date": "2021-09-08",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "200311d8-8aa2-4a57-b085-f2351c916a06",
+        "opId": 373,
+        "description": "INTERESES OP 321 FRA OC2609255",
+        "amount": 581981,
+        "date": "2021-09-08",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "0a345190-8015-42b9-a8bb-c370e30eac21",
+        "opId": 340,
+        "description": "SALDO PENDIENTE DE GIRO OP 275",
+        "amount": -110638,
+        "date": "2021-09-13",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "c502aee1-2fcc-4003-9b0d-e2c05cec13d5",
+        "opId": 380,
+        "description": "COMPENSACION FRA 489-1 OP 339 POSITIVA",
+        "amount": 7923900,
+        "date": "2021-09-13",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "9b461095-98fe-42eb-91f4-a4a8c567831a",
+        "opId": 380,
+        "description": "INTERESES FRA 489-1 OP 339 POSITIVA",
+        "amount": 28092,
+        "date": "2021-09-13",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "92386b03-8e82-4a01-b9d9-ec0bef2d70b7",
+        "opId": 377,
+        "description": "PAGO PARCIAL  FRA 4815 ECOPETROL",
+        "amount": 275492238,
+        "date": "2021-09-10",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "6e7e6027-df07-4e44-95bf-9a9c25b13f5f",
+        "opId": 377,
+        "description": "INTERESES FRA 4815 ECOPETROL",
+        "amount": 2979496,
+        "date": "2021-09-10",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "918abc20-e8b8-4896-8fb4-4245927ff946",
+        "opId": 377,
+        "description": "SALDO PENDIENTE DE GIRO OP 364",
+        "amount": -1454170,
+        "date": "2021-09-10",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "678b1b86-526f-49fe-9cae-b25e40a79c5d",
+        "opId": 384,
+        "description": "COMPENSACION FRAS OP 301-338",
+        "amount": 213074541,
+        "date": "2021-09-16",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "7f686f73-ee88-471e-b3c5-0d096b29ab13",
+        "opId": 384,
+        "description": "MENOR VALOR GIRADO CLARO",
+        "amount": 8536761,
+        "date": "2021-09-16",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "70bbf0ec-2956-45bd-88e7-013591a86082",
+        "opId": 384,
+        "description": "PAGO FRAS ATENTO SEP 15/2021",
+        "amount": -16855417,
+        "date": "2021-09-15",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "7a528e78-8f1e-45ca-ae99-5eb6d1161358",
+        "opId": 385,
+        "description": "MAYOR VALOR GIRADO ACESCO",
+        "amount": -438750,
+        "date": "2021-09-16",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "5c4cfa87-b35c-4a0a-9666-b4923bf48a1f",
+        "opId": 386,
+        "description": "COMPENSACION FRA 4815 OP 309",
+        "amount": 7379445,
+        "date": "2021-09-17",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "99b7e393-a0ee-4ae6-9618-e66d374120f1",
+        "opId": 386,
+        "description": "PAGO ANTICIPADO FRA 11515 OP 377",
+        "amount": -1529599,
+        "date": "2021-09-23",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "469db9c0-195e-4695-9a5e-b338e0dd026b",
+        "opId": 394,
+        "description": "MAYOR VALOR GIRADO",
+        "amount": -107,
+        "date": "2021-09-23",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "a5e89bae-849b-4176-882f-b541590fe070",
+        "opId": 395,
+        "description": "COMPENSACION OP 301 FRA 101 ATENTO",
+        "amount": 34227372,
+        "date": "2021-09-24",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "7e2aa42b-b136-4e06-811d-edd744759feb",
+        "opId": 395,
+        "description": "MENOR VALOR GIRADO CLARO",
+        "amount": 5310014,
+        "date": "2021-09-24",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "ceb3b97a-3ff5-4b7f-9534-53963c3bca6b",
+        "opId": 401,
+        "description": "VALOR A GIRAR GRASCO A SMART EVOLUTION - CTA BANCOLOMBIA",
+        "amount": -36749238,
+        "date": "2021-09-30",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "328843fe-ad82-4912-95f4-5d20a93c055a",
+        "opId": 399,
+        "description": "COMPENSACION OP 334 OC OY21000079",
+        "amount": 31461586,
+        "date": "2021-09-29",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "04db254e-ef40-4a7f-b45c-8b6b5b42a8ad",
+        "opId": 399,
+        "description": "ABONO PARCIAL OP 362 FRA 2364",
+        "amount": 64235728,
+        "date": "2021-09-29",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "5f6a382f-0e2f-4132-936c-77ea8184d085",
+        "opId": 406,
+        "description": "PAGO FACTURA  298 OP 315 DERSA",
+        "amount": 119427523,
+        "date": "2021-10-12",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "ed0af256-3a76-46e0-9e34-68c8f9ef5799",
+        "opId": 411,
+        "description": "INTERESES DIAS ADICIONALES PAGO MERQUEO",
+        "amount": 6020,
+        "date": "2021-10-12",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "68823218-4fb9-4b8c-9a3a-e20f30967f60",
+        "opId": 413,
+        "description": "COMPENSACION FRA 2140 SMARTEC",
+        "amount": 20016935,
+        "date": "2021-10-14",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "2821bcd7-16da-4569-880f-54e8c2f2493f",
+        "opId": 419,
+        "description": "INTERESES DIAS ADICIONALES  AZULK OP 359 FRA 326",
+        "amount": 190805,
+        "date": "2021-10-19",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "73a17093-e38d-4084-8280-4e847f84e5c3",
+        "opId": 418,
+        "description": "COMPENSACION FRA 354-361 OP 354",
+        "amount": 156094058,
+        "date": "2021-10-19",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "9d33f524-a7ec-4708-9b0d-f2ab76015302",
+        "opId": 421,
+        "description": "COMPENSACION FACTURA 2369 OP 373",
+        "amount": 206101839,
+        "date": "2021-10-22",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "de1557b3-a403-4d03-9f05-e30a4bd58609",
+        "opId": 421,
+        "description": "VALOR GIRADO SOLUCIONES HYTORC",
+        "amount": -112449101,
+        "date": "2021-10-22",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "70de42a2-b35e-4946-802a-bc67301cf62a",
+        "opId": 414,
+        "description": "COMPENSACION OP 339 FRAS 489-2, OP 347 RES9327",
+        "amount": 53338213,
+        "date": "2021-10-14",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "c01dd1c4-e8b5-44c0-a820-b0d02c149226",
+        "opId": 415,
+        "description": "COMPENSACION OP 339 FRAS 489-2, OP  347 RES9327",
+        "amount": 7561004,
+        "date": "2021-10-14",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "00c41a41-edac-4e11-8731-583804d9e881",
+        "opId": 416,
+        "description": "Descuento menor valor pagado Avesco Octubre",
+        "amount": 1734078,
+        "date": "2021-10-20",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "7eddddd1-6fb5-46a3-84b0-844c39f94c0b",
+        "opId": 429,
+        "description": "COMPENSACION FRAS CAFAM",
+        "amount": 95122345,
+        "date": "2021-10-28",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "a2d5c317-b90a-4bfa-a745-500ad27f1645",
+        "opId": 429,
+        "description": "MAYOR VALOR GIRADO OP 400 SEPTIEMBRE",
+        "amount": 17711630,
+        "date": "2021-10-29",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "51d648db-2fa2-4f6d-bd4e-c2627d441750",
+        "opId": 430,
+        "description": "COMPENSACION OP 376 FRAS 69794-69053",
+        "amount": 733893,
+        "date": "2021-10-28",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "bb0b3605-9292-445c-9dca-4a9be7ea29a0",
+        "opId": 435,
+        "description": "COMPENSACION FRAS 352-354 AZULK",
+        "amount": 199998632,
+        "date": "2021-11-05",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "ab255b5f-b036-4d7a-b861-420963504aac",
+        "opId": 435,
+        "description": "SALDO PENDIENTE POR GIRAR",
+        "amount": -38639,
+        "date": "2021-11-05",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "c4479b8e-5d98-4c1c-bb6b-b3c89fe7ed47",
+        "opId": 440,
+        "description": "DESCUENTO INTERESES ADICIONALES FRA 1920",
+        "amount": 319792,
+        "date": "2021-11-11",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "3478b5cf-3677-4757-9fb4-cbbe79de5f79",
+        "opId": 442,
+        "description": "COMPENSACION FRAS 369-397 AZULK",
+        "amount": 299970328,
+        "date": "2021-11-12",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "61a61d1f-6140-4cbe-a292-be639877ec74",
+        "opId": 442,
+        "description": "DEVOLUCION PAGO DERSA NOV 11-2021",
+        "amount": -114334208,
+        "date": "2021-11-12",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "bf66ef41-0b38-4275-8c94-f09213656330",
+        "opId": 441,
+        "description": "Menor Valor pagado Acesco FRA 184",
+        "amount": 18390,
+        "date": "2021-10-28",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "3c3a0c4e-a589-42ee-ac76-3a103618de96",
+        "opId": 445,
+        "description": "Menor valor Girado FRA 17846-17845",
+        "amount": 384051,
+        "date": "2021-11-16",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "8290f50d-fb2e-4d5e-9c5e-6b3bd89b019d",
+        "opId": 445,
+        "description": "Intereses FRA 17845",
+        "amount": 225657,
+        "date": "2021-11-16",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "610a6eec-ee16-40eb-b5b7-ea64b70889e2",
+        "opId": 449,
+        "description": "Compensacion Facturas",
+        "amount": 2588046,
+        "date": "2021-11-17",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "a44646d9-51b7-45b9-a2e8-e23fbfad7b6f",
+        "opId": 452,
+        "description": "Compensacion factura 2375",
+        "amount": 98843000,
+        "date": "2021-11-17",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "aec889d4-de97-4677-8dd4-7b75ee7cbf1e",
+        "opId": 439,
+        "description": "COMPENSACION OP 376 FRA 71694",
+        "amount": 497018,
+        "date": "2021-11-11",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "dfbd031b-3fc9-47a0-8eb7-7194399044ec",
+        "opId": 439,
+        "description": "COMPESACION PAGO AVESCO",
+        "amount": 35000795,
+        "date": "2021-11-11",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "ea5de6dc-00f8-4e4d-b6dc-540d91787d3b",
+        "opId": 463,
+        "description": "COMPENSACION FRAS VENCIDAS AVESCO",
+        "amount": 41194873,
+        "date": "2021-11-30",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "58b34d24-1075-4ea9-9577-8b0ee3810a83",
+        "opId": 455,
+        "description": "DESCUENTO VALOR GIRO NOV 4-2021",
+        "amount": 92671057,
+        "date": "2021-11-04",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "4fa532d1-a50b-4fba-ac0a-aeb94d5e1662",
+        "opId": 455,
+        "description": "INTERESES DIAS ADICIONALES",
+        "amount": 171442,
+        "date": "2021-11-04",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "356cce43-4a9d-4323-afb1-9fbaa04c5fc9",
+        "opId": 455,
+        "description": "MENOR VALOR PAGADO GR CHIA FRA 4666-4779",
+        "amount": 1573416,
+        "date": "2021-11-04",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "6fbb1eff-1f40-4ec2-8759-1e34f91df958",
+        "opId": 457,
+        "description": "VALOR PENDIENTE GIRO OP 441",
+        "amount": -840602,
+        "date": "2021-11-26",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "fa9784db-0e4f-4194-9599-0ac71285b5b8",
+        "opId": 457,
+        "description": "MENOR VALOR PAGO ACESCO 199-200",
+        "amount": 33030,
+        "date": "2021-11-26",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "18b75352-c233-413e-9267-93c1ba355452",
+        "opId": 462,
+        "description": "MENOR VALOR PAGADO FRA 659-662-674",
+        "amount": 211313,
+        "date": "2021-11-30",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "22aaa3dc-9b4b-4906-bb1e-c25926536e16",
+        "opId": 461,
+        "description": "COMPENSACION FRAS 4586-4587 CAFAM",
+        "amount": 73943436,
+        "date": "2021-11-29",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "a4606e65-6b10-48dd-8a75-629c533f3ff9",
+        "opId": 461,
+        "description": "SALDO A FAVOR OP 437",
+        "amount": -157835,
+        "date": "2021-11-29",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "75825409-23af-4068-9184-0ffbc3f11a5e",
+        "opId": 466,
+        "description": "COMPENSACION FRA 5090 OP 405",
+        "amount": 16481244,
+        "date": "2021-12-03",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "09475c61-7916-4344-bf0b-99b5b84be70a",
+        "opId": 472,
+        "description": "SALDO PENDIENTE DESCONTADO OP 469",
+        "amount": -211313,
+        "date": "2021-12-07",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "b57a885a-ed5f-4639-b23d-9928822226fd",
+        "opId": 473,
+        "description": "COMPENSACION FRA 2387 OP 421",
+        "amount": 96534932,
+        "date": "2021-12-07",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "111e7701-4a69-4b0f-962a-2bd373f07d8d",
+        "opId": 474,
+        "description": "COMPENSACION FRA MERQUEO  OP 383",
+        "amount": 4936035,
+        "date": "2021-12-09",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "65e1d6ae-87f7-4837-b73b-79170dd3f12e",
+        "opId": 476,
+        "description": "INTERESES DIAS ADICIONES FRAS CHILCO",
+        "amount": 682750,
+        "date": "2021-12-10",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "3488c417-cf36-4b23-ab6c-d6b62401d76f",
+        "opId": 481,
+        "description": "MENOR VALOR PAGADO SIERRACOL",
+        "amount": 384051,
+        "date": "2021-12-14",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "b7a3ef26-4e2c-431f-8a81-8ddd1436b413",
+        "opId": 481,
+        "description": "INTERESES DIAS ADICIONALES",
+        "amount": 225657,
+        "date": "2021-12-14",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "b0bbd8a7-0ff3-4ceb-bab5-4e6d18c193ca",
+        "opId": 489,
+        "description": "COMPENSACION FRAS VENCIDAS AVESCO",
+        "amount": 21087164,
+        "date": "2021-12-20",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "688790a5-d7cd-49ec-a682-7095609e6514",
+        "opId": 488,
+        "description": "COMPENSACION FRA 0489-4",
+        "amount": 8259886,
+        "date": "2021-12-17",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "931f2d1c-5b39-464c-a298-16c4cb59b0d3",
+        "opId": 490,
+        "description": "INTERESES DIAS ADICIONALES FRA 2413 SMARTEC",
+        "amount": 407013,
+        "date": "2021-12-20",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "0cf1c8aa-f0b9-43f5-98ac-8023f5518d92",
+        "opId": 496,
+        "description": "COMPENSACION FRAS MERQUEO",
+        "amount": 4736885,
+        "date": "2021-12-22",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "9e49f817-9062-4c31-9c36-f8d6787690ff",
+        "opId": 497,
+        "description": "MAYOR VALOR GIRADO POSITIVA",
+        "amount": -18014599,
+        "date": "2021-12-22",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "169ddc02-47fd-409c-89b2-94926bd6d2c3",
+        "opId": 503,
+        "description": "INTERESES ADICIONALES FRA 1970",
+        "amount": 33371,
+        "date": "2021-12-29",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "59817061-2f4b-4260-abb8-e736c0d5cc3d",
+        "opId": 491,
+        "description": "SALDO PENDIENTE OP 475 RAMO-ALDOR",
+        "amount": 4959365,
+        "date": "2021-12-20",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "7bdb708a-9acd-4b65-8121-fc385962ed4e",
+        "opId": 499,
+        "description": "MENOR VALOR PAGADO FRAS SIERRACOL",
+        "amount": 458760,
+        "date": "2021-12-27",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "23bd19bc-37e6-4f9f-aa9f-b23850ea89b0",
+        "opId": 471,
+        "description": "SALDO PENDIENTE DE GIRO",
+        "amount": 6546,
+        "date": "2021-12-06",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "d9563a25-5ce6-469e-a92e-66a348d606d8",
+        "opId": 502,
+        "description": "Compensacion Op 471 Claro-Atento",
+        "amount": 812020000,
+        "date": "2021-12-29",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "4318e98b-3508-4275-89f9-56009194c4e2",
+        "opId": 515,
+        "description": "DESCUENTO INTERES DIAS ADICIONALES",
+        "amount": 443775,
+        "date": "2022-01-19",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "f4e3a062-3d4b-42d9-90d3-f4b99e07da34",
+        "opId": 517,
+        "description": "SALDO DEVOLUCION PAGOS AVESCO",
+        "amount": -11974995,
+        "date": "2022-01-20",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "6428ad02-eee2-4082-a885-939f2480562e",
+        "opId": 517,
+        "description": "DESCUENTO FACTURAS VENCIDAS",
+        "amount": 999668,
+        "date": "2022-01-20",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "9d6213af-e342-46e4-8333-e8eced2a8116",
+        "opId": 518,
+        "description": "DESCUENTO FACTURAS VENCIDAS",
+        "amount": 5291719,
+        "date": "2022-01-20",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "895b6dc4-d941-47d3-b733-237728a3463b",
+        "opId": 518,
+        "description": "DEVOLUCION PAGO MERQUEO",
+        "amount": -20284,
+        "date": "2022-01-20",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "c065e316-68e0-4e5b-a62f-27c00ec598af",
+        "opId": 520,
+        "description": "SALDO A FAVOR ENTERSOFT",
+        "amount": -6254,
+        "date": "2022-01-20",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "41201938-a45f-4c7a-9ab4-1d0d91cbaefe",
+        "opId": 523,
+        "description": "Saldo pendiente op 471",
+        "amount": 35039882,
+        "date": "2022-01-21",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "bf24b8cd-442a-4be9-8fe3-084918522030",
+        "opId": 523,
+        "description": "Menor valor pagado facturas a diciembre",
+        "amount": 31426363,
+        "date": "2022-01-21",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "f506015d-58e2-4df1-9502-77e7d50973d1",
+        "opId": 523,
+        "description": "Valor girado Centro Aseo Enero 26-2022",
+        "amount": -4612720,
+        "date": "2022-01-31",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "b81d92b1-e235-43fe-afd7-53c3fe3144ab",
+        "opId": 525,
+        "description": "COMPENSACION FRAS RAMO",
+        "amount": 45589380,
+        "date": "2022-01-24",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "d9fadd47-898c-4639-b499-10f77b0936b9",
+        "opId": 526,
+        "description": "PAGO FACTURAS POSITIVA",
+        "amount": 4476450,
+        "date": "2022-01-24",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "1cbbadca-c0b8-4ee4-abba-734cb800ce26",
+        "opId": 529,
+        "description": "DESCUENTO FACTURAS VENCIDAS MERQUEO",
+        "amount": 4123722,
+        "date": "2022-01-26",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "b6606596-8696-4620-a522-fa8c5743dbba",
+        "opId": 530,
+        "description": "MENOR VALOR PAGADO FRA 228",
+        "amount": 18390,
+        "date": "2022-01-26",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "a01948f2-d1ab-40ae-b893-a196f7ad551b",
+        "opId": 530,
+        "description": "MENOR VALOR PAGADO FACTURA 201",
+        "amount": 128142,
+        "date": "2022-01-26",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "235d148a-5ac0-43b9-9777-5ca88f8c3226",
+        "opId": 533,
+        "description": "DESCUENTO FACTURAS AVESCO",
+        "amount": 5476115,
+        "date": "2022-01-31",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "c9e8b7f7-236b-4712-b587-2f3309997607",
+        "opId": 540,
+        "description": "SE APLICA MAYOR VALOR GIRADO OP 539",
+        "amount": 698146857,
+        "date": "2022-01-31",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "d9abf40f-f2aa-4da5-80fe-7e5758b3b622",
+        "opId": 545,
+        "description": "MENOR VALOR CANCELADO PAN ARABE",
+        "amount": 96527,
+        "date": "2022-02-04",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "89c113d1-e7f1-4568-b94c-44f904df4538",
+        "opId": 544,
+        "description": "COMPENSACION FRA 18314 TELCOS",
+        "amount": 35389757,
+        "date": "2022-02-03",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "4bb16f14-1eff-4c9c-97c9-1da02d6a2e5f",
+        "opId": 549,
+        "description": "SALDO PENDIENTE DE GIRO OP 544 TELCOS",
+        "amount": -22313592,
+        "date": "2022-02-09",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "59fbd78a-ab2f-4166-8c5f-dace10091d94",
+        "opId": 406,
+        "description": "RECAUDO DERSA OCTUBRE 11-2021",
+        "amount": -99574466,
+        "date": "2021-10-12",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "f5124db6-11fa-47df-bb04-74eea943b4a4",
+        "opId": 543,
+        "description": "COMPENSACION FRA 388 CLARIANT",
+        "amount": 13054908,
+        "date": "2022-02-03",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "c0338ebc-17e8-4e6c-8331-250b5e7e5b77",
+        "opId": 525,
+        "description": "INTERESES DIAS ADICIONALES FRAS RAMO",
+        "amount": 1847346,
+        "date": "2022-01-24",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "9218660a-1ee0-412d-a0a2-18f0ce04750a",
+        "opId": 556,
+        "description": "COMPENSACION FRA 497 SEGUROS BOLIVAR",
+        "amount": 181580918,
+        "date": "2022-02-14",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "e167c497-1149-4ad8-8ec4-e73ddd4be753",
+        "opId": 556,
+        "description": "REINTEGRO PAGO ANTICIPADO FRA 497 BOLIVAR",
+        "amount": -486052,
+        "date": "2022-02-14",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "2cb2bb08-3368-412e-a15d-2b27024113cf",
+        "opId": 558,
+        "description": "PAGO SALDO FRA 489-5 POSITIVA",
+        "amount": 4630073,
+        "date": "2022-02-14",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "a8be852e-7251-4c2e-83b9-7bff2f4e0667",
+        "opId": 559,
+        "description": "COMPENSACION FACTURAS GR CHIA",
+        "amount": 107706280,
+        "date": "2022-02-15",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "544a148e-99b4-4c9c-98c2-4bb94bcce2f3",
+        "opId": 559,
+        "description": "INTERESES ADICIONALES  FACTURAS GR CHIA",
+        "amount": 2443780,
+        "date": "2022-02-15",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "cf62d949-839e-4e5d-b6f1-f7b494a0ae06",
+        "opId": 561,
+        "description": "MAYOR VALOR GIRADO PEARL SOLUTIONS",
+        "amount": -983665,
+        "date": "2022-02-16",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "8638d2ea-610b-4459-b9ee-737db87ab677",
+        "opId": 561,
+        "description": "INTERESES FACTURA 2695 SMARTEC",
+        "amount": 244415,
+        "date": "2022-02-16",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "69ddb1b5-6a68-4b54-be37-526192566af7",
+        "opId": 562,
+        "description": "SALDO PENDIENTE DE GIRAR OP 556 BOLIVAR",
+        "amount": -29866133,
+        "date": "2022-02-16",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "df2cca90-32fd-41f9-a078-53373e51d36f",
+        "opId": 562,
+        "description": "SALDO PAGO FACTURAS POSITIVA FEB 15-22",
+        "amount": -3194555,
+        "date": "2022-02-16",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "c41cc609-de82-41a0-b45a-11a2a19a9050",
+        "opId": 565,
+        "description": "SE APLICA VALOR  A GIRAR A LA FACTURA 245 CHAMPIONX",
+        "amount": 5104502,
+        "date": "2022-02-17",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "97cc8439-7216-4606-90ab-daba14e38eea",
+        "opId": 569,
+        "description": "MENOR VALOR PAGADO SIERRACOL",
+        "amount": 933948,
+        "date": "2022-02-23",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "f50b1b25-b366-4116-9cb2-c34d9d5e8e16",
+        "opId": 576,
+        "description": "MAYOT VALOR GIRADO",
+        "amount": -100,
+        "date": "2022-02-25",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "5c54704d-93a8-4d80-aefc-fedd30ed4f5b",
+        "opId": 577,
+        "description": " FACTURA 503 AZUL K FEBRERO 28-2022",
+        "amount": 168115139,
+        "date": "2022-02-28",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "ef39008a-080c-429a-8ce0-47caadd8bdc6",
+        "opId": 581,
+        "description": "DESCUENTO FACTURAS VENCIDAS AVESCO",
+        "amount": 5982339,
+        "date": "2022-03-04",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "81f86c99-fbb2-4630-96ca-df4ce88c4d9f",
+        "opId": 585,
+        "description": " VALOR FACTURA COMPENSADAS",
+        "amount": 1061554778,
+        "date": "2022-03-08",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "9aeaca85-fc9a-4434-a768-b64dd789de66",
+        "opId": 585,
+        "description": "REINTEGRO PAGO ANTICIPADO",
+        "amount": -9155117,
+        "date": "2022-03-08",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "d89bdaa6-797f-475f-bb35-72ea92268ec3",
+        "opId": 588,
+        "description": "SALDO PENDIENTE OPERACI\u00d3N 588",
+        "amount": 139114203,
+        "date": "2022-03-10",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "a3557cbb-f02a-4297-8103-a1d38bef88cb",
+        "opId": 594,
+        "description": "DESCUENTO FRA 93291-92975 AVESCO",
+        "amount": 3821559,
+        "date": "2022-03-11",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "66325e5a-0a76-4a23-a9d2-22b173d9a6e5",
+        "opId": 593,
+        "description": "DESCUENTO FACTURA 18547 TELCOS",
+        "amount": 34331112,
+        "date": "2022-03-11",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "13012622-1f26-45f6-ad39-2ed99532203b",
+        "opId": 617,
+        "description": " VALOR FACTURA COMPENSADAS",
+        "amount": 797266269,
+        "date": "2022-03-31",
+        "third": 19445601.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "948555b8-200e-4db1-8c0e-1d53d9954db1",
+        "opId": 617,
+        "description": "REINTEGRO PAGO ANTICIPADO",
+        "amount": -6291437,
+        "date": "2022-03-31",
+        "third": 19445601.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "60119666-1256-4f7e-b582-bc3f8bd49980",
+        "opId": 618,
+        "description": "COMPENSACION FRAS CANCELADAS A BEDIS",
+        "amount": 215616723,
+        "date": "2022-03-31",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "caca393d-6f82-4ef4-a165-5b3f68836cc5",
+        "opId": 626,
+        "description": "MENOR VALOR FACTURAS 295-300 ACESCO",
+        "amount": 1679462,
+        "date": "2022-04-06",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "72d6d8fe-fdda-4b86-9aad-cc421478a556",
+        "opId": 623,
+        "description": "INTERESES DIAS ADICIONALES FRA NUTRABIOTICS",
+        "amount": 2188056,
+        "date": "2022-03-31",
+        "third": null,
+        "typeExpenditure": null,
+        "account": null
+    },
+    {
+        "id": "6986e186-05d9-4a7f-84b6-40ec64da27c2",
+        "opId": 632,
+        "description": "COMPENSACION PRF POSITIVA",
+        "amount": 318451029,
+        "date": "2022-04-11",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "8e6e0513-cacb-41b2-a274-6a4df5ef2404",
+        "opId": 636,
+        "description": "DESCUENTO VALOR RETENCION 2021",
+        "amount": 1301787,
+        "date": "2022-04-21",
+        "third": 901289650.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "5258376b-ab16-479d-9d0f-36d24bc1764f",
+        "opId": 643,
+        "description": "COMPENSACION FRAS GR CHIA",
+        "amount": 246219745,
+        "date": "2022-04-27",
+        "third": 900226141.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "5021f540-0041-4ac9-9e84-f72aa6e84cac",
+        "opId": 644,
+        "description": "COMPENSACION FRAS AVESCO",
+        "amount": 20327539,
+        "date": "2022-04-28",
+        "third": 900422594.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "3d86685f-dcb8-4837-a3e4-73f8094a83b1",
+        "opId": 646,
+        "description": "COMPENSACION FRAS OP 599-588-622",
+        "amount": 945164609,
+        "date": "2022-04-28",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "bf2ac72a-c7a0-46ac-a8a4-66996bdc6f31",
+        "opId": 648,
+        "description": "TOTAL VALOR DESCUENTOS",
+        "amount": 999428954,
+        "date": "2022-05-09",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "ef73e2cc-5c5a-4ea7-b8bc-7da83b656f11",
+        "opId": 648,
+        "description": "ANTICIPO OPERACI\u00d3N 651",
+        "amount": -536718475,
+        "date": "2022-05-09",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "4a415758-660a-45f3-bc27-ad0744cda6d6",
+        "opId": 657,
+        "description": "SALDO PENDIENTE  DE LA OPERACI\u00d3N 657",
+        "amount": -18150,
+        "date": "2022-05-05",
+        "third": 901289650.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "fdb0e705-579f-49c0-93d4-8facd6df6ba2",
+        "opId": 651,
+        "description": "ANTICIPO GIRADO EN LA OP 648",
+        "amount": 536718475,
+        "date": "2022-04-29",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "36529353-830c-44d3-be1b-842fa64cce27",
+        "opId": 648,
+        "description": "VALOR RETEFUENTE PENDIENTE",
+        "amount": 1558794,
+        "date": "2022-04-29",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "f3ec29c6-8c32-4cac-bb55-a5230c48fcc4",
+        "opId": 651,
+        "description": "VALOR RETEFUENTE PENDIENTE",
+        "amount": 518635,
+        "date": "2022-05-09",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "a602a978-03ff-4036-b339-92b2bf67d415",
+        "opId": 664,
+        "description": "DESCUENTO SALDO PENDIENTE FRA 371 FABRICA FELICIDAD",
+        "amount": 1355094,
+        "date": "2022-05-16",
+        "third": 900752488.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "24b0badd-7710-4a27-9e00-f5be48e6b62e",
+        "opId": 665,
+        "description": "SALDO PENDIENTE DE GIRO",
+        "amount": 4634,
+        "date": "2022-05-12",
+        "third": 860045671.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "ef925e59-642c-488c-aa64-42e439023ca4",
+        "opId": 673,
+        "description": "COMPENSACION FACTURAS OP 586",
+        "amount": 31166135,
+        "date": "2022-05-17",
+        "third": 900226141.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "18cbf259-9ac6-492a-9566-e2f1d934908a",
+        "opId": 673,
+        "description": "SALDO A FAVOR BEDIS AGRICOLA",
+        "amount": -734220,
+        "date": "2022-05-17",
+        "third": 900226141.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "b4f91793-cea5-4de0-bc8c-348e0e8c5f5d",
+        "opId": 671,
+        "description": "VALOR PENDIENTE DE DESEMBOLSO",
+        "amount": 10758,
+        "date": "2022-05-18",
+        "third": 900944210.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "808b6e1b-6eaf-4165-99cd-94dcedc297ab",
+        "opId": 682,
+        "description": "COMPENSACION FRAS ATENTO-COMCEL",
+        "amount": 386906554,
+        "date": "2022-05-20",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "f46a4709-c9f5-4c05-a0df-0fa898fc9ad8",
+        "opId": 683,
+        "description": "SALDO PENDIENTE DE GIRO",
+        "amount": -1160,
+        "date": "2022-05-24",
+        "third": 901289650.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "f408b8c5-a758-41bb-a16d-2b325cd3f971",
+        "opId": 688,
+        "description": "MAYOR VALOR GIRADO OP 579 MARZO 2-2022",
+        "amount": 392541,
+        "date": "2022-05-27",
+        "third": 13269770.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "efec3c1a-e189-4a26-ae31-49234e98ecd6",
+        "opId": 690,
+        "description": "COMPENSACION FACTURAS AVESCO",
+        "amount": 65117774,
+        "date": "2022-05-27",
+        "third": 900422594.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "53422f16-0bf9-479c-aa45-a47730063ff6",
+        "opId": 692,
+        "description": "COMPENSACION FACTURAS OP 649-622",
+        "amount": 1009096308,
+        "date": "2022-05-31",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "00933530-7361-415f-afc3-a745f9de7d80",
+        "opId": 694,
+        "description": "COMPENSACION FRAS OP 649-622",
+        "amount": 850147189,
+        "date": "2022-05-31",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "29702b6b-1d05-43da-830e-64fc64f51fb2",
+        "opId": 693,
+        "description": "SALDO PENDIENTE FRAS POSITIVA  PRF035",
+        "amount": 5205859,
+        "date": "2022-05-31",
+        "third": 900072155.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "fa5711e4-4c44-4d40-aed2-0b255e332e07",
+        "opId": 693,
+        "description": "COMPENSACION FACTURAS BOLIVAR 465-452",
+        "amount": 209604952,
+        "date": "2022-05-31",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "1498d1d8-d09b-4d69-a35f-c16b521ded02",
+        "opId": 659,
+        "description": "VALOR APLICADO FACTURAS SERVIARROZ OP 651",
+        "amount": 4384465,
+        "date": "2022-05-31",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "d59f6ec4-192e-4c99-9108-732895c1e2b9",
+        "opId": 659,
+        "description": "PAGO COLANTA SALDO A FAVOR JUNIO 1-2022",
+        "amount": -72073040,
+        "date": "2022-06-01",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "f818fc4d-9ef3-4f09-82e2-2907537da95f",
+        "opId": 659,
+        "description": "INT DIAS ADICIONALES CADEFIHULA OP 619",
+        "amount": 418531,
+        "date": "2022-06-01",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "28820c46-8abc-41f8-b969-e7263976d948",
+        "opId": 659,
+        "description": "PAGO FACTURAS BALTIME OP 659",
+        "amount": 212432264,
+        "date": "2022-06-03",
+        "third": 901174177.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "9812dd60-eae6-4db3-a0bc-b91700bb30f5",
+        "opId": 701,
+        "description": "DESCUENTO INT DIAS ADICIONALES FRAS DERSA",
+        "amount": 1520375,
+        "date": "2022-06-03",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "3a8fb9fc-b087-475b-b08c-a4eeb9fbf46b",
+        "opId": 701,
+        "description": "SALDO PENDINTE DE GIRO",
+        "amount": 462,
+        "date": "2022-06-03",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "f1ef2f8f-9fbb-4ff0-8d53-6513f9571296",
+        "opId": 704,
+        "description": "SALDO A FAVOR FACTURAS AVESCO",
+        "amount": -10121153,
+        "date": "2022-06-09",
+        "third": 900422594.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "58c2d6b0-45b9-4cec-b76e-5c4e4adfeb6e",
+        "opId": 704,
+        "description": "COMPENSACION FACTURAS AVESCO",
+        "amount": 23291776,
+        "date": "2022-06-09",
+        "third": 900422594.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "5f77b6aa-d2f0-4bd4-8b44-476d8fc171eb",
+        "opId": 707,
+        "description": "SALDO FACTURA 19460 SIERRACOL",
+        "amount": 258372,
+        "date": "2022-06-14",
+        "third": 830076042.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "dccfc7a1-82f6-403e-a3b1-cabdc549bc2f",
+        "opId": 714,
+        "description": " Pago Positiva Prf036-junio 17-2022",
+        "amount": 150197329,
+        "date": "2022-06-17",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "c356431f-d701-4ac1-addd-c3e5bb3cd18b",
+        "opId": 718,
+        "description": " VALOR FACTURA COMPENSADAS  PRFV9759-5",
+        "amount": 697858988,
+        "date": "2022-06-23",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "d571b826-c433-4675-b2fb-dcafa8aeb72c",
+        "opId": 725,
+        "description": "COMPENSACION FACTURA 9331 ATENTO",
+        "amount": 25555510,
+        "date": "2022-06-29",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "d94c65bc-d0bc-4fce-8a37-db8a70698943",
+        "opId": 723,
+        "description": "COMPENSACION FACTURAS OP 694",
+        "amount": 806685539,
+        "date": "2022-06-28",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "fc3f1357-c20f-419f-98aa-845af9751e1e",
+        "opId": 723,
+        "description": "VALOR PENDIENTE DE GIRO",
+        "amount": 62900,
+        "date": "2022-06-29",
+        "third": 900073254.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "da0d3135-1782-4f8d-9e10-c3f56c48a038",
+        "opId": 726,
+        "description": "COMPENSACION FACTURAS S. BOLIVAR OP 693",
+        "amount": 81734221,
+        "date": "2022-06-30",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "be6a7412-a2fd-434d-8b1b-6c8f8d1f49f4",
+        "opId": 727,
+        "description": "COMPENSACION FRAS 2015-2024",
+        "amount": 25005825,
+        "date": "2022-07-01",
+        "third": 901289650.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "0ffec868-7ffe-4bef-9883-edc5b152cf00",
+        "opId": 727,
+        "description": "SALDO PENDIENTE DE GIRO",
+        "amount": 871916,
+        "date": "2022-07-11",
+        "third": 901289650.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "a8ed6645-0134-4439-be1a-b9c936d2011f",
+        "opId": 729,
+        "description": "NEGOCIACION OP 730 PRODUCTOS RAMO",
+        "amount": -1027964848,
+        "date": "2022-07-07",
+        "third": 860005264.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "4f00bc63-77fc-4313-afcf-5232b35ea5e6",
+        "opId": 729,
+        "description": "NEGOCIACION OP 731 COMESTIBLES ALDOR",
+        "amount": -56208826,
+        "date": "2022-07-07",
+        "third": 860005264.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "42fdda1e-c721-4623-b556-fee3289a31c6",
+        "opId": 730,
+        "description": "DESCUENTO GIRO $1.800.000.000 NEGOCIACION OP 730 PRODUCTOS RAMO",
+        "amount": 1027964848,
+        "date": "2022-07-07",
+        "third": 860005264.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "1067b8c3-be9e-466f-8e03-7b4df440c846",
+        "opId": 731,
+        "description": "DESCUENTO GIRO $1.800.000.000 NEGOCIACION OP 731 COMESTIBLES ALDOR",
+        "amount": 56208826,
+        "date": "2022-07-07",
+        "third": 860005264.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "7b733a84-ef68-4855-8c9d-071b4bdacf2e",
+        "opId": 732,
+        "description": "DESCUENTO INTERESES PAGO DERSA JULIO 7-2022",
+        "amount": 6305307,
+        "date": "2022-07-08",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "5d0dbef9-949f-4e53-b6ec-464435a4bd9d",
+        "opId": 733,
+        "description": "COMPENSACION FACTURA S. BOLIVAR 0485",
+        "amount": 53845628,
+        "date": "2022-07-08",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "c118c69a-3718-4d10-9cba-c96c12c59f48",
+        "opId": 734,
+        "description": "COMPENSACION FACTURA GR CHIA",
+        "amount": 34010877,
+        "date": "2022-07-11",
+        "third": 900226141.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "db246ad4-85d6-46d6-9d27-e810f52df0f0",
+        "opId": 736,
+        "description": "COMPENSACION FACTURA 2004 PAN ARABE",
+        "amount": 8358915,
+        "date": "2022-07-12",
+        "third": 901289650.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "02ee69f1-6c67-4f86-aea6-d600abfb84ff",
+        "opId": 736,
+        "description": "SALDO PENDIENTE DE GIRO OP 727",
+        "amount": -871916,
+        "date": "2022-07-12",
+        "third": 901289650.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "730a65e2-ce3e-4796-b089-21f9da6e3bb8",
+        "opId": 741,
+        "description": "COMPENSACION PRF ATENTO",
+        "amount": 664751873,
+        "date": "2022-07-18",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "97087a79-0e9d-4132-bf02-e1cbb7970cbd",
+        "opId": 743,
+        "description": "INTERESES DIAS ADICIONALES FACTURA 5-6",
+        "amount": 1303289,
+        "date": "2022-07-21",
+        "third": 901358063.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "bcc98b1d-2722-48df-b8a5-445a5a32f363",
+        "opId": 745,
+        "description": " COMPENSACION FACTURAS JULIO 21/2022",
+        "amount": 269957756,
+        "date": "2022-07-21",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "32fbfe20-d16f-4228-bf13-13b9c4953187",
+        "opId": 748,
+        "description": "COMPENSACION FACTURAS JULIO 25/2022",
+        "amount": 698600021,
+        "date": "2022-07-25",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "9b1c2bfa-25c6-436a-a15c-83a3f78b81fa",
+        "opId": 755,
+        "description": "COMPENSACION  PRF102232 CLARO",
+        "amount": 211966142,
+        "date": "2022-07-29",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "6cbc9f4f-cdf9-4e63-8362-e28d7a48611c",
+        "opId": 756,
+        "description": "DESCUENTO INTERESES ADICIONALES FRAS DERSA-AZULK",
+        "amount": 13026700,
+        "date": "2022-08-08",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "5b99d7a1-cb8e-4f79-876b-5e8319672576",
+        "opId": 756,
+        "description": "SALDO APLICAR OP 760",
+        "amount": -2078983,
+        "date": "2022-08-10",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "22b71276-a572-40f9-b77b-131500483d20",
+        "opId": 760,
+        "description": "SALDO A FAVOR OP 756",
+        "amount": 2078983,
+        "date": "2022-08-08",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "7f9f03c6-c0e0-486e-9d3c-12d8b4095e4b",
+        "opId": 767,
+        "description": "Reversi\u00f3n de impuestos  Reteica y Rtefte",
+        "amount": 23751,
+        "date": "2022-08-16",
+        "third": 13269770.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "00d6941f-e448-4806-b636-b4cd0c40223c",
+        "opId": 770,
+        "description": " INTERESES ADICIONALES PENDIENTE DE COBRO FRA2086-2236",
+        "amount": 101875,
+        "date": "2022-08-18",
+        "third": 901289650.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "335f151b-5116-4ee3-81c5-8bced5ef853c",
+        "opId": 775,
+        "description": "COMPENSACION FRAS S. BOLIVAR 511-512",
+        "amount": 65422236,
+        "date": "2022-08-24",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "a9b41cea-ff52-4f75-adee-4e8c7ea85e41",
+        "opId": 776,
+        "description": "DESCUENTO INTERESES ADICIONES FRAS DERSA-AZULK",
+        "amount": 14329071,
+        "date": "2022-08-25",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "2e6daac8-0f2a-4b8f-9eb7-a6a4caef57dd",
+        "opId": 776,
+        "description": "SALDO PENDIENTE POR DESEMBOLSAR OP 779",
+        "amount": 157465,
+        "date": "2022-08-25",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "87fbd900-ed17-4d87-a4ef-fa0340688648",
+        "opId": 779,
+        "description": "SALDO PENDIENTE GIRO OP 776",
+        "amount": -157465,
+        "date": "2022-08-26",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "487f9f95-96fa-4452-9cb7-365d7dcd6e16",
+        "opId": 780,
+        "description": "COMPENSACION FACTURA SIERRACOL",
+        "amount": 42056247,
+        "date": "2022-08-26",
+        "third": 830076042.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "ad4977d5-95de-40be-9258-ed66fbea716e",
+        "opId": 782,
+        "description": "INTERESES ADICIONALES FRA 19738 TELCOS",
+        "amount": 766527,
+        "date": "2022-08-29",
+        "third": 830076042.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "a3d08634-7837-4aeb-8b0e-f7113c75ccea",
+        "opId": 784,
+        "description": "COMPENSACION FACT SURA-S. BOLIVAR 511- PRF 0039",
+        "amount": 166606468,
+        "date": "2022-08-30",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "09069b59-1c80-43c3-8e2e-f938042f5dff",
+        "opId": 786,
+        "description": "INTERSES ADICIONALES FACTURAS DERSA",
+        "amount": 9333260,
+        "date": "2022-08-31",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "fb4e14f6-d0da-4588-b4f5-2061500ef29f",
+        "opId": 788,
+        "description": "COMPENSACION FACT GR CHIA",
+        "amount": 127121210,
+        "date": "2022-08-31",
+        "third": 900226141.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "de1d30a6-b1e7-4778-a4fc-418915367d8a",
+        "opId": 788,
+        "description": "SALDO PENDIENTE DE GIRO",
+        "amount": 84580,
+        "date": "2022-08-31",
+        "third": 900226141.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "c8f4f55b-27a2-47d5-b957-7876beb64b8d",
+        "opId": 783,
+        "description": " COMPENSACION FACTURAS PRF 102234-2\n AGOSTO 30-2022",
+        "amount": 165022329,
+        "date": "2022-08-30",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "c0735439-7cea-4a2e-9124-35f2cc4be3c4",
+        "opId": 787,
+        "description": "COMPENSACION FACTURAS",
+        "amount": 544573522,
+        "date": "2022-08-31",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "bb31f954-da8b-46cb-8e85-3e08b0628bd8",
+        "opId": 787,
+        "description": "INTERESES ADICIONALES FRAS COMCEL",
+        "amount": 2501388,
+        "date": "2022-08-31",
+        "third": 900073254.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "3aa0c8fd-6dcc-4975-86bb-ebcd2f58ce24",
+        "opId": 787,
+        "description": "SALDO A FAVOR APLICAR OP 790",
+        "amount": 281700,
+        "date": "2022-08-31",
+        "third": 900073254.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "b96467da-00ca-41cf-a4ba-ee6751c0f2ad",
+        "opId": 790,
+        "description": "COMPENSACION FACTURAS SEPTIEMBRE 5-22",
+        "amount": 518196961,
+        "date": "2022-09-05",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "970de1db-c126-4942-8db2-19312b9eb6d9",
+        "opId": 790,
+        "description": "SALDO PENDIENTE DE GIRO OP 787",
+        "amount": -281700,
+        "date": "2022-09-05",
+        "third": 900073254.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "5649bd14-c92f-43b1-b3fd-1842446f8a14",
+        "opId": 790,
+        "description": "SALDO PENDIENTE GIRADO OP 792",
+        "amount": 121043615,
+        "date": "2022-09-05",
+        "third": 900073254.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "82ee0ab9-7dd6-42ea-a9e1-c81daff7c443",
+        "opId": 792,
+        "description": "SALDO PENDIENTE DE GIRO OP 790",
+        "amount": -121043615,
+        "date": "2022-09-07",
+        "third": 900073254.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "dc5f86f8-9e98-44e3-8a50-39046cc99a65",
+        "opId": 793,
+        "description": "SALDO PENDIENTE DE GIRO EN LA OP 796",
+        "amount": 23282862,
+        "date": "2022-09-06",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "cf2d4513-2cb5-48e7-bb62-21f6f44713d6",
+        "opId": 794,
+        "description": "COMPENSACION FACT S. BOLIVAR 523-524",
+        "amount": 53318897,
+        "date": "2022-09-06",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "1c80b018-a731-487d-a432-4f5b5a254db3",
+        "opId": 796,
+        "description": "SE CANCELA SALDO PENDIENTE OP 793",
+        "amount": -23282862,
+        "date": "2022-09-13",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "583a8bee-39b0-4c3d-a53f-952c2bd593df",
+        "opId": 804,
+        "description": "DESCUENTO INTERESES DIAS ADICIONALES FRA 421",
+        "amount": 43226,
+        "date": "2022-09-19",
+        "third": 900752488.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "b2d5997f-a541-4380-867f-eaa890463244",
+        "opId": 807,
+        "description": "INTERESES DIAS ADICIONALES FRAS DERSA",
+        "amount": 9641166,
+        "date": "2022-09-22",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "d5337450-890d-4d90-9dd6-a23194ae40a6",
+        "opId": 811,
+        "description": "COMPENSACION FACT S. BOLIVAR 524",
+        "amount": 17095237,
+        "date": "2022-09-27",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "dc4bd165-600a-49b4-874c-72a6e6bbbf79",
+        "opId": 816,
+        "description": "INTERESES DIAS ADICIONALES FACTURA 12-13",
+        "amount": 238829,
+        "date": "2022-09-30",
+        "third": 901358063.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "5f499a8d-58ce-4146-8c25-bd86e121f49c",
+        "opId": 815,
+        "description": "COMPENSACION FACTURAS SEPTIEMBRE 30",
+        "amount": 50374134,
+        "date": "2022-09-30",
+        "third": 900226141.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "75f231a3-63a3-4566-b3a6-8820a93519b1",
+        "opId": 815,
+        "description": "SALDO PENDIENTE DE GIRO",
+        "amount": 461658,
+        "date": "2022-09-30",
+        "third": 900226141.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "dd93d9b4-1e0a-4cf5-8bf6-c7b92b8e5bf0",
+        "opId": 817,
+        "description": "COMPENSACION FACTURAS SEPTIEMBRE 30",
+        "amount": 662515785,
+        "date": "2022-09-30",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "409e477b-b1c5-4ef5-812d-ed7fc07b35c9",
+        "opId": 817,
+        "description": "SALDO A FAVOR PAGO ATENTO 19092022",
+        "amount": -20071629,
+        "date": "2022-09-30",
+        "third": 900073254.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "5f01d722-1a11-4da8-be62-b391a243aff1",
+        "opId": 820,
+        "description": "COMPENSACION FACT S. BOLIVAR 524",
+        "amount": 6130341,
+        "date": "2022-10-05",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "cd885fb9-fc78-439e-98dc-69674e6b2b46",
+        "opId": 823,
+        "description": "COMPENSACION FACTURAS PFR102239",
+        "amount": 168437892,
+        "date": "2022-10-13",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "1e3f9058-3bf3-46d3-85f1-b36bba170bf8",
+        "opId": 809,
+        "description": "VALOR CRUZADO CON FACTURAS MAKRO",
+        "amount": 3502490,
+        "date": "2022-10-05",
+        "third": 890700058.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "bdfcd509-31d4-4654-aaaa-4cde8dfc9ed3",
+        "opId": 828,
+        "description": "COMPENSACION FACT CHAMPIONX 401",
+        "amount": 16393474,
+        "date": "2022-10-14",
+        "third": 900314861.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "87c3048f-f828-417b-8436-ffadba23f6f1",
+        "opId": 830,
+        "description": "INTERESES RECAUDO DERSA 10102022",
+        "amount": 9147447,
+        "date": "2022-10-19",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "44cb91fc-28dd-44f3-8e9d-83bc99664aab",
+        "opId": 826,
+        "description": "VALOR GIRADO EN LA OPERACI\u00d3N 827 14102022",
+        "amount": 120444689,
+        "date": "2022-10-14",
+        "third": 890700058.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "c1ba2abb-927e-4414-8a28-ffaccd42fb4e",
+        "opId": 827,
+        "description": "SALDO PENDIENTE GIRO OP 826",
+        "amount": -120444690,
+        "date": "2022-10-14",
+        "third": 890700058.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "3c9f6e37-eb45-49b2-9454-1e337495d18e",
+        "opId": 827,
+        "description": "COMPENSACION FACTURAS MAKRO",
+        "amount": 400453443,
+        "date": "2022-10-14",
+        "third": 890700058.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "f6387610-c528-414b-a2ea-e7672460791e",
+        "opId": 833,
+        "description": "COMPENSACION FACT GR CHIA",
+        "amount": 27690295,
+        "date": "2022-10-20",
+        "third": 900226141.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "75e3348d-20fe-4f8d-87a1-3141ebbc9e45",
+        "opId": 833,
+        "description": "SALDO A FAVOR BEDIS AGRICOLA",
+        "amount": 52882,
+        "date": "2022-10-20",
+        "third": 900226141.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "88220d59-0027-4ec8-8a8f-c7f14b706429",
+        "opId": 836,
+        "description": "DESCUENTO INTERESES DIAS ADICIONALES 431-DESCUENTO INTERESES DIAS ADICIONALES 431-433",
+        "amount": 17180,
+        "date": "2022-10-21",
+        "third": 900752488.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "54b9958d-141d-4e5a-be1a-b38b0e7968ca",
+        "opId": 838,
+        "description": "COMPENSACION FACTURAS CAFAM-CLARO-ATENTO",
+        "amount": 405888800,
+        "date": "2022-10-24",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "d4b9eff2-6397-480e-a36a-ee0328630560",
+        "opId": 838,
+        "description": "REINTEGRO PAGO ANTICIPADO CLARO",
+        "amount": -3341137,
+        "date": "2022-10-27",
+        "third": 900073254.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "59939395-0bf6-4179-967b-0aa5ef322b1a",
+        "opId": 840,
+        "description": "COMPENSACION FRAS BOLIVAR",
+        "amount": 21838076,
+        "date": "2022-10-27",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "69d6670a-b521-48a2-bb8d-027e5d8c40a9",
+        "opId": 841,
+        "description": "COMPENSACION FACT S. BOLIVAR 544-553",
+        "amount": 42422909,
+        "date": "2022-10-25",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "827bba02-382e-46c1-b189-864df83c4518",
+        "opId": 842,
+        "description": "DESCUENTO INTERESES DIAS ADICIONALES",
+        "amount": 1724924,
+        "date": "2022-10-26",
+        "third": 860045671.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "165585dd-d4e1-4a4a-a42c-d397863abe7b",
+        "opId": 846,
+        "description": "COMPENSACION FACTURAS ATENTO 27102022",
+        "amount": 246977802,
+        "date": "2022-10-27",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "301c38a3-41ec-493c-99fa-78bbc12440bc",
+        "opId": 846,
+        "description": "REINTEGRO PAGO ANTICIPADO ATENTO",
+        "amount": -1755285,
+        "date": "2022-10-27",
+        "third": 900073254.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "b60f5287-1992-40cc-9a38-53823fafda59",
+        "opId": 835,
+        "description": "EL VALOR PENDIENTE DE GIRO, SE CRUZA EN LA OP 837",
+        "amount": 1542783416,
+        "date": "2022-10-21",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "9ba3857c-39cb-4604-87ef-d97aad1bbbd5",
+        "opId": 837,
+        "description": "GIRO OPERACI\u00d3N 835 COPALCOL",
+        "amount": -1542783416,
+        "date": "2022-10-27",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "5841a5fa-0ed3-45d7-b8d0-399d9012fdb0",
+        "opId": 837,
+        "description": "SALDO PENDIENTE GIRO OPERACI\u00d3N 772 CADEFIHUILA",
+        "amount": -361915267,
+        "date": "2022-10-27",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "4e63bdcc-617a-4361-8edf-aec622baa2c4",
+        "opId": 772,
+        "description": "SALDO GIRO EN LA OPERACI\u00d3N 837 CADEFIHUILA",
+        "amount": 361915267,
+        "date": "2022-10-27",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "15320b47-5a57-4083-9052-d1bf0a75427d",
+        "opId": 843,
+        "description": "INTERESES DIAS ADICIONALES FACTURA 10",
+        "amount": 2866295,
+        "date": "2022-10-26",
+        "third": 901358063.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "6c2ab0e0-ace0-4cf0-b5ee-4f4f0560ea27",
+        "opId": 847,
+        "description": "DESCUENTO INTERESES PAGO FACTURAS DERSA",
+        "amount": 4979542,
+        "date": "2022-10-31",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "9664e9f0-a165-4bb8-8bf4-27958213d45c",
+        "opId": 848,
+        "description": "COMPENSACION FACTURA ATENTO CA11534",
+        "amount": 30244059,
+        "date": "2022-10-31",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "2fbbdbcb-55d9-4baa-8e7a-5a4173a63d58",
+        "opId": 819,
+        "description": "COMPENSACION FACTURAS MAKRO",
+        "amount": 232591880,
+        "date": "2022-10-05",
+        "third": 890700058.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "194702a5-893b-4781-b9e6-0a6eb4811487",
+        "opId": 819,
+        "description": "SALDO PENDIENTE DE GIRO OP 809",
+        "amount": -3502490,
+        "date": "2022-10-05",
+        "third": 890700058.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "5bb15f2a-c2e5-4cae-aa50-7e3cdd513772",
+        "opId": 819,
+        "description": "SALDO PENDIENTE DE GIRO OP 819",
+        "amount": 87606,
+        "date": "2022-11-07",
+        "third": 890700058.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "05caaf87-e05d-4250-930f-0e46137e0a16",
+        "opId": 848,
+        "description": "DESCUENTOS INTERESES Y MENOR VALOR PAGADO",
+        "amount": 4054119,
+        "date": "2022-10-31",
+        "third": 900073254.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "b38d7ca5-6c38-4af7-964f-34bb87d47444",
+        "opId": 850,
+        "description": "COMPENSACION FACTURAS GR CHIA 31102022",
+        "amount": 60272653,
+        "date": "2022-10-31",
+        "third": 900226141.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "56fe87af-31e9-4efb-8b24-e0cc2383ab7a",
+        "opId": 850,
+        "description": "SALDO POR COBRAR BEDIS AGRICOLA",
+        "amount": -1511,
+        "date": "2022-10-31",
+        "third": 900226141.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "35b037b0-8851-4a96-b42b-6655eb0f7193",
+        "opId": 851,
+        "description": "COMPENSACION FACTURAS ALDOR-RAMO 31102022",
+        "amount": 326358211,
+        "date": "2022-10-31",
+        "third": 860005264.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "abbd9cd3-d215-497b-9f42-61a23d9516a8",
+        "opId": 851,
+        "description": "INTERESES PENDIENTES OP 731 COMESTIBLES ALDOR",
+        "amount": 126987,
+        "date": "2022-11-11",
+        "third": 860005264.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "2cdeb5fb-7c5b-4716-853d-539ff0a12b0b",
+        "opId": 849,
+        "description": "COMPENSACION FACT KOBA-\u00c9XITO-COLSUBSIDIO",
+        "amount": 901516377,
+        "date": "2022-10-31",
+        "third": 890700058.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "c3ef6cb1-72d2-4d11-b011-4f65a011e04f",
+        "opId": 849,
+        "description": "REINTEGRO PAGO ANTICIPADO KOBA",
+        "amount": -6063079,
+        "date": "2022-10-31",
+        "third": 890700058.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "5681ecf4-bd96-44a1-acb4-d17183c0105e",
+        "opId": 849,
+        "description": "REINTEGRO PAGO FACTURAS MAKRO",
+        "amount": -39681268,
+        "date": "2022-10-31",
+        "third": 890700058.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "20ac99a9-8483-4c85-b844-9593e7658d11",
+        "opId": 853,
+        "description": "MAYOR VALOR GIRADO Y SE DESCUENTA EN LA OP 864",
+        "amount": -244373861,
+        "date": "2022-11-16",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "562efda3-bb4e-4283-bd3d-6da9e28cde67",
+        "opId": 854,
+        "description": "DESCUENTO INTERESES DIAS ADIC FRAS DERSA",
+        "amount": 664358,
+        "date": "2022-11-10",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "905619d2-4744-4f75-bd25-50a3f9e97677",
+        "opId": 857,
+        "description": "DESCUENTO INTERESES DIAS ADICIONALES 435-441",
+        "amount": 152019,
+        "date": "2022-11-10",
+        "third": 900752488.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "6418eea9-7c05-4dab-a86d-4b35dc245d72",
+        "opId": 858,
+        "description": "COMPENSACION FACT S. BOLIVAR 559-560",
+        "amount": 55887757,
+        "date": "2022-11-10",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "668855d7-b5f7-4981-8bba-ed8a060d577c",
+        "opId": 858,
+        "description": "INTERESES OP 811 FACTURA SURA",
+        "amount": 87464,
+        "date": "2022-11-10",
+        "third": 900072155.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "770b323c-bbc6-4475-b43b-4eb8f1ee693c",
+        "opId": 861,
+        "description": "REINTEGRO PAGO ACESCO",
+        "amount": -901079,
+        "date": "2022-11-11",
+        "third": 900314861.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "95d4d15a-0f01-41e4-9372-cf0ece74fe42",
+        "opId": 862,
+        "description": "INTERESES FRA FE765 DERSA",
+        "amount": 1038063,
+        "date": "2022-11-16",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "6cab27e5-6ae3-4c63-996a-a7380197fed4",
+        "opId": 864,
+        "description": "MAYOR VALOR GIRADO OP 853",
+        "amount": 244373861,
+        "date": "2022-11-17",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "c4b6ac5e-f910-4905-a68e-3b6ba5994802",
+        "opId": 865,
+        "description": "MENOR VALOR PAGADO FRA 474 CHAMPIONX",
+        "amount": 115038,
+        "date": "2022-11-17",
+        "third": 900314861.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "5c11e71e-0c5d-46d5-b090-1169df4f5afc",
+        "opId": 874,
+        "description": "VALOR COMPENSACION FACTURAS OP 848",
+        "amount": 1171174543,
+        "date": "2022-11-23",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "899e78f9-5cb0-40aa-ade2-599f5bc606df",
+        "opId": 874,
+        "description": "REINTEGRO PAGO ANTICIPADO OP 848",
+        "amount": -3144529,
+        "date": "2022-11-23",
+        "third": 900073254.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "caa5e48f-348e-4d5d-83ea-78a949b2a78f",
+        "opId": 873,
+        "description": "INTERESES DIAS ADICIONALES",
+        "amount": 338532,
+        "date": "2022-11-29",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "c49733ce-8bbe-45f4-b597-7f856945bfec",
+        "opId": 877,
+        "description": "VALOR COMPENSACION FACTURAS 28112022",
+        "amount": 183933611,
+        "date": "2022-11-28",
+        "third": 900226141.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "02530666-5064-4729-a7cd-e03bdf62246e",
+        "opId": 877,
+        "description": "VALOR SALDO A FAVOR",
+        "amount": -8023688,
+        "date": "2022-11-28",
+        "third": 900226141.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "bf9bad70-704e-4e13-903c-c990c8bbb615",
+        "opId": 878,
+        "description": "INTERESES PAGO FACTURAS DERSA",
+        "amount": 1002158,
+        "date": "2022-11-30",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "3d6ff822-da20-4cd7-a083-638a16ea3209",
+        "opId": 890,
+        "description": "INTERESES DIAS ADICIONLES FRAS DERSA",
+        "amount": 358168,
+        "date": "2022-12-07",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "e73bbba2-65e0-4f1e-849b-e33f629036f9",
+        "opId": 895,
+        "description": "INTERESES DIAS ADICIONALES FEVO448-FEVO446",
+        "amount": 114626,
+        "date": "2022-12-16",
+        "third": 900752488.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "11e9fbc8-f19d-47bc-a07b-7b1ce02a7594",
+        "opId": 901,
+        "description": "ABONO  FACT S. BOLIVAR FE574",
+        "amount": 35929179,
+        "date": "2022-12-15",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "a17d198a-82d2-4991-bb74-d39c2473e003",
+        "opId": 909,
+        "description": "COMPENSACION FACTURAS RAMO-              CLARO-BANCAMIA",
+        "amount": 788030995,
+        "date": "2022-12-20",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "85ebf5d4-6e7f-4616-8c8c-432a586a6aca",
+        "opId": 909,
+        "description": " REINTEGRO PAGO ANTICIPADO CLARO",
+        "amount": -6329383,
+        "date": "2022-12-20",
+        "third": 900073254.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "6770ec6f-6f16-4305-a30c-5f427fd90d91",
+        "opId": 907,
+        "description": "COMPENSACION FACTURAS GR CHIA",
+        "amount": 46401779,
+        "date": "2022-12-20",
+        "third": 900226141.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "6052fcbe-c69e-45a2-9580-992dd190e997",
+        "opId": 911,
+        "description": "PAGO FACTURA CHAMPIONX TSI522",
+        "amount": 5185585,
+        "date": "2022-12-27",
+        "third": 900314861.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "e38b837e-3fb5-4820-a8fc-33c7dcc4faf4",
+        "opId": 915,
+        "description": "INTERESES DIAS ADICIONALES",
+        "amount": 22310,
+        "date": "2022-12-28",
+        "third": 900752488.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "e089b1c8-001a-42e4-87ca-6f43341cfaf3",
+        "opId": 918,
+        "description": "COMPENSACION PREFACTURAS Y FACTURAS",
+        "amount": 237978058,
+        "date": "2022-12-20",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "6d82acba-33e7-4d03-b949-2088f9499fba",
+        "opId": 917,
+        "description": "COMPENSACION PREFACTURA Y FACTURA",
+        "amount": 311505306,
+        "date": "2022-12-20",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "34b0e7c3-8a1b-460f-b938-8499540f6c57",
+        "opId": 917,
+        "description": "SALDO PENDIENTE GIRO OP 909",
+        "amount": 794791,
+        "date": "2022-12-20",
+        "third": 900073254.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "e9a98299-c360-472a-85c7-32cb2348d015",
+        "opId": 922,
+        "description": "COMPENSACION FACTURAS BOLIVAR FE570-FE582-FE574",
+        "amount": 42188518,
+        "date": "2022-12-28",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "925bfa83-d2e9-4194-ba3d-d82a5892e159",
+        "opId": 923,
+        "description": "COMPENSACION FACTURAS MAKRO-D1",
+        "amount": 1024255175,
+        "date": "2022-12-28",
+        "third": 900205288.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "343c9849-3a6f-4380-a0be-ace58ff08ab1",
+        "opId": 923,
+        "description": "VALOR PENDIENTE DE PAGO",
+        "amount": 6120188,
+        "date": "2022-12-28",
+        "third": 890700058.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "4d76cc27-0102-4a36-9a10-c98621471461",
+        "opId": 927,
+        "description": "COMPENSACION FACTURA FE584-FE578",
+        "amount": 182591435,
+        "date": "2023-01-11",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "ca35a6bb-260f-4f37-b3b0-5b655e0cc7a1",
+        "opId": 928,
+        "description": "VALOR AJUSTADO OP 935 ENERO 12-23",
+        "amount": -32226,
+        "date": "2023-01-11",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "19eb53cd-7b4e-4da8-b02a-88c63ae798f7",
+        "opId": 935,
+        "description": "INTERESES ADICIONALES FRAS DERSA",
+        "amount": 13645148,
+        "date": "2023-01-12",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "3381a081-b5fb-4fe6-89bc-feb8dcc6ede2",
+        "opId": 935,
+        "description": "VALOR AJUSTE OP 928",
+        "amount": 32226,
+        "date": "2023-01-12",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "d16252e2-8a2c-4d56-ae06-26ee5f416cdc",
+        "opId": 930,
+        "description": "RECOMPRA CENTRO ASEO-ATENTO",
+        "amount": 413532097,
+        "date": "2023-01-12",
+        "third": 901323336.0,
+        "typeExpenditure": "5d6524f0-521b-43b2-bf85-ea4c02e2a901",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "19a4bf01-d605-4aab-8700-c6d7e8c009e3",
+        "opId": 930,
+        "description": "MENOS VALOR FACTURA",
+        "amount": -176606,
+        "date": "2023-01-12",
+        "third": 901323336.0,
+        "typeExpenditure": "5d6524f0-521b-43b2-bf85-ea4c02e2a901",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "fad30962-154e-45b1-a1f2-aa58f51dc1d2",
+        "opId": 931,
+        "description": "RECOMPRA ENTERSOFT-CENTURY",
+        "amount": 272858783,
+        "date": "2023-01-12",
+        "third": 901323336.0,
+        "typeExpenditure": "5d6524f0-521b-43b2-bf85-ea4c02e2a901",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "284e6cf6-c53c-499d-a3dd-24cf1474a9b5",
+        "opId": 931,
+        "description": "MENOS VALOR FACTURA",
+        "amount": -176606,
+        "date": "2023-01-12",
+        "third": 901323336.0,
+        "typeExpenditure": "5d6524f0-521b-43b2-bf85-ea4c02e2a901",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "d9f2b355-77b2-4c0f-995b-4932caf90ec8",
+        "opId": 932,
+        "description": "RECOMPRA INDAFRE-SERVIENTREGA",
+        "amount": 271506079,
+        "date": "2023-01-12",
+        "third": 901323336.0,
+        "typeExpenditure": "5d6524f0-521b-43b2-bf85-ea4c02e2a901",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "86ce8d97-c3be-426b-ad3e-9a0831ffbfe7",
+        "opId": 932,
+        "description": "MENOS VALOR FACTURA",
+        "amount": -178200,
+        "date": "2023-01-12",
+        "third": 901323336.0,
+        "typeExpenditure": "5d6524f0-521b-43b2-bf85-ea4c02e2a901",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "918a4911-932d-464d-8115-ee4da7c566aa",
+        "opId": 933,
+        "description": "RECOMPRA BEDIS AGRICOLA-GR CHIA",
+        "amount": 108467326,
+        "date": "2023-01-12",
+        "third": 901323336.0,
+        "typeExpenditure": "5d6524f0-521b-43b2-bf85-ea4c02e2a901",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "f64f9e75-d380-41ea-a556-d7ea536a13d5",
+        "opId": 933,
+        "description": "MENOS VALOR FACTURA",
+        "amount": -178200,
+        "date": "2023-01-12",
+        "third": 901323336.0,
+        "typeExpenditure": "5d6524f0-521b-43b2-bf85-ea4c02e2a901",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "99ae921f-cf44-4a4a-b37c-ee7dbd6ac03e",
+        "opId": 934,
+        "description": "RECOMPRA UNION-D1",
+        "amount": 260456521,
+        "date": "2023-01-12",
+        "third": 901323336.0,
+        "typeExpenditure": "5d6524f0-521b-43b2-bf85-ea4c02e2a901",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "5c94fe3c-c02c-4a99-b53c-2c59498a2c92",
+        "opId": 934,
+        "description": "MENOS VALOR FACTURA",
+        "amount": -173498,
+        "date": "2023-01-12",
+        "third": 901323336.0,
+        "typeExpenditure": "5d6524f0-521b-43b2-bf85-ea4c02e2a901",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "3ed2d9d7-2e79-4bf3-9433-4516bf4f5dc1",
+        "opId": 937,
+        "description": "SALDO DEL GIRO SE APLICA A LA OP 938",
+        "amount": -501206690,
+        "date": "2023-01-13",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "212c4bcb-107a-4f3a-90cb-043f3c8390fb",
+        "opId": 938,
+        "description": "SE APLICA SALDO GIRO ENERO 13-2023 DE LA OPERACI\u00d3N 937",
+        "amount": 501206690,
+        "date": "2023-01-13",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "6c25b76b-ac2b-40ac-a151-daa68f4727ed",
+        "opId": 938,
+        "description": "MAYOR VALOR GIRADO ENERO 13-2023",
+        "amount": -25509183,
+        "date": "2023-01-13",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "4e33a97a-ee7c-4e87-991c-80bab2019593",
+        "opId": 940,
+        "description": "INTERESES DIAS ADICIONALES FRA FPT29",
+        "amount": 836003,
+        "date": "2023-01-20",
+        "third": 901358063.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "d31d6f50-eae2-401b-9ba3-3c203e9be25b",
+        "opId": 942,
+        "description": "COMPENSACION FACTURA CAFAM-ATENTO-RAMO",
+        "amount": 405188979,
+        "date": "2023-01-20",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "1b5eb330-dc61-494b-b97d-b0ccc13bc2be",
+        "opId": 942,
+        "description": "REINTEGRO PAGO ANTICIPADO",
+        "amount": -1114686,
+        "date": "2023-01-20",
+        "third": 900073254.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "2b9946e3-26c9-46ad-b0e1-bceaed361cb4",
+        "opId": 943,
+        "description": "INTERESES DIAS ADICIONALES FRAS DERSA",
+        "amount": 17718544,
+        "date": "2023-01-24",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "be374ddf-f10c-4ce1-8a3b-8a0b4966a4c3",
+        "opId": 944,
+        "description": "RECOMPRA BIOTRADE-DERSA",
+        "amount": 78827133,
+        "date": "2023-01-24",
+        "third": 900884741.0,
+        "typeExpenditure": "5d6524f0-521b-43b2-bf85-ea4c02e2a901",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "a56765ad-bc4e-4f6c-8538-833e5ab179ac",
+        "opId": 944,
+        "description": "MENOS VALOR FACTURA",
+        "amount": -178199,
+        "date": "2023-01-24",
+        "third": 900884741.0,
+        "typeExpenditure": "5d6524f0-521b-43b2-bf85-ea4c02e2a901",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "85e8d6d4-951e-42ad-ac21-225afdf76c09",
+        "opId": 949,
+        "description": " PAGO FACTURAS D1 0156519-0156575",
+        "amount": 257449760,
+        "date": "2023-01-27",
+        "third": 890700058.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "7d8ae959-2d5a-4854-964c-198e406b1ca7",
+        "opId": 949,
+        "description": " ABONO SALDO PENDIENTE DICIEMBRE 2022",
+        "amount": 3583087,
+        "date": "2023-01-27",
+        "third": 890700058.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "bc31fbc2-f823-4214-9b73-1b2751ac6c2c",
+        "opId": 948,
+        "description": "COMPENSACION FACTURA CLARO PRF201222",
+        "amount": 417825733,
+        "date": "2023-02-26",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "50d76ae3-e79f-4070-bfc2-4c3b9c067ddc",
+        "opId": 953,
+        "description": "RECOMPRA CENTRO ASEO-ATENTO",
+        "amount": 117112140,
+        "date": "2023-01-27",
+        "third": 901323336.0,
+        "typeExpenditure": "5d6524f0-521b-43b2-bf85-ea4c02e2a901",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "59930463-c058-41aa-826f-cf83abe8616a",
+        "opId": 953,
+        "description": "MENOS VALOR FACTURA",
+        "amount": -176605,
+        "date": "2023-01-27",
+        "third": 901323336.0,
+        "typeExpenditure": "5d6524f0-521b-43b2-bf85-ea4c02e2a901",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "3f56a415-5e90-43f0-a39a-c7747468bd8a",
+        "opId": 954,
+        "description": "RECOMPRA CENTRO ASEO-ATENTO",
+        "amount": 204858283,
+        "date": "2023-01-31",
+        "third": 900884741.0,
+        "typeExpenditure": "5d6524f0-521b-43b2-bf85-ea4c02e2a901",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "f2f8a18b-0965-478e-ac47-629dbf4b316b",
+        "opId": 954,
+        "description": "MENOS VALOR FACTURA",
+        "amount": -176606,
+        "date": "2023-01-31",
+        "third": 900884741.0,
+        "typeExpenditure": "5d6524f0-521b-43b2-bf85-ea4c02e2a901",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "af74cdda-3f9e-46c9-b92f-f3b31e120aba",
+        "opId": 956,
+        "description": "PAGO FACTURAS MAKRO 31012023",
+        "amount": 307512689,
+        "date": "2023-01-31",
+        "third": 890700058.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "e82cfa96-79aa-4a1a-b164-1378ae8c7dfe",
+        "opId": 956,
+        "description": "CANCELA SALDO PENDIENTE DICIEMBRE 2022",
+        "amount": 1153042,
+        "date": "2023-01-31",
+        "third": 890700058.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "1eb8d6cd-7808-4e67-a404-8d0efbf761e7",
+        "opId": 966,
+        "description": " PAGO PRF060123 ATENTO",
+        "amount": 210412984,
+        "date": "2023-02-06",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "c45de171-d873-4013-89e4-a89ecac948b2",
+        "opId": 968,
+        "description": "Intereses Dias Adicionales Dersa 08022023",
+        "amount": 14152647,
+        "date": "2023-02-09",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "8259a735-66de-49a2-b6ee-c4d95ede6d65",
+        "opId": 973,
+        "description": " PAGO PRF CAFAM-BANCAMIA",
+        "amount": 290782176,
+        "date": "2023-02-10",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "83db0f2a-b39e-4c46-8921-f5fa5d87d0a7",
+        "opId": 973,
+        "description": "VALOR DESCONTADO EN LA OP 977",
+        "amount": -279594,
+        "date": "2023-02-10",
+        "third": 900073254.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "32182e21-e68d-425a-94c1-100a3daa2293",
+        "opId": 977,
+        "description": " PAGO PRF CAFAM-CLARO",
+        "amount": 58845210,
+        "date": "2023-02-14",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "26935e31-8c50-416c-b8a8-a5e73a69ca93",
+        "opId": 977,
+        "description": " VALOR PENDEINTE  OP973",
+        "amount": 279594,
+        "date": "2023-02-14",
+        "third": 900073254.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "9262ab62-3c5b-4945-b458-b489eae8ce55",
+        "opId": 981,
+        "description": "PAGO PREFACTURA ATENTO PRF310123",
+        "amount": 343285541,
+        "date": "2023-02-16",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "da084216-b360-4313-8970-8a4b056cd395",
+        "opId": 990,
+        "description": " PAGO PREFACTURA RAMO-CLARO\n ATENTO",
+        "amount": 547483329,
+        "date": "2023-02-24",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "3d6f2558-de9c-4012-80aa-71ddbd796b3c",
+        "opId": 985,
+        "description": "COMPENSACION FRAS GR CHIA",
+        "amount": 73379103,
+        "date": "2023-02-22",
+        "third": 900226141.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "8004be9b-267a-43fe-beab-4a2c006567b9",
+        "opId": 991,
+        "description": "DESCUENTO DIAS ADICIONALES",
+        "amount": 248711,
+        "date": "2023-02-27",
+        "third": 900752488.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "dd361544-edd4-45cf-a66f-6cd8093bc0da",
+        "opId": 992,
+        "description": "VALOR DIFERENCIAS EN RECAUDO",
+        "amount": 159786,
+        "date": "2023-02-27",
+        "third": 900314861.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "56ef2902-606a-4848-a2d8-852298bed17f",
+        "opId": 993,
+        "description": "VALOR INTERESES-FACTURA FE 593 S. BOLIVAR",
+        "amount": 37923433,
+        "date": "2023-02-27",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "fbf3712d-7970-4539-874d-1465fafad1c7",
+        "opId": 993,
+        "description": "SALDO PENDIENTE POR COBRAR",
+        "amount": -2216796,
+        "date": "2023-02-27",
+        "third": 900072155.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "eab7e113-cc9f-4d45-82cc-17b1a8593a42",
+        "opId": 995,
+        "description": "INTERESES DIAS ADICIONALES PAGO DERSA",
+        "amount": 15784895,
+        "date": "2023-02-28",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "9d8d7ed2-538f-4d62-9d2e-ee317c9ba93e",
+        "opId": 958,
+        "description": "COMPENSACION FRAS CADEFIHUILA",
+        "amount": 1445428737,
+        "date": "2023-02-02",
+        "third": 901174177.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "a6258f9f-a6b9-46a7-bc0d-5c7cbeec17b0",
+        "opId": 958,
+        "description": "SALDO A FAVOR PAGO CADEFIHUILA",
+        "amount": -56438156,
+        "date": "2023-02-02",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "e3fce546-bd11-4bf1-a35e-40e61eb75dbd",
+        "opId": 999,
+        "description": " PAGO PREFACTURA ATENTO  PRF310123-2",
+        "amount": 28556802,
+        "date": "2023-02-28",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "85413c4a-24ea-4fba-ae6c-2accea690cc7",
+        "opId": 986,
+        "description": "SALDO PENDIENTE POR COBRAR",
+        "amount": 143121,
+        "date": "2023-02-23",
+        "third": 900341056.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "c27319e7-f65a-467e-8e3b-b48ce3701496",
+        "opId": 1001,
+        "description": "INTERESES DIAS ADICIONALES FEVO444- FEVO453",
+        "amount": 156236,
+        "date": "2023-03-07",
+        "third": 900752488.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "4947824f-ffef-4763-9cec-cba2b3f42090",
+        "opId": 1003,
+        "description": "INTERESES DIAS ADICIONALES POW556",
+        "amount": 679428,
+        "date": "2023-03-07",
+        "third": 901288769.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "e42b96bf-693d-4b77-8f23-86ed2748d643",
+        "opId": 1010,
+        "description": "COMPENSACION FRA S. BOLIVAR FE604-LA EQUIDAD FE600",
+        "amount": 131067401,
+        "date": "2023-03-10",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "720c6d28-8564-4f8c-84e1-468b2eca774a",
+        "opId": 1013,
+        "description": "INTERESES DIAS ADICIONALES FRA FPT33",
+        "amount": 836002,
+        "date": "2023-03-13",
+        "third": 901358063.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "3bc985a3-191d-4dbd-98b6-246585e3bf75",
+        "opId": 1013,
+        "description": "INTERESES DIAS ADICIONALES FRA FPT30",
+        "amount": 54999,
+        "date": "2023-03-13",
+        "third": 901358063.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "7c7b5b91-d1a8-46bb-b0e6-1b418792bad1",
+        "opId": 1013,
+        "description": "INTERESES DIAS ADICIONALES FRA FPT36",
+        "amount": 88674,
+        "date": "2023-03-13",
+        "third": 901358063.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "2798e349-295e-4aaa-96c9-50cb6a96082a",
+        "opId": 1013,
+        "description": "INTERESES DIAS ADICIONALES FRA FPT38",
+        "amount": 215938,
+        "date": "2023-03-13",
+        "third": 901358063.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "72dd3ac9-b9ac-4d0f-9a85-a48a2401c0eb",
+        "opId": 1016,
+        "description": "INTERESES DIAS ADICIONALES FEBRERO 28",
+        "amount": 8849613,
+        "date": "2023-03-16",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "7b2c54ad-3945-4a9e-9e59-10db3209ba08",
+        "opId": 1016,
+        "description": "INTERESES DIAS ADIONALES MARZO 14",
+        "amount": 8773013,
+        "date": "2023-03-16",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "b675b199-9988-420e-8d15-233bd8330f48",
+        "opId": 998,
+        "description": " COMPENSACION FRAS CADEFIHUILA",
+        "amount": 518797959,
+        "date": "2023-02-28",
+        "third": 901174177.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "bf37872a-bf35-4ffd-8736-02b00a094603",
+        "opId": 998,
+        "description": "SALDO A FAVOR PAGOS CADEFIHUILA",
+        "amount": -5078401,
+        "date": "2023-02-28",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "998ca31e-5d49-4aa2-b704-147fd9a59a4d",
+        "opId": 998,
+        "description": "SALDO POR COBRAR NITROFERT \t\t\nSE CRUZA EN LA OPERACI\u00d3N 1008",
+        "amount": -16146519,
+        "date": "2023-02-28",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "5743a1fb-ee7c-4e29-b74b-b5dc20fe2788",
+        "opId": 1008,
+        "description": "SALDO POR COBRAR NITROFERT OP 998",
+        "amount": 16146519,
+        "date": "2023-03-09",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "0c226832-3671-40fe-9508-274b651b77e8",
+        "opId": 1008,
+        "description": "SALDO A FAVOR CADEFIHUILA 06032023",
+        "amount": -5853732,
+        "date": "2023-03-09",
+        "third": 901174177.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "b9377f45-4a3b-46cb-ae65-24e6c15413f3",
+        "opId": 1024,
+        "description": "INTERESES DIAS ADICIONALES FRAS DERSA",
+        "amount": 14704972,
+        "date": "2023-03-22",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "d2b02b8a-f781-4c36-94b0-e81c85de4fee",
+        "opId": 1029,
+        "description": "COMPENSACION FACTURAS ATENTO-CAFAM-BANCAMIA-RAMO",
+        "amount": 514402519,
+        "date": "2023-03-24",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "40b91010-9efd-46c8-92c0-c7eb59cb5c8f",
+        "opId": 1031,
+        "description": "COMPENSACION CLARO-SEGUROS BOLIVAR",
+        "amount": 560376496,
+        "date": "2023-03-28",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "955bbc60-2ac4-407a-bec7-0a427fb55643",
+        "opId": 1033,
+        "description": "COMPENSACION FACTURA LA EQUIDAD FE600",
+        "amount": 63962775,
+        "date": "2023-03-28",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "2387b9e2-f558-4e6b-97ba-3283501c0112",
+        "opId": 1033,
+        "description": "VALOR PENDIENTE DE PAGO",
+        "amount": -1477431,
+        "date": "2023-03-28",
+        "third": 900072155.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "b49c69bc-4128-4ed4-8197-f825b731e2b8",
+        "opId": 1036,
+        "description": "SALDO PENDIENTE POR COBRAR OP1033",
+        "amount": 1477431,
+        "date": "2023-03-31",
+        "third": 900072155.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "66b5a1f3-9c94-4dec-980a-ef414476e543",
+        "opId": 1042,
+        "description": "INTERESES DIAS ADICIONALES RECAUDO DERSA 29032023",
+        "amount": 2708905,
+        "date": "2023-04-10",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "13a1a370-6588-4451-af9d-0f7b3844175a",
+        "opId": 1045,
+        "description": "COMPENSACION PREF ATENTO 11042023",
+        "amount": 219501254,
+        "date": "2023-04-11",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "e56a59b4-f037-406c-81ad-9da652fe8ff5",
+        "opId": 1050,
+        "description": "COMPENSACION FACTURAS RAMO-CAFAM-ATENTO-CLARO",
+        "amount": 906279328,
+        "date": "2023-04-26",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "71cc2cf0-3734-476f-a1d2-5492585146f6",
+        "opId": 1055,
+        "description": "PAGO FACTURA 564 SLACOL",
+        "amount": 13706425,
+        "date": "2023-04-27",
+        "third": 901288769.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "babd6653-afe1-4005-b06c-12b935c5593d",
+        "opId": 1060,
+        "description": "COMPENSACION FACTURA FE611 SEGUROS BOLIVAR",
+        "amount": 37506240,
+        "date": "2023-04-27",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "7cdf1df7-a9bf-40bb-acbb-924260034404",
+        "opId": 1064,
+        "description": "INTERESES DIAS ADICIONALES PAGO FACTURAS DERSA",
+        "amount": 22520365,
+        "date": "2023-05-04",
+        "third": 901186849.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "d124ba93-fb59-4331-b864-3deac4f85fdf",
+        "opId": 1066,
+        "description": "COMPENSACION FACTURAS TSI689-TSI691-TSI692",
+        "amount": 15090927,
+        "date": "2023-05-05",
+        "third": 900314861.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "f4fd513c-34a0-4b1a-8974-e77073d6f37b",
+        "opId": 1068,
+        "description": "VALOR COMPENSACION FACTURAS",
+        "amount": 283963626,
+        "date": "2023-05-05",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "8ce29d80-6d70-4858-89b2-a2ac3d961d7d",
+        "opId": 1068,
+        "description": "SALDO PENDIENTE GIRO OP1060",
+        "amount": -2885108,
+        "date": "2023-05-05",
+        "third": 900072155.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "97dbc8b8-aa22-43ad-acb5-e7821d21227a",
+        "opId": 1069,
+        "description": "VALOR COMPENSACION FACTURAS",
+        "amount": 171066844,
+        "date": "2023-05-09",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "d6d4e2c0-fe5b-4324-b822-6cbd4a2fa728",
+        "opId": 1070,
+        "description": "VALOR COMPENSACION FACTURAS",
+        "amount": 108997509,
+        "date": "2023-05-10",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "1b879f07-9ba3-45ef-a3e7-26ccc37e261b",
+        "opId": 1072,
+        "description": "INTERESES DIAS ADICIONALES",
+        "amount": 384129,
+        "date": "2023-05-11",
+        "third": 900752488.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "c3ad1ad7-6767-4ecd-992f-ad37e7a7cdee",
+        "opId": 1080,
+        "description": "INTERESES DIAS ADICIONALES DERSA",
+        "amount": 3185896,
+        "date": "2023-05-17",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "6bbfe215-dbe6-4c2b-8dee-078cfb61c60a",
+        "opId": 1084,
+        "description": "COMPENSACION FACTURA CAS78",
+        "amount": 5433560,
+        "date": "2023-05-18",
+        "third": 901633252.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "de503b90-c09a-4fe9-b23b-c28ace3fd0d0",
+        "opId": 1084,
+        "description": "INTERESES DIAS ADICIONALES",
+        "amount": 1261322,
+        "date": "2023-05-18",
+        "third": 901633252.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "d9940def-3c12-4e50-884e-1f80a1b2e420",
+        "opId": 1088,
+        "description": "COMPENSACION FRAS GFCO1591-GFCO1599",
+        "amount": 12779241,
+        "date": "2023-05-19",
+        "third": 901352912.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "1e621f0e-b212-4d45-8918-143fb2bbd0a7",
+        "opId": 1094,
+        "description": "GIRO SALDO PENDIENTE OP 1081",
+        "amount": -9706270,
+        "date": "2023-05-26",
+        "third": 900299502.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "d904bc53-34c3-4408-b488-466f78c02f96",
+        "opId": 1081,
+        "description": "GIRO SALDO PEDIENTE OP 1094",
+        "amount": 9706270,
+        "date": "2023-05-26",
+        "third": 900299502.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "f42617ee-509f-498b-a92f-bf357a3db386",
+        "opId": 1097,
+        "description": "COMPENSACION FACTURA SIN22456",
+        "amount": 4849870,
+        "date": "2023-05-26",
+        "third": 830076042.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "c5354da9-037f-4f23-b81f-b37376efcb79",
+        "opId": 1097,
+        "description": "COMPENSACION FACTURA SIN22455",
+        "amount": 18885711,
+        "date": "2023-05-26",
+        "third": 830076042.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "ff9668a1-3ee4-44eb-806a-3be73e31105d",
+        "opId": 1097,
+        "description": "VALOR GIRADO SINTECTO",
+        "amount": -17205005,
+        "date": "2023-05-30",
+        "third": 830076042.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "00d23dce-6842-44c4-b9b0-a18262a9f510",
+        "opId": 1098,
+        "description": "COMPENSACION FACTURAS",
+        "amount": 472266143,
+        "date": "2023-06-26",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "4ade0ab9-1e34-47d6-949d-efaf58e42fed",
+        "opId": 1099,
+        "description": "COMPENSACION FRAS CLARO",
+        "amount": 405152658,
+        "date": "2023-05-30",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "e4cbd228-cf63-462d-a2fc-fc3c1b80c5f7",
+        "opId": 1103,
+        "description": "COMPENSACION FRAS CLARO-ATENTO-BANCAMIA",
+        "amount": 430825249,
+        "date": "2023-05-30",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "5c506522-009e-4244-8c9d-0c06ae0950d1",
+        "opId": 1104,
+        "description": "COMPENSACION FRAS BANCAMIA",
+        "amount": 300007327,
+        "date": "2023-05-30",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "74fc325f-1429-4289-9974-0144f8746eef",
+        "opId": 1105,
+        "description": "COMPENSACION FRAS 31052023",
+        "amount": 164752367,
+        "date": "2023-05-31",
+        "third": 900226141.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "3f1c0bb2-7821-4ba9-a674-c5430605455e",
+        "opId": 1111,
+        "description": "INTERESES DIAS ADICIONALES PAGO DERSA 02-2023",
+        "amount": 7358144,
+        "date": "2023-06-07",
+        "third": 901186849.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "a7b40026-444d-4d46-b918-e22b44008aa2",
+        "opId": 1112,
+        "description": "COMPENSACION FACTURA FE623 S. BOLIVAR",
+        "amount": 30825066,
+        "date": "2023-06-08",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "d5dfbde3-1805-4a02-8655-c4c5eadf8057",
+        "opId": 1112,
+        "description": "COMPENSACION FACTURA FEP041 SURA",
+        "amount": 250896900,
+        "date": "2023-06-08",
+        "third": 900072155.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "b66ead36-d7ac-43b7-a999-fb27b945a519",
+        "opId": 1116,
+        "description": "COMPENSACION FACTURAS GR CHIA",
+        "amount": 3332143,
+        "date": "2023-06-13",
+        "third": 830108975.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "544a6a73-35f4-461b-831d-587aeafc2f4b",
+        "opId": 1120,
+        "description": "COMPENSACION FACTURAS SIERRACOL",
+        "amount": 34502180,
+        "date": "2023-06-15",
+        "third": 830076042.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "58e890b3-34f2-40a5-93eb-ef8a6147291e",
+        "opId": 1123,
+        "description": "COMPENSACION FACTURA FE775 PETROMIL",
+        "amount": 90161871,
+        "date": "2023-06-16",
+        "third": 900922697.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "2749e131-d5f1-43f7-a94e-0a758b896d1b",
+        "opId": 1125,
+        "description": "INTERESES DIAS ADICIONALES FACTURA FEVO493 QBCO S.A.S.",
+        "amount": 20870,
+        "date": "2023-06-21",
+        "third": 900752488.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "41da94c5-13df-46cf-92b2-338cbb1ba2d1",
+        "opId": 1126,
+        "description": "COMPENSACION FACTURAS",
+        "amount": 372920327,
+        "date": "2023-06-20",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "d3b2f0f3-41af-4bf2-8f91-f4a1a9129ec2",
+        "opId": 1140,
+        "description": "COMPENSACION FACTURAS CLARO-ATENTO-BANCAMIA",
+        "amount": 932292011,
+        "date": "2023-06-26",
+        "third": 900073254.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    },
+    {
+        "id": "dad6e009-b7ef-467f-b5f6-a6ab41bf1295",
+        "opId": 1124,
+        "description": "SALDO PENDIENTE SE GIRO EN LA OPERACI\u00d3N 1131",
+        "amount": 157835,
+        "date": "2023-06-16",
+        "third": 890700058.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "f17d224f-3852-4902-9192-025ae60724fa",
+        "opId": 1127,
+        "description": "SALDO PENDIENTE SE GIRO EN LA OPERACI\u00d3N 1131",
+        "amount": 244129,
+        "date": "2023-06-20",
+        "third": 890700058.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "ff687092-7b4e-4036-b35e-6b1aebaec3ce",
+        "opId": 1131,
+        "description": "GIRO SALDO PENDIENTE OP 1124-1127",
+        "amount": -401962,
+        "date": "2023-06-23",
+        "third": 890700058.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "3cfdc215-060d-468e-9b6f-ac16d4086584"
+    },
+    {
+        "id": "b016be65-422e-4680-b9af-613bfcb94e36",
+        "opId": 1137,
+        "description": "INTERESES DIAS ADICIONALES",
+        "amount": 2140787,
+        "date": "2023-06-26",
+        "third": 901358063.0,
+        "typeExpenditure": "39e0b709-cff5-42e2-b729-6a1e0a09ae07",
+        "account": "e12e227a-aa84-405b-be7f-60060e90bf52"
+    },
+    {
+        "id": "64d7d4f1-56fa-4d0c-b94a-5e033a1955f8",
+        "opId": 1150,
+        "description": "COMPENSACION FACTURAS GR CHIA",
+        "amount": 17078395,
+        "date": "2023-06-29",
+        "third": 830108975.0,
+        "typeExpenditure": "0799fc62-fd65-4bef-af56-6747fbcadac4",
+        "account": "6e3b9251-33bc-460c-8c94-59c8eb473923"
+    }
+]

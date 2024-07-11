@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+
+        body {
+            margin: 0;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .container {
+            width: 210mm;
+            height: 297mm;
+            margin: 0 auto;
+            padding: 22px;
+            background-color: #fff;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+            box-sizing: border-box;
+
+        }
+
+        #HeaderContainer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0px;
+        }
+
+        #HeaderContainer:nth-child(2) {
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #445469;
+            font-size: 35px;
+            font-weight: 600;
+        }
+
+        p {
+            margin-bottom: 10px;
+        }
+
+        #FirstContainer {
+            background-color: #445469;
+            margin-bottom: 10px;
+        }
+
+        #SecondContainer {
+            background-color: #F2F7FC;
+        }
+
+        h2 {
+            text-align: left;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .h2Container {
+            display: flex;
+            justify-content: left;
+            align-items: center;
+            padding: 0 15px;
+            margin-top: 0px;
+            width: calc(100% - 30px);
+        }
+
+        .h2Container#SecondContainer {
+            margin-top: 10px;
+        }
+
+        .TextBoxes .h2Container#SecondContainer {
+            margin-top: 0px;
+        }
+
+        .h2Container#SecondContainer h2 {
+            color: #445469;
+
+        }
+
+        .image-wrapper {
+            text-align: center;
+        }
+
+        .image-wrapper img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        #AnotherInfo {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: flex-end;
+            margin-bottom: 20px;
+        }
+
+        .ConditionsTextDiv {
+            margin-top: 20px;
+            width: 100%;
+            text-align: justify;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        .table1 {
+            width: 60%;
+        }
+
+        .table1 th:first-child,
+        .table1 td:first-child {
+            width: 45%;
+        }
+
+        .table1 th:last-child,
+        .table1 td:last-child {
+            width: 55%;
+        }
+
+        .table1 th,
+        .table1 td {
+
+            padding: 3px;
+        }
+
+        /* Styles for the first column */
+        .table1 td:first-child {
+            color: #445469;
+            font-weight: bold;
+            font-size: 10px;
+            padding-left: 0%;
+        }
+
+        /* Styles for the second column */
+        .table1 td:nth-child(2) {
+            color: #707070;
+            font-weight: 600;
+            font-size: 11px;
+        }
+
+        .table2 {
+            width: 31%;
+            margin-top: 10px;
+            border-collapse: collapse;
+            text-align: center;
+            word-wrap: break-word;
+            word-break: break-all;
+        }
+
+        .table2 th {
+            background-color: #DBE2EB;
+            color: #707070;
+            font-weight: bold;
+            font-size: 8px;
+            padding: 8px 4px;
+            word-wrap: break-word;
+            word-break: break-all;
+        }
+
+        .table2 tr:nth-child(odd) td {
+            background-color: #F8F8F8;
+            color: #707070;
+            font-size: 10px;
+            padding: 6px;
+            font-weight: bold;
+            word-wrap: break-word;
+            word-break: break-all;
+        }
+
+        .table2 tr:nth-child(even) td {
+            background-color: #FFFFFF;
+            color: #707070;
+            font-size: 10px;
+            padding: 6px;
+            font-weight: bold;
+            word-wrap: break-word;
+            word-break: break-all;
+        }
+
+        .table3 {
+            width: 100%;
+            margin-top: 10px;
+            border-collapse: collapse;
+            text-align: center;
+        }
+
+        .table3#FinancialCenters {
+            margin-top: 0px;
+            text-align: left;
+        }
+
+        .table3#FinancialCenters th,
+        .table3#FinancialCenters td {
+            padding: 5px 4px;
+        }
+
+        .table3 th {
+            background-color: #DBE2EB;
+            color: #707070;
+            font-weight: bold;
+            font-size: 9px;
+            padding: 4px 4px;
+
+        }
+
+        .table3 tr:nth-child(odd) td {
+            background-color: #F8F8F8;
+            color: #707070;
+            font-size: 10px;
+            padding: 4px 4px;
+            font-weight: 600;
+        }
+
+        .table3 tr:nth-child(even) td {
+            background-color: #FFFFFF;
+            color: #707070;
+            font-size: 10px;
+            padding: 4px 4px;
+            font-weight: 600;
+        }
+
+        .table4 {
+            width: 100%;
+            margin-top: 10px;
+            border-collapse: collapse;
+            text-align: center;
+            background-color: #F8F8F8;
+
+        }
+
+
+
+        .table4 th {
+            background-color: #DBE2EB;
+            color: #707070;
+            font-weight: bold;
+            font-size: 9px;
+            padding: 4px 4px;
+        }
+
+        .table4 td:nth-child(odd) {
+            background-color: #F8F8F8;
+            color: #445469;
+            font-size: 10px;
+            padding: 6px;
+            width: 5%;
+            font-weight: bold;
+            white-space: nowrap;
+            width: min-content;
+        }
+
+        .table4 td:nth-child(even) {
+            background-color: #FFFFFF;
+            color: #707070;
+            font-size: 10px;
+            padding: 6px 2px;
+            font-weight: 600;
+            word-wrap: break-word;
+            word-break: break-all;
+            border: 5px solid #F8F8F8;
+        }
+
+        #TermsAndConditions {
+            margin-top: 20px;
+            width: 100%;
+            text-align: justify;
+            font-size: 12px;
+            font-weight: 600;
+            color: #707070;
+            line-height: 15px
+        }
+
+        #SignatureLine {
+            width: 30%;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #707070;
+            line-height: 15px;
+            border-top: #707070 solid 1.5px;
+        }
+
+        .SignatureLineText {
+            font-weight: bold;
+            padding-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        .TextBoxes {
+            width: 100%;
+            border: 1px solid #F8F8F8;
+            margin-top: 15px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #707070;
+            line-height: 12px;
+        }
+
+        .TextBoxes #TermsAndConditions {
+            width: 96%;
+            margin: 1% 2%;
+            font-size: 8px;
+            line-height: 12px;
+
+        }
+
+
+
+        @media all {
+            .page-break {
+                display: none;
+            }
+        }
+
+        @media print {
+            .page-break {
+                display: block;
+                page-break-before: always;
+            }
+
+
+        }
+
+        #footer {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            text-align: right;
+            font-size: 10px;
+            font-weight: bold;
+            color: #707070;
+        }
+    </style>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+
+        <!-- Oferta de Venta (Página 1)-->
+
+        <div id="HeaderContainer" class="target-div">
+            <h1>Oferta de Venta</h1>
+            <div class="image-wrapper">
+                <img src="https://smartevolution.s3.amazonaws.com/assets/Logo+Smart+-+Lite.svg" alt="Smart Evolution">
+            </div>
+        </div>
+        <div id="GeneralInfo" class="target-div">
+            <div class="h2Container" id="FirstContainer">
+                <h2>INFORMACIÓN DEL EMISOR</h2>
+            </div>
+            <table class="table1">
+                <tr>
+                    <td>NOMBRE DE LA EMPRESA</td>
+                    <td>{{emitter.name}}</td>
+                </tr>
+
+                <tr>
+                    <td>NIT / CC</td>
+                    <td>{{emitter.documentNumber}}</td>
+                </tr>
+                <tr>
+                    <td>OBJETO SOCIAL</td>
+                    <td>{{emitter.socialObject}}</td>
+                </tr>
+                <tr>
+                    <td>CÓDIGO CIIU</td>
+                    <td>{{emitter.ciiu}}</td>
+                </tr>
+            </table>
+        </div>
+        <div id="AnotherInfo" class="target-div">
+
+            <div class="h2Container" id="SecondContainer">
+                <h2>POSICIÓN EN CENTRALES FINANCIERAS</h2>
+            </div>
+            <table class="table3" id="FinancialCenters">
+                <thead>
+                    <tr>
+                        <th>ENTIDAD FINANCIERA</th>
+                        <th>POSICIÓN</th>
+                        <th>CALIFICACIÓN</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{emitter.financialCentral.0.bank}}</td>
+                        <td>{{emitter.financialCentral.0.rating}}</td>
+                        <td>{{emitter.financialCentral.0.centralBalances}}</td>
+                    </tr>
+
+                    <tr>
+                        <td>{{emitter.financialCentral.1.bank}}</td>
+                        <td>{{emitter.financialCentral.1.rating}}</td>
+                        <td>{{emitter.financialCentral.1.centralBalances}}</td>
+                    </tr>
+                    <tr>
+                        <td>{{emitter.financialCentral.2.bank}}</td>
+                        <td>{{emitter.financialCentral.2.rating}}</td>
+                        <td>{{emitter.financialCentral.2.centralBalances}}</td>
+                    </tr>
+                    <tr>
+                        <td>{{emitter.financialCentral.3.bank}}</td>
+                        <td>{{emitter.financialCentral.3.rating}}</td>
+                        <td>{{emitter.financialCentral.3.centralBalances}}</td>
+                    </tr>
+                    <tr>
+                        <td>{{emitter.financialCentral.4.bank}}</td>
+                        <td>{{emitter.financialCentral.4.rating}}</td>
+                        <td>{{emitter.financialCentral.4.centralBalances}}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="TextBoxes">
+                <div class="h2Container" id="SecondContainer">
+                    <h2>RESUMEN CUALITATIVO</h2>
+                </div>
+                <div id="TermsAndConditions">
+                    {{emitter.qualitativeOverview}}
+                </div>
+            </div>
+            {% load humanize %}
+            <div class="h2Container" id="SecondContainer">
+                <h2>INFORMACIÓN FINANCIERA</h2>
+            </div>
+            <table class="table3" id="FinancialCenters">
+                <thead>
+                    <tr>
+                        <th>INDICADOR</th>
+                        <th>{{emitter.period_3.period|stringformat:"i"}}</th>
+                        <th>{{emitter.period_2.period|stringformat:"i"}}</th>
+                        <th>{{emitter.period_1.period|stringformat:"i"}}</th>
+                        <th>VAR {{emitter.period_2.period|stringformat:"i"}}</th>
+                        <th>VAR {{emitter.period_1.period|stringformat:"i"}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Ventas Netas</td>
+                        <td>{{emitter.period_3.grossSale|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.period_2.grossSale|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.period_1.grossSale|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.variability.period_2.net_sales|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.variability.period_3.net_sales|floatformat:"g"|intcomma}}</td>
+                    </tr>
+                    <tr>
+                        <td>Utilidad Operacional</td>
+                        <td>{{emitter.period_3.operatingProfit|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.period_2.operatingProfit|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.period_1.operatingProfit|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.variability.period_2.operating_profit|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.variability.period_3.operating_profit|floatformat:"g"|intcomma}}</td>
+                    </tr>
+                    <tr>
+                        <td>Utilidad Neta</td>
+                        <td>{{emitter.period_3.netIncome|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.period_2.netIncome|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.period_1.netIncome|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.variability.period_2.net_income|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.variability.period_3.net_income|floatformat:"g"|intcomma}}</td>
+                    </tr>
+                    <tr>
+                        <td>Total Activo</td>
+                        <td>{{emitter.period_3.totalAssets|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.period_2.totalAssets|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.period_1.totalAssets|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.variability.period_2.total_assets|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.variability.period_3.total_assets|floatformat:"g"|intcomma}}</td>
+                    </tr>
+                    <tr>
+                        <td>Total Pasivo</td>
+                        <td>{{emitter.period_3.totalPassives|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.period_2.totalPassives|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.period_1.totalPassives|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.variability.period_2.total_passives|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.variability.period_3.total_passives|floatformat:"g"|intcomma}}</td>
+                    </tr>
+                    <tr>
+                        <td>Total Patrimonio</td>
+                        <td>{{emitter.period_3.totalPatrimony|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.period_2.totalPatrimony|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.period_1.totalPatrimony|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.variability.period_2.total_patrimony|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.variability.period_3.total_patrimony|floatformat:"g"|intcomma}}</td>
+                    </tr>
+                    <tr>
+                        <td>Endeudamiento</td>
+                        <td>{{emitter.period_3.debt|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.period_2.debt|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.period_1.debt|floatformat:"g"|intcomma}}</td>
+                        <td>-</td>
+                        <td>-</td>
+                    </tr>
+                    <tr>
+                        <td>Rotación Cartera</td>
+                        <td>{{emitter.period_3.walletRotation|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.period_2.walletRotation|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.period_1.walletRotation|floatformat:"g"|intcomma}}</td>
+                        <td>-</td>
+                        <td>-</td>
+                    </tr>
+                    <tr>
+                        <td>Rotación Proveedores</td>
+                        <td>{{emitter.period_3.providersRotation|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.period_2.providersRotation|floatformat:"g"|intcomma}}</td>
+                        <td>{{emitter.period_1.providersRotation|floatformat:"g"|intcomma}}</td>
+                        <td>-</td>
+                        <td>-</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="TextBoxes">
+                <div class="h2Container" id="SecondContainer">
+                    <h2>ANÁLISIS FINANCIERO</h2>
+                </div>
+                <div id="TermsAndConditions">
+                    {{emitter.financialAnalisis}}
+                </div>
+            </div>
+        </div>
+
+        <div class="page-break"></div>
+
+        <!-- Oferta de Venta (Página 2)-->
+        {% for x in payers %}
+        <div id="HeaderContainer" class="target-div">
+            <h1>‎</h1>
+            <div class="image-wrapper">
+                <img src="https://smartevolution.s3.amazonaws.com/assets/Logo+Smart+-+Lite.svg" alt="Smart Evolution">
+            </div>
+        </div>
+        <div id="GeneralInfo" class="target-div">
+            <div class="h2Container" id="FirstContainer">
+                <h2>INFORMACIÓN DEL PAGADOR</h2>
+            </div>
+            <table class="table1">
+                <tr>
+                    <td>NOMBRE DE LA EMPRESA</td>
+                    <td>{{x.name}}</td>
+                </tr>
+
+                <tr>
+                    <td>NIT / CC</td>
+                    <td>{{x.documentNumber}}</td>
+                </tr>
+                <tr>
+                    <td>OBJETO SOCIAL</td>
+                    <td>{{x.socialObject}}</td>
+                </tr>
+                <tr>
+                    <td>CÓDIGO CIIU</td>
+                    <td>{{x.ciiu}}</td>
+                </tr>
+            </table>
+        </div>
+        <div id="AnotherInfo" class="target-div">
+            <div class="TextBoxes">
+                <div class="h2Container" id="SecondContainer">
+                    <h2>RESUMEN CUALITATIVO</h2>
+                </div>
+                <div id="TermsAndConditions">
+                    {{x.qualitativeOverview}}
+                </div>
+            </div>
+
+            <div class="h2Container" id="SecondContainer">
+                <h2>INFORMACIÓN FINANCIERA</h2>
+            </div>
+            <table class="table3" id="FinancialCenters">
+                <thead>
+                    <tr>
+                        <th>INDICADOR</th>
+                        <th>{{x.period_3.period|stringformat:"i"}}</th>
+                        <th>{{x.period_2.period|stringformat:"i"}}</th>
+                        <th>{{x.period_1.period|stringformat:"i"}}</th>
+                        <th>VAR {{x.period_2.period|stringformat:"i"}}</th>
+                        <th>VAR {{x.period_1.period|stringformat:"i"}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Ventas Netas</td>
+                        <td>{{x.period_3.grossSale|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.period_2.grossSale|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.period_1.grossSale|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.variability.period_2.net_sales|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.variability.period_3.net_sales|floatformat:"g"|intcomma}}</td>
+                    </tr>
+                    <tr>
+                        <td>Utilidad Operacional</td>
+                        <td>{{x.period_3.operatingProfit|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.period_2.operatingProfit|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.period_1.operatingProfit|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.variability.period_2.operating_profit|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.variability.period_3.operating_profit|floatformat:"g"|intcomma}}</td>
+                    </tr>
+                    <tr>
+                        <td>Utilidad Neta</td>
+                        <td>{{x.period_3.netIncome|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.period_2.netIncome|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.period_1.netIncome|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.variability.period_2.net_income|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.variability.period_3.net_income|floatformat:"g"|intcomma}}</td>
+                    </tr>
+                    <tr>
+                        <td>Total Activo</td>
+                        <td>{{x.period_3.totalAssets|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.period_2.totalAssets|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.period_1.totalAssets|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.variability.period_2.total_assets|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.variability.period_3.total_assets|floatformat:"g"|intcomma}}</td>
+                    </tr>
+                    <tr>
+                        <td>Total Pasivo</td>
+                        <td>{{x.period_3.totalPassives|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.period_2.totalPassives|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.period_1.totalPassives|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.variability.period_2.total_passives|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.variability.period_3.total_passives|floatformat:"g"|intcomma}}</td>
+                    </tr>
+                    <tr>
+                        <td>Total Patrimonio</td>
+                        <td>{{x.period_3.totalPatrimony|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.period_2.totalPatrimony|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.period_1.totalPatrimony|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.variability.period_2.total_patrimony|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.variability.period_3.total_patrimony|floatformat:"g"|intcomma}}</td>
+                    </tr>
+                    <tr>
+                        <td>Endeudamiento</td>
+                        <td>{{x.period_3.debt|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.period_2.debt|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.period_1.debt|floatformat:"g"|intcomma}}</td>
+                        <td>-</td>
+                        <td>-</td>
+                    </tr>
+                    <tr>
+                        <td>Rotación Cartera</td>
+                        <td>{{x.period_3.walletRotation|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.period_2.walletRotation|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.period_1.walletRotation|floatformat:"g"|intcomma}}</td>
+                        <td>-</td>
+                        <td>-</td>
+                    </tr>
+                    <tr>
+                        <td>Rotación Proveedores</td>
+                        <td>{{x.period_3.providersRotation|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.period_2.providersRotation|floatformat:"g"|intcomma}}</td>
+                        <td>{{x.period_1.providersRotation|floatformat:"g"|intcomma}}</td>
+                        <td>-</td>
+                        <td>-</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="TextBoxes">
+                <div class="h2Container" id="SecondContainer">
+                    <h2>ANÁLISIS FINANCIERO</h2>
+                </div>
+                <div id="TermsAndConditions">
+                    {{x.financialAnalisis}}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        <div class="page-break"></div>
+
+        <!-- Oferta de Venta (Página 3)-->
+        <div style="height:70px"></div>
+        <div id="GeneralInfo" class="target-div">
+            <div class="h2Container" id="FirstContainer">
+                <h2>CONDICIONES DE LA OFERTA</h2>
+            </div>
+            <table class="table4">
+                <tr>
+                    <td>MONTO DE LA OPERACIÓN</td>
+                    <td>{{operation.total|floatformat}}</td>
+                    <td>PLAZO PROMEDIO</td>
+                    <td>{{operation.averageTerm}} días</td>
+                    <td>TIPO DE OPERACIÓN</td>
+                    <td>Factoring con responsabilidad</td>
+                </tr>
+
+                <tr>
+                    <td style="text-align: right;">DESCRIPCIÓN</td>
+                    <td colspan="5" style="text-align: left;">Endoso y/o cesión sobre los derechos económicos de los
+                        Títulos Valor negociados, con notificación de la cesión sobre los derechos económicos y/o endoso
+                        al Pagador.</td>
+                </tr>
+                <tr>
+                    <td style="text-align: right;">GARANTÍAS</td>
+                    <td colspan="5" style="text-align: left;">Firma de Pagaré y Carta de Instrucciones por parte del
+                        Emisor.</td>
+                </tr>
+
+            </table>
+            <div class="TextBoxes" style="margin-top: 5x;">
+                <div class="h2Container" id="FirstContainer">
+                    <h2>FUENTES DE INFORMACIÓN</h2>
+                </div>
+                <div id="TermsAndConditions">
+                    Indicadores y Estados financieros del Emisor: la información contenida en este anexo ha sido
+                    preparada de buena fe con base en la información financiera más reciente otorgada por el Emisor.
+                    Indicadores y Estados Financieros del Pagador: la información contenida en este anexo ha sido
+                    preparada de buena fe con base en la información financiera del Pagador más reciente y disponible
+                    para consulta pública en SUPERSOCIEDADES. Se hace constar que la información financiera del
+                    Emisor/Pagador que sirve de base a la estimación de los indicadores financieros, ha sido preparada y
+                    divulgada por el Emisor/Pagador bajo su exclusiva responsabilidad, quienes comprometen su
+                    responsabilidad civil y penal en caso de falsedades o inexactitudes graves de aquella, por lo cual
+                    SMART EVOLUTION SAS no es responsable de la veracidad ni exactitud de la mencionada información. Los
+                    cuadros contienen información sobre los indicadores financieros básicos que un inversionista
+                    razonable y diligente consideraría como mínimo, pero no constituye una recomendación de inversión.
+                    La inversión debe ser valorada en forma independiente y autónoma por el comprador de los títulos,
+                    documentos o derechos cuyo deudor es el Pagador con responsabilidad del Emisor, junto con la
+                    información adicional sobre el Comprador y/o el Vendedor que el Comprador estime adecuada para
+                    adoptar la decisión de compra del activo presentado por SMART EVOLUTION SAS por encargo del Emisor.
+                    SMART EVOLUTION ha informado al Comprador que ha sido contratado como corredor por el VENDEDOR del
+                    activo referenciado en esta ficha técnica y que le presenta dicho activo en desarrollo del objeto
+                    del contrato de corretaje comercial firmado entre SMART EVOLUTION y el Vendedor.
+                </div>
+            </div>
+            <div class="TextBoxes" style="margin-top: 5x;">
+                <div class="h2Container" id="FirstContainer">
+                    <h2>DECLARACIÓN Y RECONOCIMIENTO DE USO POR PARTE DE SMART EVOLUTION S.A.S.</h2>
+                </div>
+                <div id="TermsAndConditions">
+                    Mensajes de datos: la información contenida en el presente documento goza de plena validez a la luz
+                    del artículo 5 de la Ley 527 de 1999, por medio del cual se reconoce jurídicamente los efectos de
+                    los mensajes de datos. Firma electrónica: el abajo firmante de este documento reconocen el uso de
+                    firma electrónica (mecanismos técnicos que permiten verificar la identidad y que verifican tanto
+                    autenticidad como integridad). Yo {{investor.legalRepresentativeName}} ,
+                    {{investor.legalRepresentativeTypeDocument}}. {{investor.legalRepresentativeDocumentNumber}},
+                    actuando en calidad de Representante Legal de la empresa {{investor.investor}}, NIT:
+                    {{investor.investorDocumentNumber}}, declaro que SMART
+                    EVOLUTION S.A.S. me hizo entrega de la Oferta de Venta. Además declaro que he leído este documento y
+                    sus anexos, que he comprendido todo lo allí establecido, que he valorado el riesgo y condiciones de
+                    la inversión en forma autónoma y bajo mi propia y exclusiva responsabilidad y que acepto las
+                    condiciones y declaraciones de SMART EVOLUTION S.A.S expuestas respecto al alcance de esta Oferta de
+                    Venta y sus anexos.
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 100px;color: whitesmoke !important;">
+            {% verbatim %}
+            {{signature:0}}
+            {% endverbatim %}
+        </div>
+        <div id="SignatureLine">
+            <div class="SignatureLineText">
+                {{investor.legalRepresentativeName}}
+            </div>
+            <div class="GeneralInfo">
+                <table class="table1">
+                    <tr>
+                        <td>{{investor.legalRepresentativeTypeDocument}}.</td>
+                        <td>{{investor.legalRepresentativeDocumentNumber}}</td>
+                    </tr>
+                    <tr>
+                        <td>TEL</td>
+                        <td>{{investor.legalRepresentativePhone}}</td>
+                    </tr>
+                    <tr>
+                        <td>EMAIL</td>
+                        <td>{{investor.legalRepresentativeEmail}}</td>
+                    </tr>
+
+                </table>
+            </div>
+            <div class="SignatureLineText">
+                {{investor.investor}}
+            </div>
+            <div class="GeneralInfo">
+                <table class="table1">
+                    <tr>
+                        <td>NIT</td>
+                        <td>{{investor.investorDocumentNumber}}</td>
+                    </tr>
+
+                </table>
+            </div>
+        </div>
+
+        <div class="page-break"></div>
+
+        <!-- Oferta de Compra -->
+        <div id="HeaderContainer" class="target-div">
+            <h1>Oferta de Compra</h1>
+            <div class="image-wrapper">
+                <img src="https://smartevolution.s3.amazonaws.com/assets/Logo+Smart+-+Lite.svg" alt="Smart Evolution">
+            </div>
+        </div>
+        <div id="GeneralInfo" class="target-div">
+            <table class="table1">
+                <tr>
+                    <td>ACEPTACIÓN DE OFERTA SEGÚN OPERACIÓN Nº</td>
+                    <td>{{investor.opId}}</td>
+                </tr>
+                <tr>
+                    <td>NOMBRE DEL INVERSIONISTA</td>
+                    <td>{{investor.investor}}</td>
+                </tr>
+                <tr>
+                    <td>NIT / CC</td>
+                    <td>{{investor.investorDocumentNumber}}</td>
+                </tr>
+                <tr>
+                    <td>DIRECCIÓN</td>
+                    <td>{{investor.investorAddress}}</td>
+                </tr>
+                <tr>
+                    <td>TELÉFONO DE CONTACTO</td>
+                    <td>{{investor.investorPhoneNumber}}</td>
+                </tr>
+                <tr>
+                    <td>CORREO ELECTRÓNICO</td>
+                    <td>{{investor.investorEmail}}</td>
+                </tr>
+                <tr>
+                    <td>CORREDOR</td>
+                    <td>{{investor.investorBroker}}</td>
+                </tr>
+            </table>
+        </div>
+        <div id="AnotherInfo" class="target-div">
+            <table class="table2">
+                <thead>
+                    <tr>
+                        <th>DÍAS OP.</th>
+                        <th>VR. COMPRA</th>
+                        <th>VR. FUTURO</th>
+                        <th>TOTAL GM</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{totalBills.bills}}</td>
+                        <td>{{totalBills.total}}</td>
+                        <td>{{totalBills.future}}</td>
+                        <td>{{totalBills.gm}}</td>
+                    </tr>
+
+                </tbody>
+            </table>
+            <table class="table3">
+                <thead>
+                    <tr>
+                        <th>FECHA OP.</th>
+                        <th>FECHA PROB.</th>
+                        <th>FECHA FINAL</th>
+                        <th>DOC</th>
+                        <th>Nº DOC</th>
+                        <th>NOMBRE EMISOR</th>
+                        <th>NOMBRE PAGADOR</th>
+                        <th>TASA INV.</th>
+                        <th>DÍAS OP.</th>
+                        <th>VR. COMPRA</th>
+                        <th>VR. FUTURO</th>
+                        <th>GM</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for x in bills %}
+                    <tr>
+                        <td>{{x.dateOP}}</td>
+                        <td>{{x.probDate}}</td>
+                        <td>{{x.dateExp}}</td>
+                        <td>FACT</td>
+                        <td>{{x.number}}</td>
+                        <td>{{x.emitter}}</td>
+                        <td>{{x.payer}}</td>
+                        <td>{{x.invTax}}</td>
+                        <td>{{x.daysOP}}</td>
+                        <td>{{x.VRBuy}}</td>
+                        <td>{{x.VRFuture}}</td>
+                        <td>{{x.totalGM}}</td>
+                    </tr>
+                    {% endfor %}
+
+
+
+                </tbody>
+            </table>
+        </div>
+        <div id="TermsAndConditions">
+            Señores SMART EVOLUTION S.A.S.: Notifico que acepto adquirir los documentos relacionados en las condiciones
+            aquí expresadas, conforme a la oferta de venta que me fue presentada. Les solicito custodiar los documentos
+            y les autorizo para que por mi cuenta sean endosados a su nombre y realicen labores de cobro y recaudo en
+            cuentas bancarias de Smart Evolution S.A.S. Asimismo, otorgo poder amplio y suficiente a SMART EVOLUTION
+            S.A.S. para que, en caso de ser necesario, se adelanten acciones ejecutivas, se presente la acreencia en
+            proceso concursal y se concilie o transija judicial o extrajudicialmente los derechos de los titulos aquí
+            adquiridos. La información contenida en el presente documento, goza de plena validez a la luz del artículo 5
+            de la Ley 527 de 1999, por medio del cual se reconoce jurídicamente los efectos de los mensajes de
+            datos.<br><br>
+            Finalmente, reconozco el uso de la firma electrónica y los mecanismos técnicos que permiten verificar mi
+            identidad y que verifican tanto autenticidad como integridad de la información plasmada.<br><br>
+            Atentamente,
+        </div>
+        <div style="margin-top: 20px;color: whitesmoke !important;">
+            {% verbatim %}
+            {{signature:0}}
+            {% endverbatim %}
+        </div>
+        <div id="SignatureLine">
+            <div class="SignatureLineText">
+                {{investor.legalRepresentativeName}}
+            </div>
+            <div class="GeneralInfo">
+                <table class="table1">
+                    <tr>
+                        <td>{{investor.legalRepresentativeTypeDocument}}</td>
+                        <td>{{investor.legalRepresentativeDocumentNumber}}</td>
+                    </tr>
+                    <tr>
+                        <td>TEL</td>
+                        <td>{{investor.legalRepresentativePhone}}</td>
+                    </tr>
+                    <tr>
+                        <td>EMAIL</td>
+                        <td>{{investor.legalRepresentativeEmail}}</td>
+                    </tr>
+
+                </table>
+            </div>
+            <div class="SignatureLineText">
+                {{investor.investor}}
+            </div>
+            <div class="GeneralInfo">
+                <table class="table1">
+                    <tr>
+                        <td>NIT/CC</td>
+                        <td>{{investor.investorDocumentNumber}}</td>
+                    </tr>
+
+                </table>
+            </div>
+        </div>
+
+        <script>
+
+        </script>
+
+
+
+
+</body>
+
+</html>

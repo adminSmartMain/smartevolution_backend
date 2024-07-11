@@ -1,0 +1,2963 @@
+[
+    {
+        "id": "79e37e5d-b920-4727-8d20-4f40038110ac",
+        "dId": 10000,
+        "date": "2020-08-27",
+        "client": 900797325,
+        "account": 2022531103.0,
+        "amount": 40998995.0,
+        "description": ""
+    },
+    {
+        "id": "4fa79da6-5394-48e4-9ac9-be457d667df3",
+        "dId": 10001,
+        "date": "2020-08-27",
+        "client": 1121841120,
+        "account": 2022532347.0,
+        "amount": 2625362.0,
+        "description": ""
+    },
+    {
+        "id": "96954729-34cc-49d4-9f9b-58ab30df1ccc",
+        "dId": 10002,
+        "date": "2020-08-27",
+        "client": 80100023,
+        "account": 2022547496.0,
+        "amount": 65971.0,
+        "description": ""
+    },
+    {
+        "id": "342e6545-347d-4ae4-97b6-a52ea84d060d",
+        "dId": 10003,
+        "date": "2020-08-27",
+        "client": 1088270382,
+        "account": 2022514499.0,
+        "amount": 407.0,
+        "description": ""
+    },
+    {
+        "id": "82b81909-af4f-4fca-a66e-58cad5bbf4e5",
+        "dId": 10004,
+        "date": "2020-08-27",
+        "client": 35462767,
+        "account": 2022534156.0,
+        "amount": 5082382.0,
+        "description": ""
+    },
+    {
+        "id": "1173c4f2-57b4-48b1-875a-9babe409b25f",
+        "dId": 10005,
+        "date": "2020-08-27",
+        "client": 901319693,
+        "account": 2022543123.0,
+        "amount": 16703076.0,
+        "description": ""
+    },
+    {
+        "id": "992b18b0-315c-429c-b8ee-93c6385c2a17",
+        "dId": 10006,
+        "date": "2020-06-01",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 345017273.0,
+        "description": ""
+    },
+    {
+        "id": "d0b65f25-3ea0-4171-bbca-470136c64fb6",
+        "dId": 10007,
+        "date": "2020-06-01",
+        "client": 900797325,
+        "account": 2022531103.0,
+        "amount": 555162840.0,
+        "description": ""
+    },
+    {
+        "id": "414fb39c-7437-4120-9fd8-773cad865862",
+        "dId": 10008,
+        "date": "2020-06-01",
+        "client": 1121841120,
+        "account": 2022532347.0,
+        "amount": 80787788.0,
+        "description": ""
+    },
+    {
+        "id": "729dfb1b-db0d-4910-935a-be047c779b8c",
+        "dId": 10009,
+        "date": "2020-06-01",
+        "client": 80100023,
+        "account": 2022547496.0,
+        "amount": 50601607.0,
+        "description": ""
+    },
+    {
+        "id": "47c653cd-e914-4c85-b027-43315c56b0cf",
+        "dId": 10010,
+        "date": "2020-06-01",
+        "client": 1088270382,
+        "account": 2022514499.0,
+        "amount": 25366768.0,
+        "description": ""
+    },
+    {
+        "id": "bf9d9ed4-5c8c-4ecf-b50e-cc24b9c8648b",
+        "dId": 10011,
+        "date": "2020-06-01",
+        "client": 35462767,
+        "account": 2022534156.0,
+        "amount": 172333840.0,
+        "description": ""
+    },
+    {
+        "id": "b7eae2e3-b67e-4d51-a24d-bd240042243c",
+        "dId": 10012,
+        "date": "2020-06-01",
+        "client": 901319693,
+        "account": 2022543123.0,
+        "amount": 929237291.0,
+        "description": ""
+    },
+    {
+        "id": "685d653a-8ad0-4031-bce8-f3691098b5d2",
+        "dId": 10013,
+        "date": "2020-08-28",
+        "client": 30048894,
+        "account": 2022585965.0,
+        "amount": 170000000.0,
+        "description": ""
+    },
+    {
+        "id": "bab717da-b7ac-42d9-bc7d-3a2507130d9c",
+        "dId": 10014,
+        "date": "2020-02-01",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 758747790.0,
+        "description": ""
+    },
+    {
+        "id": "ef6a71de-b3cd-4bbe-a688-91f50988d56d",
+        "dId": 10015,
+        "date": "2020-09-11",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 15000000.0,
+        "description": ""
+    },
+    {
+        "id": "a4d62df5-3ede-4cf3-8489-fc09cf5f6cbb",
+        "dId": 10016,
+        "date": "2020-09-11",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 15000000.0,
+        "description": ""
+    },
+    {
+        "id": "fd6ac5e9-35a9-43d3-96fc-4ee6ae9a05ac",
+        "dId": 10017,
+        "date": "2020-09-11",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 10000000.0,
+        "description": ""
+    },
+    {
+        "id": "a89f7913-60c3-482c-8a76-fc4f8807b3b2",
+        "dId": 10018,
+        "date": "2020-09-14",
+        "client": 35462767,
+        "account": 2022534156.0,
+        "amount": 50000000.0,
+        "description": ""
+    },
+    {
+        "id": "468739b9-3f7e-471e-b0db-f8fdea7f77c0",
+        "dId": 10019,
+        "date": "2020-09-11",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 2000000.0,
+        "description": ""
+    },
+    {
+        "id": "9823fce6-801e-42a7-acb4-1cf22376dce9",
+        "dId": 10020,
+        "date": "2020-09-14",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 8000000.0,
+        "description": ""
+    },
+    {
+        "id": "eef5d157-6600-4c89-ac8f-71e1941b677d",
+        "dId": 10021,
+        "date": "2020-09-11",
+        "client": 901323336,
+        "account": 2022579010.0,
+        "amount": 250000000.0,
+        "description": ""
+    },
+    {
+        "id": "4c665bde-663a-49a9-99b9-5746dcb160e1",
+        "dId": 10022,
+        "date": "2020-09-18",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 127200000.0,
+        "description": ""
+    },
+    {
+        "id": "4e62fb2a-0b3c-4874-8bc1-b23d96041d72",
+        "dId": 10023,
+        "date": "2020-10-01",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 100000000.0,
+        "description": ""
+    },
+    {
+        "id": "7cc964d1-94a7-45ec-bed6-d66092046900",
+        "dId": 10024,
+        "date": "2020-10-08",
+        "client": 900797325,
+        "account": 2022531103.0,
+        "amount": 150000000.0,
+        "description": ""
+    },
+    {
+        "id": "292bcdbd-49d1-42f7-a5e9-df79b8b206c9",
+        "dId": 10025,
+        "date": "2020-10-15",
+        "client": 1088270382,
+        "account": 2022514499.0,
+        "amount": 7250000.0,
+        "description": ""
+    },
+    {
+        "id": "e89c6e26-db50-4284-ad54-dfab76897def",
+        "dId": 10026,
+        "date": "2020-10-15",
+        "client": 1088270382,
+        "account": 2022514499.0,
+        "amount": 1750000.0,
+        "description": ""
+    },
+    {
+        "id": "b3baec5f-888f-4dea-bbed-37448125ac54",
+        "dId": 10027,
+        "date": "2020-10-20",
+        "client": 79268897,
+        "account": 2022514280.0,
+        "amount": 200000000.0,
+        "description": ""
+    },
+    {
+        "id": "7a190f44-b1b0-4efa-bd6a-8c2d31222054",
+        "dId": 10028,
+        "date": "2020-10-21",
+        "client": 74436081,
+        "account": 2022571369.0,
+        "amount": 200000000.0,
+        "description": ""
+    },
+    {
+        "id": "0ff908fb-9ac2-40dc-8989-b9d05bf0b6e1",
+        "dId": 10029,
+        "date": "2020-10-21",
+        "client": 1088270382,
+        "account": 2022514499.0,
+        "amount": 125000000.0,
+        "description": ""
+    },
+    {
+        "id": "380dc943-25f0-40ec-97e5-d4b354802c6b",
+        "dId": 10030,
+        "date": "2020-10-21",
+        "client": 1088270382,
+        "account": 2022514499.0,
+        "amount": 123300000.0,
+        "description": ""
+    },
+    {
+        "id": "01f38b4b-c5a0-4f6e-ab4f-aa69b71d3584",
+        "dId": 10031,
+        "date": "2020-10-27",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 18000000.0,
+        "description": ""
+    },
+    {
+        "id": "ccac0610-7ac7-42ee-872b-5783ac57b7fa",
+        "dId": 10032,
+        "date": "2020-10-30",
+        "client": 1088270382,
+        "account": 2022514499.0,
+        "amount": 3000000.0,
+        "description": ""
+    },
+    {
+        "id": "6e29f5cc-3fa5-44cf-94df-d614483ad76e",
+        "dId": 10033,
+        "date": "2020-10-30",
+        "client": 1088270382,
+        "account": 2022514499.0,
+        "amount": 2950000.0,
+        "description": ""
+    },
+    {
+        "id": "43a1b9d9-9b97-41a8-b937-57d726b3f876",
+        "dId": 10034,
+        "date": "2020-10-30",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 38053930.0,
+        "description": ""
+    },
+    {
+        "id": "4ffc5096-c825-4075-9144-7725d9921073",
+        "dId": 10035,
+        "date": "2020-11-12",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 152000000.0,
+        "description": ""
+    },
+    {
+        "id": "cf285b9c-ca03-44a9-883d-d3588b01bbc6",
+        "dId": 10036,
+        "date": "2020-11-23",
+        "client": 860076394,
+        "account": 2022559816.0,
+        "amount": 100000000.0,
+        "description": ""
+    },
+    {
+        "id": "a496c820-576f-43ce-8ae8-84dc2770efbc",
+        "dId": 10037,
+        "date": "2020-11-23",
+        "client": 79268897,
+        "account": 2022514280.0,
+        "amount": 200000697.0,
+        "description": ""
+    },
+    {
+        "id": "9b8246dd-ff5d-4610-ad52-bad351233604",
+        "dId": 10038,
+        "date": "2020-11-30",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 17000000.0,
+        "description": ""
+    },
+    {
+        "id": "2b906de8-7668-4130-b1be-514b2bc34cef",
+        "dId": 10039,
+        "date": "2020-12-07",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 50000000.0,
+        "description": ""
+    },
+    {
+        "id": "e9f603bc-d776-400e-840c-8371287981bb",
+        "dId": 10040,
+        "date": "2020-12-07",
+        "client": 30048894,
+        "account": 2022585965.0,
+        "amount": 208468400.0,
+        "description": ""
+    },
+    {
+        "id": "14c614b6-a5a9-4b13-8998-013ecb48f25b",
+        "dId": 10041,
+        "date": "2020-12-22",
+        "client": 1088270382,
+        "account": 2022514499.0,
+        "amount": 30000000.0,
+        "description": ""
+    },
+    {
+        "id": "2df8a172-edd4-419e-a56c-3459d58a5877",
+        "dId": 10042,
+        "date": "2020-12-23",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 127000000.0,
+        "description": ""
+    },
+    {
+        "id": "36329c2f-0120-47e4-85d1-211b7965e28b",
+        "dId": 10043,
+        "date": "2020-12-22",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 33138886.0,
+        "description": ""
+    },
+    {
+        "id": "758a1201-aea4-4c6d-ba6c-0dac47e0fc6c",
+        "dId": 10044,
+        "date": "2020-12-23",
+        "client": 30048894,
+        "account": 2022585965.0,
+        "amount": 195514248.0,
+        "description": ""
+    },
+    {
+        "id": "2f5e5c4a-ac4e-4e10-b952-c9b6a2e8afdc",
+        "dId": 10045,
+        "date": "2020-12-30",
+        "client": 30048894,
+        "account": 2022585965.0,
+        "amount": 115490397.0,
+        "description": ""
+    },
+    {
+        "id": "fccd742f-3ca7-4d5b-89ec-82052621a402",
+        "dId": 10046,
+        "date": "2020-12-30",
+        "client": 30048894,
+        "account": 2022585965.0,
+        "amount": 66428251.0,
+        "description": ""
+    },
+    {
+        "id": "567a6717-37e6-4b3e-a784-8a3c8735f48d",
+        "dId": 10047,
+        "date": "2020-12-30",
+        "client": 30048894,
+        "account": 2022585965.0,
+        "amount": 323139373.0,
+        "description": ""
+    },
+    {
+        "id": "a955bde9-8f76-4a01-abda-de5ebdacaa00",
+        "dId": 10048,
+        "date": "2020-12-30",
+        "client": 30048894,
+        "account": 2022585965.0,
+        "amount": 348892269.0,
+        "description": ""
+    },
+    {
+        "id": "fab56f76-88a7-4c64-a8ce-8edcaeb36701",
+        "dId": 10049,
+        "date": "2020-12-30",
+        "client": 30048894,
+        "account": 2022585965.0,
+        "amount": 140391927.0,
+        "description": ""
+    },
+    {
+        "id": "be136dcd-2280-4cde-a66e-9a420f433eea",
+        "dId": 10050,
+        "date": "2020-12-30",
+        "client": 30048894,
+        "account": 2022585965.0,
+        "amount": 63682744.0,
+        "description": ""
+    },
+    {
+        "id": "54773bcd-896c-4bba-9301-1b06dedc0e39",
+        "dId": 10051,
+        "date": "2020-12-30",
+        "client": 30048894,
+        "account": 2022585965.0,
+        "amount": 124063639.0,
+        "description": ""
+    },
+    {
+        "id": "ce206cab-f133-4107-b098-a7d44d800679",
+        "dId": 10052,
+        "date": "2020-12-30",
+        "client": 30048894,
+        "account": 2022585965.0,
+        "amount": 62500000.0,
+        "description": ""
+    },
+    {
+        "id": "ee76277d-7511-41a1-bbaf-54b2a6ad8a43",
+        "dId": 10053,
+        "date": "2020-12-30",
+        "client": 30048894,
+        "account": 2022585965.0,
+        "amount": 62500000.0,
+        "description": ""
+    },
+    {
+        "id": "f4abc27a-1624-44c8-926f-8ade751e2e04",
+        "dId": 10054,
+        "date": "2020-12-30",
+        "client": 30048894,
+        "account": 2022585965.0,
+        "amount": 290000000.0,
+        "description": ""
+    },
+    {
+        "id": "9c5a57b2-073b-4420-a8aa-7aba4c94f58b",
+        "dId": 10055,
+        "date": "2020-12-30",
+        "client": 30048894,
+        "account": 2022585965.0,
+        "amount": 141350063.0,
+        "description": ""
+    },
+    {
+        "id": "dd35bbfa-b8ad-429f-b634-ac4209388a36",
+        "dId": 10056,
+        "date": "2020-12-30",
+        "client": 30048894,
+        "account": 2022585965.0,
+        "amount": 13047089.0,
+        "description": ""
+    },
+    {
+        "id": "e556f626-f751-4b4b-96f4-4771a8183fbc",
+        "dId": 10057,
+        "date": "2020-12-30",
+        "client": 1121844590,
+        "account": 2022576384.0,
+        "amount": 150000000.0,
+        "description": ""
+    },
+    {
+        "id": "63400417-7925-4a43-b2f5-df2ea61d04e6",
+        "dId": 10058,
+        "date": "2020-12-30",
+        "client": 1020768812,
+        "account": 2022579716.0,
+        "amount": 150000000.0,
+        "description": ""
+    },
+    {
+        "id": "0688526c-28fe-4a66-b8bb-812a7c20af25",
+        "dId": 10059,
+        "date": "2020-12-30",
+        "client": 42071780,
+        "account": 2022539121.0,
+        "amount": 50000000.0,
+        "description": ""
+    },
+    {
+        "id": "6a8248b7-4c62-441b-8183-5dd0086e8481",
+        "dId": 10060,
+        "date": "2021-01-25",
+        "client": 1088270382,
+        "account": 2022514499.0,
+        "amount": 61847600.0,
+        "description": ""
+    },
+    {
+        "id": "4fe8ec69-faf1-473e-b835-d048ddc2e0a8",
+        "dId": 10061,
+        "date": "2021-01-31",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 100000000.0,
+        "description": ""
+    },
+    {
+        "id": "d348beee-40f6-4683-9c05-6a3d4c3732cb",
+        "dId": 10062,
+        "date": "2021-01-31",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 30000000.0,
+        "description": ""
+    },
+    {
+        "id": "ad829760-759d-48ed-be36-90f20b3b39e1",
+        "dId": 10063,
+        "date": "2021-02-04",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 250000000.0,
+        "description": ""
+    },
+    {
+        "id": "2e5939b5-63c5-42bd-8bf4-a28317a919b2",
+        "dId": 10064,
+        "date": "2021-02-04",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 393158415.0,
+        "description": ""
+    },
+    {
+        "id": "15f403b3-25c8-48b0-ad83-48641638b8bf",
+        "dId": 10065,
+        "date": "2021-02-05",
+        "client": 901319693,
+        "account": 2022543123.0,
+        "amount": 300000000.0,
+        "description": ""
+    },
+    {
+        "id": "c2d7703c-7f93-4e74-9709-0e948ca1943a",
+        "dId": 10066,
+        "date": "2021-02-15",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 165000000.0,
+        "description": ""
+    },
+    {
+        "id": "3a12d5e4-02d3-49c1-960a-19f6f2bdeabc",
+        "dId": 10067,
+        "date": "2021-03-02",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 29000000.0,
+        "description": ""
+    },
+    {
+        "id": "a3e98af4-928c-431d-b855-e83877189474",
+        "dId": 10068,
+        "date": "2021-03-04",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 200000000.0,
+        "description": ""
+    },
+    {
+        "id": "edc783ec-7555-4c81-b3df-3d5e9c189912",
+        "dId": 10069,
+        "date": "2021-03-04",
+        "client": 16778093,
+        "account": 2022566444.0,
+        "amount": 50000000.0,
+        "description": ""
+    },
+    {
+        "id": "9892c993-b62b-4429-b380-69e1c097fc45",
+        "dId": 10070,
+        "date": "2021-03-02",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 16000000.0,
+        "description": ""
+    },
+    {
+        "id": "bc4c48e8-598c-4248-9e43-eed52d5e1aea",
+        "dId": 10071,
+        "date": "2021-03-05",
+        "client": 16778093,
+        "account": 2022566444.0,
+        "amount": 100000000.0,
+        "description": ""
+    },
+    {
+        "id": "12c1f3cb-1342-4c52-a155-a8c0ff6f5f26",
+        "dId": 10072,
+        "date": "2021-03-08",
+        "client": 16778093,
+        "account": 2022566444.0,
+        "amount": 100000000.0,
+        "description": ""
+    },
+    {
+        "id": "d0d60752-9be8-44d6-b0fd-d89a9c0d6797",
+        "dId": 10073,
+        "date": "2021-03-08",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 7160587.0,
+        "description": ""
+    },
+    {
+        "id": "51eb7157-89f4-42a6-b45e-da2e22e37e05",
+        "dId": 10074,
+        "date": "2021-03-15",
+        "client": 16778093,
+        "account": 2022566444.0,
+        "amount": 120000000.0,
+        "description": ""
+    },
+    {
+        "id": "c6f88f21-ee92-4a5f-8e1f-d12c00f9874e",
+        "dId": 10075,
+        "date": "2021-03-17",
+        "client": 16778093,
+        "account": 2022566444.0,
+        "amount": 80000000.0,
+        "description": ""
+    },
+    {
+        "id": "a0e8bc9d-51ba-434f-9aa8-d9604df4af5c",
+        "dId": 10076,
+        "date": "2021-03-18",
+        "client": 16778093,
+        "account": 2022566444.0,
+        "amount": 80000000.0,
+        "description": ""
+    },
+    {
+        "id": "7747fe64-2a50-48d5-9c3f-db17e2731a54",
+        "dId": 10077,
+        "date": "2021-03-15",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 10933754.0,
+        "description": ""
+    },
+    {
+        "id": "c7b7659f-f8ce-4590-8d21-547af75306b9",
+        "dId": 10078,
+        "date": "2021-03-27",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 72000000.0,
+        "description": ""
+    },
+    {
+        "id": "161db5c0-9708-4935-9747-f2c3a56fd247",
+        "dId": 10079,
+        "date": "2021-03-29",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 112498991.0,
+        "description": ""
+    },
+    {
+        "id": "7ee57921-f6bf-4a65-ba4c-c7dddcea66a9",
+        "dId": 10080,
+        "date": "2021-03-31",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 806175093.0,
+        "description": ""
+    },
+    {
+        "id": "af7624ea-7398-4317-bee0-377870418a02",
+        "dId": 10081,
+        "date": "2021-04-06",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 16637871.0,
+        "description": ""
+    },
+    {
+        "id": "010f3d7e-7487-448e-af2f-5222f57d6335",
+        "dId": 10082,
+        "date": "2021-04-06",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 374400.0,
+        "description": ""
+    },
+    {
+        "id": "dbf05bf8-ca25-401b-8cd8-34617a4c984a",
+        "dId": 10083,
+        "date": "2021-04-06",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 70000000.0,
+        "description": ""
+    },
+    {
+        "id": "e9bbf94d-77e4-4739-8760-3b57500b9d59",
+        "dId": 10084,
+        "date": "2021-04-16",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 11215004.0,
+        "description": ""
+    },
+    {
+        "id": "5e03e060-cc89-44b3-8ac8-b282373533bd",
+        "dId": 10085,
+        "date": "2021-04-28",
+        "client": 79268897,
+        "account": 2022514280.0,
+        "amount": 386522023.0,
+        "description": ""
+    },
+    {
+        "id": "684b29f0-2eb5-45fd-a523-b7a8264dd679",
+        "dId": 10086,
+        "date": "2021-04-28",
+        "client": 52255093,
+        "account": 2022511121.0,
+        "amount": 269817084.0,
+        "description": ""
+    },
+    {
+        "id": "c89831cc-9f49-49f4-a5f3-0447371c846a",
+        "dId": 10087,
+        "date": "2021-04-28",
+        "client": 79456098,
+        "account": 2022557397.0,
+        "amount": 100000000.0,
+        "description": ""
+    },
+    {
+        "id": "8cce6024-f05d-4129-b1e5-3737211c3c5c",
+        "dId": 10088,
+        "date": "2021-04-30",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 17340754.0,
+        "description": ""
+    },
+    {
+        "id": "ccf09013-9e4d-4abc-a95d-742e6e1c7059",
+        "dId": 10089,
+        "date": "2021-05-07",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 70000000.0,
+        "description": ""
+    },
+    {
+        "id": "e94bb028-28b7-448a-a1a5-f2542d0af3f1",
+        "dId": 10090,
+        "date": "2021-05-13",
+        "client": 19445601,
+        "account": 2022556362.0,
+        "amount": 350000000.0,
+        "description": ""
+    },
+    {
+        "id": "496b3c04-d64a-4115-9ad7-f7ea0965d524",
+        "dId": 10091,
+        "date": "2021-05-11",
+        "client": 900518285,
+        "account": 2022575968.0,
+        "amount": 70000000.0,
+        "description": ""
+    },
+    {
+        "id": "65c789f9-0bfc-4878-a0f2-00cc7220f5bc",
+        "dId": 10092,
+        "date": "2021-05-14",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 11041237.0,
+        "description": ""
+    },
+    {
+        "id": "a31dd37a-220c-405a-90c2-e9de57f9d710",
+        "dId": 10093,
+        "date": "2021-05-27",
+        "client": 1088270382,
+        "account": 2022514499.0,
+        "amount": 10000000.0,
+        "description": ""
+    },
+    {
+        "id": "2113a625-7923-4a80-90ef-bcf82c4e77ff",
+        "dId": 10094,
+        "date": "2021-05-20",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 1000000.0,
+        "description": ""
+    },
+    {
+        "id": "de1c5b89-70c5-4c32-aa04-afec1f29f421",
+        "dId": 10095,
+        "date": "2021-05-31",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 15000000.0,
+        "description": ""
+    },
+    {
+        "id": "6d7f514b-9782-4fc7-accb-6852c3fe7ee8",
+        "dId": 10096,
+        "date": "2021-05-28",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 86000000.0,
+        "description": ""
+    },
+    {
+        "id": "31568a1c-e563-43fb-8260-32b6d3984b69",
+        "dId": 10097,
+        "date": "2021-05-31",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 15607333.0,
+        "description": ""
+    },
+    {
+        "id": "c0ca7cd1-0450-4db6-9c49-0b85f6f46791",
+        "dId": 10098,
+        "date": "2021-06-08",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 5000000.0,
+        "description": ""
+    },
+    {
+        "id": "365c6f77-072c-403e-ba8d-31bcd2571b22",
+        "dId": 10099,
+        "date": "2021-06-12",
+        "client": 1020768812,
+        "account": 2022579716.0,
+        "amount": 30000000.0,
+        "description": ""
+    },
+    {
+        "id": "3edf98f6-57ab-4557-9572-4816b282bec5",
+        "dId": 10100,
+        "date": "2021-06-12",
+        "client": 1020768812,
+        "account": 2022579716.0,
+        "amount": 40000000.0,
+        "description": ""
+    },
+    {
+        "id": "aa79b8ce-28db-4eba-b647-20b54e25b6f3",
+        "dId": 10101,
+        "date": "2021-06-15",
+        "client": 901319693,
+        "account": 2022543123.0,
+        "amount": 500000000.0,
+        "description": ""
+    },
+    {
+        "id": "59dbb856-92e8-4dd4-b2f6-081e280cfd3e",
+        "dId": 10102,
+        "date": "2021-06-20",
+        "client": 42071780,
+        "account": 2022539121.0,
+        "amount": 30000000.0,
+        "description": ""
+    },
+    {
+        "id": "4bd5468a-047c-482e-b4dc-7af7c3f68f3c",
+        "dId": 10103,
+        "date": "2021-06-21",
+        "client": 42071780,
+        "account": 2022539121.0,
+        "amount": 20000000.0,
+        "description": ""
+    },
+    {
+        "id": "5c581a74-be38-4d1a-9c46-f3d01991053c",
+        "dId": 10104,
+        "date": "2021-06-15",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 10933754.0,
+        "description": ""
+    },
+    {
+        "id": "1f59bd6d-945b-414c-acd2-456026eb96d3",
+        "dId": 10105,
+        "date": "2021-06-30",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 124000000.0,
+        "description": ""
+    },
+    {
+        "id": "ee9ea325-cf3c-44f5-92e3-8465c55aa8dd",
+        "dId": 10106,
+        "date": "2021-06-30",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 100000000.0,
+        "description": ""
+    },
+    {
+        "id": "00c52dff-c5f6-4231-aec8-c06436cf3f70",
+        "dId": 10107,
+        "date": "2021-06-30",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 22023587.0,
+        "description": ""
+    },
+    {
+        "id": "9d28f140-8e3d-41b9-9df1-ee0516f1fe6d",
+        "dId": 10108,
+        "date": "2021-07-02",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 19900000.0,
+        "description": ""
+    },
+    {
+        "id": "7b107758-c0eb-4653-9e4b-b37e77968b2d",
+        "dId": 10109,
+        "date": "2021-07-06",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 5100000.0,
+        "description": ""
+    },
+    {
+        "id": "93b14825-452b-48ae-b853-4b62fc2585c9",
+        "dId": 10110,
+        "date": "2021-07-15",
+        "client": 19445601,
+        "account": 2022556362.0,
+        "amount": 348075903.0,
+        "description": ""
+    },
+    {
+        "id": "4c001b44-3344-4764-8d80-24956466c32a",
+        "dId": 10111,
+        "date": "2021-07-15",
+        "client": 80416264,
+        "account": 2022533853.0,
+        "amount": 100000000.0,
+        "description": ""
+    },
+    {
+        "id": "caa0f41a-e63c-49c9-b1b9-1824e0a881f3",
+        "dId": 10112,
+        "date": "2021-07-16",
+        "client": 16778093,
+        "account": 2022566444.0,
+        "amount": 30000000.0,
+        "description": ""
+    },
+    {
+        "id": "7d101cd8-ac18-48c7-87b7-a4663506dbb6",
+        "dId": 10113,
+        "date": "2021-07-15",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 100000000.0,
+        "description": ""
+    },
+    {
+        "id": "da279835-022f-4856-b8f6-17cefc136db3",
+        "dId": 10114,
+        "date": "2021-07-16",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 97346512.0,
+        "description": ""
+    },
+    {
+        "id": "fcaf1b83-edfc-42ed-867d-069afdfe8e61",
+        "dId": 10115,
+        "date": "2021-07-16",
+        "client": 16778093,
+        "account": 2022566444.0,
+        "amount": 33000000.0,
+        "description": ""
+    },
+    {
+        "id": "5f42d1c3-127d-4219-8b1c-069d016dd872",
+        "dId": 10116,
+        "date": "2021-07-19",
+        "client": 16778093,
+        "account": 2022566444.0,
+        "amount": 200000.0,
+        "description": ""
+    },
+    {
+        "id": "9a0d14d0-08f2-426e-ba04-51a11a34cb7b",
+        "dId": 10117,
+        "date": "2021-07-21",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 30000000.0,
+        "description": ""
+    },
+    {
+        "id": "2c0a8f39-4c7e-4bb6-93d6-3106fc77020c",
+        "dId": 10118,
+        "date": "2021-07-20",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 30000000.0,
+        "description": ""
+    },
+    {
+        "id": "18c2fb52-c88c-422c-8ed0-0708c902784d",
+        "dId": 10119,
+        "date": "2021-07-21",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 30000000.0,
+        "description": ""
+    },
+    {
+        "id": "7b512007-e44e-4fd2-953b-e7f98fe89a44",
+        "dId": 10120,
+        "date": "2021-07-22",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 15000000.0,
+        "description": ""
+    },
+    {
+        "id": "27d063a9-97fc-4e3d-a655-95d29ac36b4a",
+        "dId": 10121,
+        "date": "2021-07-22",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 18000000.0,
+        "description": ""
+    },
+    {
+        "id": "16784660-a146-4c1d-92f4-5d453feac916",
+        "dId": 10122,
+        "date": "2021-07-22",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 30000000.0,
+        "description": ""
+    },
+    {
+        "id": "5fba5765-468c-406e-b20e-46563036f4e7",
+        "dId": 10123,
+        "date": "2021-07-27",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 10000000.0,
+        "description": ""
+    },
+    {
+        "id": "fbf73aad-e9ec-46cd-a4e2-b8b942ebc6be",
+        "dId": 10124,
+        "date": "2021-07-30",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 33605917.0,
+        "description": ""
+    },
+    {
+        "id": "044fdd0e-65e4-4c40-b248-8e187e711655",
+        "dId": 10125,
+        "date": "2021-08-03",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 1000000000.0,
+        "description": ""
+    },
+    {
+        "id": "2d9f34ee-f848-47f0-933e-a896d0ff9335",
+        "dId": 10126,
+        "date": "2021-07-30",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 46442242.0,
+        "description": ""
+    },
+    {
+        "id": "68ab4f07-52a0-4fee-beec-390ed33e485b",
+        "dId": 10127,
+        "date": "2021-07-30",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 9340754.0,
+        "description": ""
+    },
+    {
+        "id": "60d6342f-5a05-4646-af37-f9e83288a790",
+        "dId": 10128,
+        "date": "2021-07-30",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 100000000.0,
+        "description": ""
+    },
+    {
+        "id": "0bda9b40-455d-431d-b100-280e072c84f6",
+        "dId": 10129,
+        "date": "2021-08-06",
+        "client": 38249027,
+        "account": 2022571979.0,
+        "amount": 100000000.0,
+        "description": ""
+    },
+    {
+        "id": "c90ae2f2-6c29-4fc9-bac3-c438b44790ca",
+        "dId": 10130,
+        "date": "2021-08-11",
+        "client": 900797325,
+        "account": 2022531103.0,
+        "amount": 46423040.0,
+        "description": ""
+    },
+    {
+        "id": "e07ff107-6d49-495a-bd6b-1f276f3e77da",
+        "dId": 10131,
+        "date": "2021-08-11",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 69634560.0,
+        "description": ""
+    },
+    {
+        "id": "284a6e6f-0117-4237-a47f-2e2e433dc7df",
+        "dId": 10132,
+        "date": "2021-08-01",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 15796190.0,
+        "description": ""
+    },
+    {
+        "id": "d9bb875c-db4d-4fe6-b057-532475267542",
+        "dId": 10133,
+        "date": "2021-08-12",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 5764283.0,
+        "description": ""
+    },
+    {
+        "id": "d3885e71-5d07-4917-8f0e-18de192f6637",
+        "dId": 10134,
+        "date": "2021-08-19",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 16000095.0,
+        "description": ""
+    },
+    {
+        "id": "8dba7b3b-833b-4763-96f3-569ef75e22eb",
+        "dId": 10135,
+        "date": "2021-08-19",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 519930138.0,
+        "description": ""
+    },
+    {
+        "id": "48945af8-7501-41e2-8729-c4b2458c9b45",
+        "dId": 10136,
+        "date": "2021-08-15",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 10933754.0,
+        "description": ""
+    },
+    {
+        "id": "08e54dc1-7e95-410e-9de0-9efaee8af2ec",
+        "dId": 10137,
+        "date": "2021-08-31",
+        "client": 35462767,
+        "account": 2022534156.0,
+        "amount": 250000000.0,
+        "description": ""
+    },
+    {
+        "id": "e1240868-ed19-4e30-93f0-6cf8f32e4609",
+        "dId": 10138,
+        "date": "2021-08-31",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 17284195.0,
+        "description": ""
+    },
+    {
+        "id": "5a2b4164-cdac-4502-b4a9-ec78766dd01d",
+        "dId": 10139,
+        "date": "2021-09-02",
+        "client": 38249027,
+        "account": 2022571979.0,
+        "amount": 10000000.0,
+        "description": ""
+    },
+    {
+        "id": "eb202ec7-acd8-4d37-aeaa-0f3e8f0855b1",
+        "dId": 10140,
+        "date": "2021-09-02",
+        "client": 38249027,
+        "account": 2022571979.0,
+        "amount": 90000000.0,
+        "description": ""
+    },
+    {
+        "id": "a0f96f78-3440-431a-9aae-361a394af54e",
+        "dId": 10141,
+        "date": "2021-08-31",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 4832069.0,
+        "description": ""
+    },
+    {
+        "id": "5fd24366-a4cf-4bd1-80ca-1320e0826d30",
+        "dId": 10142,
+        "date": "2021-09-07",
+        "client": 38249027,
+        "account": 2022571979.0,
+        "amount": 150000000.0,
+        "description": ""
+    },
+    {
+        "id": "779fa83a-0cbe-4cdc-9c09-8d0f1d938191",
+        "dId": 10143,
+        "date": "2021-08-31",
+        "client": 860076394,
+        "account": 2022559816.0,
+        "amount": 28412.0,
+        "description": ""
+    },
+    {
+        "id": "ec3bfa43-ca8e-49a3-a908-e4deb476ccc6",
+        "dId": 10144,
+        "date": "2021-09-15",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 323700000.0,
+        "description": ""
+    },
+    {
+        "id": "f95bc757-30f2-4d54-9596-4180c66fc55a",
+        "dId": 10145,
+        "date": "2021-09-15",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 323700000.0,
+        "description": ""
+    },
+    {
+        "id": "53645b66-d1cc-4fa7-9749-ee1f45092f9b",
+        "dId": 10146,
+        "date": "2021-09-14",
+        "client": 65767998,
+        "account": 2022551989.0,
+        "amount": 1224963.0,
+        "description": ""
+    },
+    {
+        "id": "2e370ecc-b715-4bc4-95f4-8ae5b061410e",
+        "dId": 10147,
+        "date": "2021-09-18",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 30000000.0,
+        "description": ""
+    },
+    {
+        "id": "0696c998-676d-439e-90e0-25a7bcaa80b2",
+        "dId": 10148,
+        "date": "2021-09-19",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 30000000.0,
+        "description": ""
+    },
+    {
+        "id": "b3f0c976-7643-4692-addb-0e984e0e59bf",
+        "dId": 10149,
+        "date": "2021-09-20",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 30000000.0,
+        "description": ""
+    },
+    {
+        "id": "5ce1b0d0-57f3-4086-ac56-d8175d8c0630",
+        "dId": 10150,
+        "date": "2021-09-21",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 30000000.0,
+        "description": ""
+    },
+    {
+        "id": "990eb13d-2ff5-465f-bfa7-ff1f5dd065c3",
+        "dId": 10151,
+        "date": "2021-09-24",
+        "client": 901319693,
+        "account": 2022543123.0,
+        "amount": 362000.0,
+        "description": ""
+    },
+    {
+        "id": "e06dae70-deba-47b5-a999-75a2762f28fa",
+        "dId": 10152,
+        "date": "2021-09-20",
+        "client": 901319693,
+        "account": 2022543123.0,
+        "amount": 56396964.0,
+        "description": ""
+    },
+    {
+        "id": "2e3b8699-308d-45a9-94f1-6a404904d856",
+        "dId": 10153,
+        "date": "2021-09-15",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 30000000.0,
+        "description": ""
+    },
+    {
+        "id": "af2d67ce-eb53-45cc-9926-f8acab26a98f",
+        "dId": 10154,
+        "date": "2021-09-22",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 30000000.0,
+        "description": ""
+    },
+    {
+        "id": "7c8b3384-cee9-428b-bb23-580aa67ae902",
+        "dId": 10155,
+        "date": "2021-09-30",
+        "client": 900518285,
+        "account": 2022575968.0,
+        "amount": 400000000.0,
+        "description": ""
+    },
+    {
+        "id": "f55d7eae-1894-4eb8-8a1b-8d89c16f089a",
+        "dId": 10156,
+        "date": "2021-09-30",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 239188539.0,
+        "description": ""
+    },
+    {
+        "id": "a08e73eb-0ccf-4097-8605-f3723e482b1a",
+        "dId": 10157,
+        "date": "2021-09-30",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 48824524.0,
+        "description": ""
+    },
+    {
+        "id": "193a5e4f-35a5-447f-a8b9-92ce3e3ff5cf",
+        "dId": 10158,
+        "date": "2021-10-07",
+        "client": 35462767,
+        "account": 2022534156.0,
+        "amount": 20000000.0,
+        "description": ""
+    },
+    {
+        "id": "22bea4d2-68f5-432a-964b-b866e22dc83a",
+        "dId": 10159,
+        "date": "2021-10-11",
+        "client": 1088270382,
+        "account": 2022514499.0,
+        "amount": 53691597.0,
+        "description": ""
+    },
+    {
+        "id": "e585be8f-0e4b-47e0-9e42-4024efd916c6",
+        "dId": 10160,
+        "date": "2021-10-06",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 30000000.0,
+        "description": ""
+    },
+    {
+        "id": "6c96fa2f-1929-44a6-a8d4-bcd76628ba30",
+        "dId": 10164,
+        "date": "2021-10-21",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 74708889.0,
+        "description": "PRESTAMO A FAVOR DE INVERSIONES TOMMAT"
+    },
+    {
+        "id": "ec54f3da-d8f5-4cbe-b61d-f1ddbe138e92",
+        "dId": 10165,
+        "date": "2021-10-21",
+        "client": 1088270382,
+        "account": 2022514499.0,
+        "amount": 11901132.0,
+        "description": "TRASLADO DE CUENTA DE LUIS FELIPE RIOS"
+    },
+    {
+        "id": "deab4f59-8ba9-4824-9ad3-52c6c62dc05b",
+        "dId": 10166,
+        "date": "2021-10-22",
+        "client": 830125410,
+        "account": 2022566723.0,
+        "amount": 189329133.0,
+        "description": "PRIMERA INVERSION"
+    },
+    {
+        "id": "a755c2b2-72cb-4293-a7ed-0ecacd45513d",
+        "dId": 10167,
+        "date": "2021-10-26",
+        "client": 830125410,
+        "account": 2022566723.0,
+        "amount": 150670867.0,
+        "description": ""
+    },
+    {
+        "id": "b737e0da-90fb-443f-ae05-3d06870e3418",
+        "dId": 10168,
+        "date": "2021-10-29",
+        "client": 901319693,
+        "account": 2022543123.0,
+        "amount": 600000000.0,
+        "description": ""
+    },
+    {
+        "id": "8e5d9301-93b9-46dc-907f-928ead09d811",
+        "dId": 10169,
+        "date": "2021-10-29",
+        "client": 20100919,
+        "account": 2022533165.0,
+        "amount": 200000000.0,
+        "description": ""
+    },
+    {
+        "id": "0abab893-8c74-4ca0-a591-74886a7ce33b",
+        "dId": 10170,
+        "date": "2021-11-04",
+        "client": 20100919,
+        "account": 2022533165.0,
+        "amount": 230000000.0,
+        "description": "INVERSION NUEVA"
+    },
+    {
+        "id": "c04c44b0-5895-4d7d-b1e4-44a67215de5f",
+        "dId": 10173,
+        "date": "2021-11-30",
+        "client": 901319693,
+        "account": 2022543123.0,
+        "amount": 198235349.0,
+        "description": "TRASLADO DE ROCIO LIZARAZO"
+    },
+    {
+        "id": "90a8c15f-3925-432b-984b-5c66006ab5b9",
+        "dId": 10174,
+        "date": "2021-12-01",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 13671429.0,
+        "description": "PRESTAMO MAYERLY MEDINA"
+    },
+    {
+        "id": "07e27be2-6cbf-423e-a422-c62f5183a696",
+        "dId": 10175,
+        "date": "2021-11-30",
+        "client": 900536206,
+        "account": 2022561826.0,
+        "amount": 71991264.0,
+        "description": "GIRO THOMAS GREG"
+    },
+    {
+        "id": "88341e57-5f82-4e02-ae32-e5df176b2be7",
+        "dId": 10176,
+        "date": "2021-12-15",
+        "client": 19445601,
+        "account": 2022556362.0,
+        "amount": 564748921.0,
+        "description": "GIRO INVERSION ITAU"
+    },
+    {
+        "id": "f34a73b7-9a5b-4a77-906d-f1bc8b2926c6",
+        "dId": 10177,
+        "date": "2021-12-16",
+        "client": 830123485,
+        "account": 2022575160.0,
+        "amount": 12354020.0,
+        "description": "GIRO INVERION SALON XX"
+    },
+    {
+        "id": "3fec5606-1514-4bbf-8c4c-ec7c473bffa5",
+        "dId": 10178,
+        "date": "2021-12-17",
+        "client": 901319693,
+        "account": 2022543123.0,
+        "amount": 23623023.0,
+        "description": "TRASLADO DE ROCIO LIZARAZO"
+    },
+    {
+        "id": "ca80fefe-e636-4f36-ab85-39fcc2b99dfa",
+        "dId": 10179,
+        "date": "2021-12-20",
+        "client": 19445601,
+        "account": 2022556362.0,
+        "amount": 6300000000.0,
+        "description": "INVERSION"
+    },
+    {
+        "id": "caec0080-1259-4918-affc-9ef1c3d19a93",
+        "dId": 10180,
+        "date": "2021-12-22",
+        "client": 20100919,
+        "account": 2022533165.0,
+        "amount": 58162379.0,
+        "description": "TRASLADO INTERNO RL GROUP"
+    },
+    {
+        "id": "2542211f-09b8-4c25-a02f-59a82741e81c",
+        "dId": 10181,
+        "date": "2022-01-05",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 150000000.0,
+        "description": "GIRO CHEQUE GERENCIA"
+    },
+    {
+        "id": "6449020d-f14d-4534-96f5-009a5c73da07",
+        "dId": 10182,
+        "date": "2022-01-07",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 483650000.0,
+        "description": "DESEMBOLSO CREDITO BANCARIO A FAVOR EGT"
+    },
+    {
+        "id": "69c336bb-28d8-4918-8965-016a50b34222",
+        "dId": 10183,
+        "date": "2022-01-06",
+        "client": 30048894,
+        "account": 2022585965.0,
+        "amount": 23623023.0,
+        "description": "TRASLADO DE ROCIO LIZARAZO y RL GROUP"
+    },
+    {
+        "id": "07f5af09-8318-45ad-9b62-f55467d8451f",
+        "dId": 10184,
+        "date": "2022-01-31",
+        "client": 8301238485,
+        "account": "",
+        "amount": 293640304.0,
+        "description": "INVERSION"
+    },
+    {
+        "id": "7f1b581b-78a2-4eef-b336-00c5af14fd89",
+        "dId": 10185,
+        "date": "2022-01-31",
+        "client": 830125410,
+        "account": 2022566723.0,
+        "amount": 300208683.0,
+        "description": ""
+    },
+    {
+        "id": "76d3cfca-7db7-4007-a064-f72ebd076882",
+        "dId": 10186,
+        "date": "2022-02-01",
+        "client": 900518285,
+        "account": 2022575968.0,
+        "amount": 254109988.0,
+        "description": "GIRO INVERSION OP GRUPO BIMBO"
+    },
+    {
+        "id": "2336468e-3b26-4dfd-880a-e259560b2ad0",
+        "dId": 10187,
+        "date": "2022-02-08",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 140000000.0,
+        "description": ""
+    },
+    {
+        "id": "a24229f3-23b0-4273-b5f1-d0baa851d956",
+        "dId": 10188,
+        "date": "2022-02-11",
+        "client": 802011972,
+        "account": 2022570858.0,
+        "amount": 358101590.0,
+        "description": "INVERSION INICIAL"
+    },
+    {
+        "id": "35471698-6094-427b-a76d-8b6798d5ecca",
+        "dId": 10189,
+        "date": "2022-02-15",
+        "client": 20100919,
+        "account": 2022533165.0,
+        "amount": 56902859.0,
+        "description": "TRASLADO RL GROUP"
+    },
+    {
+        "id": "af698e3a-742f-4eaf-8c52-35f440246ed3",
+        "dId": 10190,
+        "date": "2022-02-15",
+        "client": 802011972,
+        "account": 2022570858.0,
+        "amount": 200000000.0,
+        "description": "INVERSION INICIAL"
+    },
+    {
+        "id": "05c1ac42-ba13-48c3-8b5c-f39971e33455",
+        "dId": 10191,
+        "date": "2022-02-16",
+        "client": 20100919,
+        "account": 2022533165.0,
+        "amount": 111684762.0,
+        "description": "RECURSOS PROVENIENTES DE RL GROUP"
+    },
+    {
+        "id": "655407b5-22fa-4aa0-8943-10529a93953c",
+        "dId": 10192,
+        "date": "2022-02-18",
+        "client": 20100919,
+        "account": 2022533165.0,
+        "amount": 127500000.0,
+        "description": "GIRO ANDRES GALLEGO"
+    },
+    {
+        "id": "63e7da33-743c-4f9b-b0c8-3c82703b8521",
+        "dId": 10193,
+        "date": "2022-02-24",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 35562242.0,
+        "description": "INVERSION INICIAL"
+    },
+    {
+        "id": "5c35a5cb-fc48-4a7e-b757-3df76958ee8f",
+        "dId": 10194,
+        "date": "2022-03-02",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 300000000.0,
+        "description": "AJUSTE SALDO RELACIONADO CON CONTABILIDAD"
+    },
+    {
+        "id": "bd6aa938-c1a3-4853-8ac3-b0480eb46760",
+        "dId": 10195,
+        "date": "2022-03-07",
+        "client": 35462767,
+        "account": 2022534156.0,
+        "amount": 25000000.0,
+        "description": "GIRO REALIZADO POR SOCIEDAD CONSTRU"
+    },
+    {
+        "id": "47b08a35-31f1-4b83-8441-573b3f14ec2e",
+        "dId": 10196,
+        "date": "2022-03-23",
+        "client": 19106161,
+        "account": 2022552674.0,
+        "amount": 145606681.338081,
+        "description": "TRASPASO INTERNO PROVENIENTE DE DARIO PINILLA"
+    },
+    {
+        "id": "5064c512-e204-4ea8-a58f-b5ba07bdbebe",
+        "dId": 10197,
+        "date": "2022-03-23",
+        "client": 19106161,
+        "account": 2022552674.0,
+        "amount": 154393318.661919,
+        "description": "TRASPASO INTERNO PROVENIENTE DE DIANA CELIS"
+    },
+    {
+        "id": "d554474b-fd5b-4c06-92ff-e131d5057d60",
+        "dId": 10198,
+        "date": "2022-03-25",
+        "client": 1088270382,
+        "account": 2022514499.0,
+        "amount": 75000000.0,
+        "description": "TRASLADO DE RL A LUISA GONZALEZ"
+    },
+    {
+        "id": "227fbd50-c2fe-4df0-8e4a-c62db8902abf",
+        "dId": 10199,
+        "date": "2022-03-31",
+        "client": 52255093,
+        "account": 2022511121.0,
+        "amount": 45056687.0,
+        "description": "TRASLADO INTERNO DE DARIO PINILLA"
+    },
+    {
+        "id": "fbb97ed8-21f7-4e60-8c7c-c6bb795adbd8",
+        "dId": 10200,
+        "date": "2022-03-25",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 50000000.0,
+        "description": "PAGO PRESTAMO 30MM BANCO \u00c9XITO 77 - - REINTEGRO 20MM MAYERLY"
+    },
+    {
+        "id": "b005445a-3d97-45f5-93db-9e5d01f001c6",
+        "dId": 1,
+        "date": "2022-04-01",
+        "client": 52255093,
+        "account": 2022511121.0,
+        "amount": 5564119.0,
+        "description": "TRASLADO DE DARIO PINILLA"
+    },
+    {
+        "id": "e1df077e-537b-42a4-8926-f8802a37f07c",
+        "dId": 10201,
+        "date": "2022-04-12",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 5000000.0,
+        "description": "PRESTAMO DE MAYERLY-VENTA MOTO ANDRES"
+    },
+    {
+        "id": "3b88d36a-4bd1-4944-ac98-2ecad1cc8552",
+        "dId": 10202,
+        "date": "2022-04-12",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 4500000.0,
+        "description": "PRESTAMO DE MAYERLY-VENTA MOTO ANDRES"
+    },
+    {
+        "id": "d8818d62-e83f-476a-beb4-766973da3d4b",
+        "dId": 10203,
+        "date": "2022-04-09",
+        "client": 52255093,
+        "account": 2022511121.0,
+        "amount": 5644351.0,
+        "description": "TRASLADO INTERSNO DARIO PINILLA"
+    },
+    {
+        "id": "3c83034f-b8cf-4f91-a6a5-a6bbbcbb44f5",
+        "dId": 10204,
+        "date": "2022-05-04",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 547069277.0,
+        "description": "GIRO OPERACI\u00d3N 648 COLANTA"
+    },
+    {
+        "id": "35e30586-f876-4273-9f04-f0b82338ef37",
+        "dId": 10205,
+        "date": "2022-04-29",
+        "client": 52255093,
+        "account": 2022511121.0,
+        "amount": 16865077.0,
+        "description": "TRASLADO INTERNO DE DARIO PINILLA"
+    },
+    {
+        "id": "b2377c7b-05d2-4a51-a3d4-67f911b956e6",
+        "dId": 10206,
+        "date": "2022-05-04",
+        "client": 900518285,
+        "account": 2022518509.0,
+        "amount": 18721166.0,
+        "description": "INVERSION PRONUS HIJOA"
+    },
+    {
+        "id": "43cc188e-6c14-4a5d-bb47-4cacd807cad0",
+        "dId": 10207,
+        "date": "2022-05-13",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 1585000.0,
+        "description": "GIRO MAYERLY MEDINA"
+    },
+    {
+        "id": "3e0f230f-8708-4dcb-b948-2c25ccc29b07",
+        "dId": 10208,
+        "date": "2022-05-25",
+        "client": 901319693,
+        "account": 2022543123.0,
+        "amount": 150000000.0,
+        "description": ""
+    },
+    {
+        "id": "fbffe4b9-d4e3-4227-beb4-0b9834fd4f6f",
+        "dId": 10209,
+        "date": "2022-05-27",
+        "client": 800140170,
+        "account": 2022539883.0,
+        "amount": 495645815.0,
+        "description": ""
+    },
+    {
+        "id": "f275b537-1738-4edc-8c77-e2a90ce26473",
+        "dId": 10210,
+        "date": "2022-05-27",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 940421556.0,
+        "description": "INVERSION COMPRA TITULOS"
+    },
+    {
+        "id": "fb45adc4-6b05-4b5e-9e91-4d428f05e834",
+        "dId": 10211,
+        "date": "2022-06-03",
+        "client": 19445601,
+        "account": 2022556362.0,
+        "amount": 1000000000.0,
+        "description": "GIRO CUENTA ITAU"
+    },
+    {
+        "id": "2bbc4559-72be-4997-b81b-e2be530ec853",
+        "dId": 10212,
+        "date": "2022-06-07",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 250000000.0,
+        "description": "PRESTAMO MOTUFUTURO"
+    },
+    {
+        "id": "ce687bc9-3ebe-4629-8779-e9ac57e986d3",
+        "dId": 10213,
+        "date": "2022-06-22",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 483594003.0,
+        "description": ""
+    },
+    {
+        "id": "f08839ec-f62e-48a4-aab0-746db4bf6b07",
+        "dId": 10214,
+        "date": "2022-07-08",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 726205938.0,
+        "description": "PAGO OP BIMBO"
+    },
+    {
+        "id": "c7408181-64b2-4e96-a721-a2e42fa6b3bc",
+        "dId": 10216,
+        "date": "2022-07-13",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 399533023.0,
+        "description": "GIRO NEGOCIACION DERSA OP 737"
+    },
+    {
+        "id": "42570ffa-3542-40cf-af9a-9fb5fac8e180",
+        "dId": 10217,
+        "date": "2022-07-16",
+        "client": 16778093,
+        "account": 2022566444.0,
+        "amount": 50000000.0,
+        "description": "GIRO REALIZADO EN CTA BANCOLOMBIA"
+    },
+    {
+        "id": "3466ad40-ea06-4b33-b7c3-1932c1d83bb2",
+        "dId": 10218,
+        "date": "2022-07-22",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 150000000.0,
+        "description": ""
+    },
+    {
+        "id": "406c9f9b-f66d-4b46-a615-12e24e383b71",
+        "dId": 10219,
+        "date": "2022-07-27",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 206243399.0,
+        "description": ""
+    },
+    {
+        "id": "4369a105-7c1b-402d-9db1-fb8d278d3899",
+        "dId": 10220,
+        "date": "2022-07-30",
+        "client": 901319693,
+        "account": 2022543123.0,
+        "amount": 100000000.0,
+        "description": "GIRO COMERCIAL MOTOR"
+    },
+    {
+        "id": "a468f13e-46d3-457a-9262-0abad431236f",
+        "dId": 10221,
+        "date": "2022-08-04",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 67000000.0,
+        "description": "PRESTAMO MOTOFUTURO"
+    },
+    {
+        "id": "308e2add-bbd8-4e0b-870a-f27f3ff324a5",
+        "dId": 10222,
+        "date": "2022-08-04",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 33000000.0,
+        "description": "PRESTAMO ANDRES RUIZ"
+    },
+    {
+        "id": "aa2cc5df-d589-445a-9cbf-c45a2cfaac8b",
+        "dId": 10223,
+        "date": "2022-08-05",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 19000000.0,
+        "description": "PRESTAMO ANDRES RUIZ"
+    },
+    {
+        "id": "d22b967d-f276-4dc4-964d-615a8845f70b",
+        "dId": 10224,
+        "date": "2022-08-08",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 181807260.0,
+        "description": "GIRO OP 756 BIOTRADE-DERSA"
+    },
+    {
+        "id": "7e24de9c-29c7-4b95-b1f8-3f3cce5ce4d7",
+        "dId": 10225,
+        "date": "2022-07-31",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 222911890.0,
+        "description": "AJUSTE CONTABLE SALDO INVERSION"
+    },
+    {
+        "id": "b230de16-bef7-4243-9680-5eac5af74b97",
+        "dId": 10226,
+        "date": "2022-08-09",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 162337287.0,
+        "description": "GIRO FRAS DERSA OP 760-761"
+    },
+    {
+        "id": "d3d4c3e9-8e64-4741-a488-c3d70f9032ee",
+        "dId": 10227,
+        "date": "2022-08-17",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 104767198.0,
+        "description": "GIRO OPERACI\u00d3N DERSA 16082022"
+    },
+    {
+        "id": "5e3854d5-6e10-48cc-ad55-a91107807244",
+        "dId": 10228,
+        "date": "2022-08-01",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 164538009.0,
+        "description": "AJUSTE CONTABLE JULIO 31"
+    },
+    {
+        "id": "c6aea2e6-6359-444f-92ec-e63ca1df7743",
+        "dId": 10229,
+        "date": "2022-08-26",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 6847337.0,
+        "description": "GIRO OPERACI\u00d3N BIOTRADE-DERSA 25082022"
+    },
+    {
+        "id": "5a2d5fcd-97ae-4077-8412-10f5ff81b32b",
+        "dId": 10230,
+        "date": "2022-08-31",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 30000000.0,
+        "description": "GIRO LUZ MEDINA-MAYERLY MEDINA"
+    },
+    {
+        "id": "0ee316fd-c9d6-478a-a419-d0c63187fc53",
+        "dId": 10231,
+        "date": "2022-09-01",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 720353798.0,
+        "description": "NEGOCIACION DERSA 31082022"
+    },
+    {
+        "id": "fdfca80f-c28d-468a-89b6-5315e84cca4f",
+        "dId": 10233,
+        "date": "2022-09-01",
+        "client": 901319693,
+        "account": 2022543123.0,
+        "amount": 42000000.0,
+        "description": "GIRO REALIZADO POR FIDUAGRARIA 70MM"
+    },
+    {
+        "id": "c1048816-8e77-472e-b80c-88f2679c80aa",
+        "dId": 10234,
+        "date": "2022-09-08",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 333917994.0,
+        "description": "GIRO NEGOCIACION FACTURAS D1 07092022"
+    },
+    {
+        "id": "07cc96c1-83d9-4d51-93e6-f98b5652b4fd",
+        "dId": 10235,
+        "date": "2022-09-09",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 137475547.0,
+        "description": "RECURSOS GIRADOS OPERACI\u00d3N D1"
+    },
+    {
+        "id": "1b2a9e42-3cec-4398-ae69-276305366873",
+        "dId": 10236,
+        "date": "2022-09-13",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 411895808.0,
+        "description": "GIRO OPERACI\u00d3N DERSA 801"
+    },
+    {
+        "id": "beb4eeee-21c7-4caf-8586-365f54c1c070",
+        "dId": 10237,
+        "date": "2022-09-23",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 383587089.0,
+        "description": "GIRO NEGOCIACION DERSA 22092022"
+    },
+    {
+        "id": "bfd66f03-7e78-4156-8d17-dbcb80ce127e",
+        "dId": 10238,
+        "date": "2022-09-23",
+        "client": 830125410,
+        "account": 2022566723.0,
+        "amount": 150000000.0,
+        "description": "GIRO INVERSION D1"
+    },
+    {
+        "id": "d346aeaa-f3f3-48fd-9a46-4677c5280640",
+        "dId": 10239,
+        "date": "2022-09-23",
+        "client": 800140170,
+        "account": 2022539883.0,
+        "amount": 150000000.0,
+        "description": "GIRO INVERSION D1"
+    },
+    {
+        "id": "6da0de9a-8ecc-48a4-9c3c-84d67b08fa87",
+        "dId": 10240,
+        "date": "2022-09-23",
+        "client": 900518285,
+        "account": 2022575968.0,
+        "amount": 342660694.0,
+        "description": "GIRO DE RECURSOS"
+    },
+    {
+        "id": "817163ce-7c8a-4c5f-873f-75582658400d",
+        "dId": 10241,
+        "date": "2022-09-26",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 430757556.0,
+        "description": "GIRO COMPRA FACTURA CLARO 26092022"
+    },
+    {
+        "id": "ec2b8cb8-dae6-4013-ab02-0c8f0b7c14fd",
+        "dId": 10242,
+        "date": "2022-10-03",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 235741639.0,
+        "description": "GIRO NEGOCIACION D1 30092022"
+    },
+    {
+        "id": "a8d316b8-d55c-47cc-8f99-3e906efae539",
+        "dId": 10243,
+        "date": "2022-10-04",
+        "client": 19106161,
+        "account": 2022552674.0,
+        "amount": 200000000.0,
+        "description": "GIRO COMPRA TITULOS"
+    },
+    {
+        "id": "2978be0d-18e3-487d-a7ef-448909094b91",
+        "dId": 10244,
+        "date": "2022-10-14",
+        "client": 901319693,
+        "account": 2022543123.0,
+        "amount": 1000000000.0,
+        "description": "GIRO OP UNION ARROCEROS"
+    },
+    {
+        "id": "aca5f653-c289-4b53-885c-91fccca25140",
+        "dId": 10245,
+        "date": "2022-10-14",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 62892792.0,
+        "description": "GIRO OPERACI\u00d3N BIOTRADE-DERSA 14102022"
+    },
+    {
+        "id": "4398a371-4cfd-45da-a65e-2dc8df1e686f",
+        "dId": 10246,
+        "date": "2022-10-19",
+        "client": 802011972,
+        "account": 2022570858.0,
+        "amount": 350000000.0,
+        "description": "GIRO NEGOCIACION D1 14102022"
+    },
+    {
+        "id": "8b299256-16f5-4ae6-911a-27618625e152",
+        "dId": 10247,
+        "date": "2022-10-25",
+        "client": 1088270382,
+        "account": 2022106644.0,
+        "amount": 5000000.0,
+        "description": "GIRO LUISA GONZALEZ"
+    },
+    {
+        "id": "b8337e11-5c37-49ee-80ee-56501b3f78ec",
+        "dId": 10248,
+        "date": "2022-10-26",
+        "client": 1088270382,
+        "account": 2022106644.0,
+        "amount": 5000000.0,
+        "description": "GIRO INVERSION PERSONAL"
+    },
+    {
+        "id": "6b0dc2a3-16a0-42d3-bf09-b0ab81fd7e89",
+        "dId": 10249,
+        "date": "2022-10-01",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 134821448.0,
+        "description": "AJUSTE A SEPTIEMBRE CONTABLE"
+    },
+    {
+        "id": "b6037a39-7e3e-4964-8f91-63b8571b8fbf",
+        "dId": 10250,
+        "date": "2022-11-01",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 950000000.0,
+        "description": "RECURSOS OPERACI\u00d3N BIOTRADE 31102022"
+    },
+    {
+        "id": "8b80e448-552b-4924-aadb-2f6ef504dd4d",
+        "dId": 10251,
+        "date": "2022-11-01",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 184291913.0,
+        "description": "RECURSOS OPERACI\u00d3N BIOTRADE 31102022"
+    },
+    {
+        "id": "46edacfc-2334-4d48-912d-ecea8a44ab57",
+        "dId": 10252,
+        "date": "2022-11-10",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 400000000.0,
+        "description": "GIRO RECURSOS OPERACI\u00d3N DERSA 09112022"
+    },
+    {
+        "id": "0a54e69b-57c0-42c6-b7f0-5a408f5927a5",
+        "dId": 10253,
+        "date": "2022-11-11",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 69950940.0,
+        "description": "GIRO OPERACI\u00d3N DERSA 09112022"
+    },
+    {
+        "id": "4945577c-fca5-44fc-a852-d9d2bbb550d0",
+        "dId": 10254,
+        "date": "2022-11-16",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 135268837.0,
+        "description": "GIRO OPERACI\u00d3N BIOTRADE-DERSA 862"
+    },
+    {
+        "id": "80e402a0-c65f-49c8-98fd-87f388fe4704",
+        "dId": 10255,
+        "date": "2022-11-22",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 438941592.0,
+        "description": "GIRO OPERACI\u00d3N 868  D1"
+    },
+    {
+        "id": "7b9199a9-c87e-4a2f-b7f4-2c27a192e4e7",
+        "dId": 10256,
+        "date": "2022-11-23",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 259713212.0,
+        "description": "GIRO OP 870 BIOTRADE-DERSA"
+    },
+    {
+        "id": "456299b7-0821-4ee1-b878-bdc95882fc0f",
+        "dId": 10257,
+        "date": "2022-11-29",
+        "client": 901319693,
+        "account": 2022543123.0,
+        "amount": 19050660.0,
+        "description": "TRASLADO CUENTA DE CAMILA RIOS PARA RL GROUP"
+    },
+    {
+        "id": "fc0f015c-3d97-49f1-8cdc-58ab4056d7ca",
+        "dId": 10258,
+        "date": "2022-11-30",
+        "client": 901319693,
+        "account": 2022543123.0,
+        "amount": 43549986.0,
+        "description": "TRASLADO CUENTA DE CAMILA RIOS PARA RL GROUP"
+    },
+    {
+        "id": "4cf96796-e92c-4a0f-9198-3415b6811af9",
+        "dId": 10259,
+        "date": "2022-11-30",
+        "client": 901319693,
+        "account": 2022543123.0,
+        "amount": 18092374.0,
+        "description": "TRASLADO RL GROUP"
+    },
+    {
+        "id": "bef70c41-e01f-485f-9c6e-246e275b63f3",
+        "dId": 10260,
+        "date": "2022-12-01",
+        "client": 901323336,
+        "account": 2022579010.0,
+        "amount": 2500000000.0,
+        "description": "GIRO INVERSION PETROMIL"
+    },
+    {
+        "id": "da74ff9e-7b12-45bf-bf00-ddcfb72ce655",
+        "dId": 10261,
+        "date": "2022-12-01",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 335739489.0,
+        "description": "GIRO OPERACI\u00d3N DERSA 30112022"
+    },
+    {
+        "id": "4b58ee76-147e-4cd9-a163-26aefa887471",
+        "dId": 10262,
+        "date": "2022-11-30",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 300000000.0,
+        "description": "PRESTAMO MOTOFUTURO"
+    },
+    {
+        "id": "ca66fa59-c2f4-4a65-a17d-106f2a6df924",
+        "dId": 10263,
+        "date": "2022-11-30",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 161713540.0,
+        "description": "AJUSTE MES OCTUBRE"
+    },
+    {
+        "id": "1f04438f-690e-44e3-8302-2a49e5528497",
+        "dId": 10264,
+        "date": "2022-12-07",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 586925.0,
+        "description": "GIRO OPERACI\u00d3N ATENTO"
+    },
+    {
+        "id": "b4bf2dad-ff18-404b-a727-3e9e477b2095",
+        "dId": 10265,
+        "date": "2022-12-09",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 135604185.0,
+        "description": "GIRO OPERACI\u00d3N DERSA"
+    },
+    {
+        "id": "f3d1ae9e-8c9b-4d5d-a7cc-30d8cf876da1",
+        "dId": 10266,
+        "date": "2022-12-16",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 120000000.0,
+        "description": "OPERACI\u00d3N DERSA 897"
+    },
+    {
+        "id": "b2fd792c-1c68-4ec6-a019-ec82c215fa7b",
+        "dId": 10267,
+        "date": "2022-12-19",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 374245591.0,
+        "description": "OPERACI\u00d3N 897 DERSA"
+    },
+    {
+        "id": "026fce7a-0a8e-4f07-89b8-a5cc665d7b01",
+        "dId": 10268,
+        "date": "2022-12-21",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 15000000.0,
+        "description": "PRESTAMO MAYERLY MEDINA"
+    },
+    {
+        "id": "a7fe8c18-e78c-481b-83fd-e1b82e75dac0",
+        "dId": 10269,
+        "date": "2022-12-23",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 150000000.0,
+        "description": "PRESTAMO MOTOFUTURO"
+    },
+    {
+        "id": "394feb6d-88c1-4df0-8c3e-ad894465e843",
+        "dId": 10270,
+        "date": "2022-12-23",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 30000000.0,
+        "description": "PRESTAMO MOTOFUTURO"
+    },
+    {
+        "id": "6bf72051-be35-4fe9-bd83-832a90838367",
+        "dId": 10271,
+        "date": "2022-12-23",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 30000000.0,
+        "description": "PRESTAMO MAYERLY MEDINA"
+    },
+    {
+        "id": "5050ed66-0141-4762-a2bb-33e368db6a77",
+        "dId": 10272,
+        "date": "2022-12-27",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 70000000.0,
+        "description": "PRESTAMO MOTOFUTURO"
+    },
+    {
+        "id": "a5e9d170-59ea-4afa-a3f9-059b4adac615",
+        "dId": 10273,
+        "date": "2022-12-27",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 366807718.0,
+        "description": "GIRO OPERACI\u00d3N DERSA 26122022"
+    },
+    {
+        "id": "cfb75606-b3a6-4ffb-93dd-a636fd4d0859",
+        "dId": 10274,
+        "date": "2022-12-28",
+        "client": 900032888,
+        "account": 2022125264.0,
+        "amount": 985000000.0,
+        "description": "INIVERSION INICIAL"
+    },
+    {
+        "id": "b9bba618-83f8-4eea-8b42-aca3f99f4cf7",
+        "dId": 10275,
+        "date": "2022-12-28",
+        "client": 900032888,
+        "account": 2022125264.0,
+        "amount": 1015000000.0,
+        "description": "INVERSION INICIAL"
+    },
+    {
+        "id": "c80f6f46-b953-4ede-aff8-0c59ed572b1e",
+        "dId": 10278,
+        "date": "2022-12-28",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 94000000.0,
+        "description": ""
+    },
+    {
+        "id": "f6ced29b-f2c8-4d78-9cdd-4ff9b43153ca",
+        "dId": 10279,
+        "date": "2022-12-29",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 141540689.0,
+        "description": "GIRO OPERACI\u00d3N CLARO"
+    },
+    {
+        "id": "b2d94b19-b00c-4a59-bfd2-63717286302e",
+        "dId": 10280,
+        "date": "2023-01-04",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 30000000.0,
+        "description": "PRESTAMO MAYERLY MEDINA-ANDRES RUIZ"
+    },
+    {
+        "id": "0e663ac1-5310-45b8-b5ca-297d0b91e279",
+        "dId": 10281,
+        "date": "2023-01-04",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 100000000.0,
+        "description": "PRESTAMOS MOTOFUTURO"
+    },
+    {
+        "id": "4daf0eee-f240-4c46-a181-95830246c577",
+        "dId": 10282,
+        "date": "2023-01-10",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 150000000.0,
+        "description": "TRASLADO INTERNO EGT"
+    },
+    {
+        "id": "da808138-e8f9-4560-a509-563274696ded",
+        "dId": 10283,
+        "date": "2023-01-13",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 383625326.0,
+        "description": "GIRO OPERACI\u00d3N DERSA 11012023"
+    },
+    {
+        "id": "1db023db-86ad-4f9f-9d0a-1102820a6f50",
+        "dId": 10284,
+        "date": "2023-01-25",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 340666528.0,
+        "description": "GIRO OPERACI\u00d3N DERSA 943-944"
+    },
+    {
+        "id": "2a4991e9-3f7a-4ec4-b7d6-ffdcd0d6d8f0",
+        "dId": 10285,
+        "date": "2023-01-27",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 420210643.0,
+        "description": "GIRO OPERACI\u00d3N CLARO"
+    },
+    {
+        "id": "da771392-d431-49d1-af4b-4679a46292f8",
+        "dId": 10286,
+        "date": "2023-01-31",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 263531454.0,
+        "description": "GIRO OPERACIONES D1 27012023"
+    },
+    {
+        "id": "3edde413-204a-4277-93c9-99b40bdd382c",
+        "dId": 10287,
+        "date": "2023-02-03",
+        "client": 901323336,
+        "account": 2022579010.0,
+        "amount": 2500000000.0,
+        "description": "GIRO PETROMIL"
+    },
+    {
+        "id": "d41a56dc-4f96-42eb-988c-e0d185414132",
+        "dId": 10288,
+        "date": "2023-02-02",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 5280144.0,
+        "description": "GIRO OPERACI\u00d3N ATENTO"
+    },
+    {
+        "id": "05bfc178-0297-43ee-9940-8a9189953d6f",
+        "dId": 10289,
+        "date": "2023-02-09",
+        "client": 19445601,
+        "account": 2022556362.0,
+        "amount": 1728807000.0,
+        "description": "GIRO REALIZADO CUENTA ITAU"
+    },
+    {
+        "id": "a30f16b7-a309-41e4-b760-358218fbbc48",
+        "dId": 10290,
+        "date": "2023-02-11",
+        "client": 900518285,
+        "account": 2022518509.0,
+        "amount": 17868000.0,
+        "description": "GIRO CUENTA SECUNDARIA PRONUS"
+    },
+    {
+        "id": "93af3953-7ea1-4745-9570-836ce83a2197",
+        "dId": 10291,
+        "date": "2023-02-16",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 39662548.0,
+        "description": "PAGO PRESTAMO MOTOFUTURO-PLANILLA"
+    },
+    {
+        "id": "162189f5-03d9-43c8-a997-cc1b6b37c2ae",
+        "dId": 10292,
+        "date": "2023-02-22",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 0.0,
+        "description": "PAGO PRESTAMO MOTOFUTURO"
+    },
+    {
+        "id": "dc4d8dac-173b-4e7f-b1c9-fb748ed883c2",
+        "dId": 10292,
+        "date": "2023-02-22",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 140000000.0,
+        "description": "PAGO PRESTAMO MOTOFUTURO"
+    },
+    {
+        "id": "3acdc28c-fe2e-4cab-b449-2f297831413c",
+        "dId": 10293,
+        "date": "2023-02-28",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 100000000.0,
+        "description": "PAGO PRESTAMOS MOTOFUTURO"
+    },
+    {
+        "id": "97be0e6c-2ea8-4113-a9e8-f54eca5ae1a5",
+        "dId": 10294,
+        "date": "2023-03-08",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 70000000.0,
+        "description": "PAGO MOTOFUTURO"
+    },
+    {
+        "id": "420741f2-461c-499e-b666-dd5a105149da",
+        "dId": 10295,
+        "date": "2023-03-13",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 10000000.0,
+        "description": "GIRO GARCIA-MAYERLY MEDINA"
+    },
+    {
+        "id": "3385d101-c6ef-4fa6-b5ad-8cb4de9675ad",
+        "dId": 10296,
+        "date": "2023-03-15",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 40000000.0,
+        "description": "PAGO PRESTAMO MOTOFUTURO"
+    },
+    {
+        "id": "e8eba9c4-5cf4-457f-9334-1ef82c8fc39c",
+        "dId": 10297,
+        "date": "2023-03-21",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 55000000.0,
+        "description": "PAGO PRESTAMO MOTOFUTURO"
+    },
+    {
+        "id": "889b7e3a-50e1-4195-82b9-1ca250ff79ec",
+        "dId": 10298,
+        "date": "2023-03-24",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 126795077.0,
+        "description": "GIRO OPERACI\u00d3N DERSA"
+    },
+    {
+        "id": "0a3b1d22-26c3-4fa9-bf6a-da522438820d",
+        "dId": 10299,
+        "date": "2023-04-12",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 226268914.0,
+        "description": "GIRO OPERACI\u00d3N ATENTO"
+    },
+    {
+        "id": "b4c83699-4e24-4a8b-baa1-e3427bb85d09",
+        "dId": 10300,
+        "date": "2023-04-25",
+        "client": 900518285,
+        "account": 2022518509.0,
+        "amount": 17000000.0,
+        "description": "GIRO CUENTA PRONUS SECUNDARIA"
+    },
+    {
+        "id": "90bd1319-6f64-420a-b4d6-3b99a3177389",
+        "dId": 10301,
+        "date": "2023-04-28",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 20000000.0,
+        "description": "MAYERLY MEDINA"
+    },
+    {
+        "id": "40cbba4d-90a1-4f17-82e3-c48a88d8e2b3",
+        "dId": 10302,
+        "date": "2023-04-28",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 130000000.0,
+        "description": "PAGO PRESTAMO MOTOFUTURO"
+    },
+    {
+        "id": "13f4d037-c878-4e13-81ad-ddcbcb67bdcd",
+        "dId": 10303,
+        "date": "2023-04-28",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 12833300.0,
+        "description": "MOTOFUTURO PLANILLAS"
+    },
+    {
+        "id": "d79d74ca-09b5-4e92-b619-721086f10ec2",
+        "dId": 10304,
+        "date": "2023-05-02",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 150000000.0,
+        "description": "PAGO PRESTAMO MOTOFUTURO"
+    },
+    {
+        "id": "92cf034f-c5fe-40eb-afcd-464dca58ae5a",
+        "dId": 10305,
+        "date": "2023-05-03",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 10000000.0,
+        "description": "GIRO MAYERLY MEDINA"
+    },
+    {
+        "id": "895f4671-e06e-4b58-95cf-908e801a99ae",
+        "dId": 10306,
+        "date": "2023-05-19",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 230771485.0,
+        "description": "GIRO OPERACI\u00d3N DERSA"
+    },
+    {
+        "id": "d7db7f70-19e6-462d-b21e-bed655b745ca",
+        "dId": 10307,
+        "date": "2023-05-30",
+        "client": 1088270382,
+        "account": 2022106644.0,
+        "amount": 5000000.0,
+        "description": "GIRO CUENTA BANCARIA"
+    },
+    {
+        "id": "f1bed7c6-57ce-45fc-9a4a-4c627dc22bc0",
+        "dId": 10308,
+        "date": "2023-05-31",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 138810275.0,
+        "description": "GIRO OPERACI\u00d3N BIMBO"
+    },
+    {
+        "id": "736e344c-f164-4a42-abc4-4b3a431e2740",
+        "dId": 10309,
+        "date": "2023-05-31",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 409065834.0,
+        "description": "GIRO OPERACI\u00d3N CLARO"
+    },
+    {
+        "id": "5e02f5e8-f02e-46b2-8f37-8932c6ff187e",
+        "dId": 10310,
+        "date": "2023-06-02",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 33062227.0,
+        "description": "GIRO OPERACI\u00d3N DERSA"
+    },
+    {
+        "id": "648804ff-2f51-408b-b3a5-40e8d07ff67c",
+        "dId": 10311,
+        "date": "2023-06-02",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 16000000.0,
+        "description": "GIRO MMO"
+    },
+    {
+        "id": "4487801f-14a5-4335-b4b2-076bddc1f55d",
+        "dId": 10312,
+        "date": "2023-06-06",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 100000000.0,
+        "description": "GIRO MOTOFUTURO"
+    },
+    {
+        "id": "00ebd2c2-3259-4c98-a82b-66e4c15a7f41",
+        "dId": 10314,
+        "date": "2023-06-08",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 509094131.0,
+        "description": "OPERACI\u00d3N BIOTRADE-DERSA"
+    },
+    {
+        "id": "c48480f5-a3d2-46cb-be63-380bec8111c1",
+        "dId": 10315,
+        "date": "2023-06-16",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 5387470.0,
+        "description": "OPERACI\u00d3N BIMBO"
+    },
+    {
+        "id": "fb42a83a-8c7d-49f3-a223-5eea4a09a883",
+        "dId": 10316,
+        "date": "2023-06-16",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 17000000.0,
+        "description": "ABONO PRESTAMO MOTOFUTURO"
+    },
+    {
+        "id": "2effad86-a5a2-4538-aa5f-f3fa99d8b9aa",
+        "dId": 10317,
+        "date": "2023-06-16",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 95000000.0,
+        "description": "ABONO PRESTAMOS MOTOFUTURO"
+    },
+    {
+        "id": "2d2423c3-ef49-4753-a47b-dbf9b5ce3f67",
+        "dId": 10318,
+        "date": "2023-06-20",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 60000000.0,
+        "description": "ABONO PRESTAMO MOTOFUTURO"
+    },
+    {
+        "id": "9c2009c4-d914-40c6-980d-8f91506010e6",
+        "dId": 10319,
+        "date": "2023-06-23",
+        "client": 86061597,
+        "account": 2023634156.0,
+        "amount": 350000000.0,
+        "description": "GIRO CUENTA BANCOLOMBIA"
+    },
+    {
+        "id": "6a4d9d2c-b8f1-4bb0-881c-d4a408ec6e97",
+        "dId": 10320,
+        "date": "2023-06-23",
+        "client": 901319693,
+        "account": 2022543123.0,
+        "amount": 500000000.0,
+        "description": "GIRO CUENTA BANCOLOMBIA"
+    },
+    {
+        "id": "eaf6724e-3f25-43bd-90e3-9ada7132c214",
+        "dId": 10321,
+        "date": "2023-06-26",
+        "client": 900518285,
+        "account": 2023666444.0,
+        "amount": 9679053.0,
+        "description": "TRASLADO CUENTA SECUNDARIA"
+    },
+    {
+        "id": "aa217f51-81eb-425b-862c-7f4d4248605a",
+        "dId": 10322,
+        "date": "2023-06-26",
+        "client": 900518285,
+        "account": 2023652674.0,
+        "amount": 26655610.0,
+        "description": "TRASLADO CUENTA SECUNDARIA"
+    },
+    {
+        "id": "bc3c4703-d098-4930-a876-5c5093d57808",
+        "dId": 10323,
+        "date": "2023-06-26",
+        "client": 900518285,
+        "account": 2023671979.0,
+        "amount": 22399485.0,
+        "description": "TRASLADO CUENTA SECUNDARIA"
+    },
+    {
+        "id": "0bce0ad3-a4d3-4af3-8164-0fce3d918cf1",
+        "dId": 10324,
+        "date": "2023-06-26",
+        "client": 20616539,
+        "account": 2023633165.0,
+        "amount": 500000000.0,
+        "description": "GIRO CUENTA BANCOLOMBIA"
+    },
+    {
+        "id": "e27c2b32-1507-4666-bfc7-c830752163b4",
+        "dId": 10325,
+        "date": "2023-06-27",
+        "client": 900884741,
+        "account": 2022513628.0,
+        "amount": 135386905.0,
+        "description": "OPERACI\u00d3N BIMBO"
+    },
+    {
+        "id": "b4dcd845-6505-4bd5-a8ae-8b0a9f114327",
+        "dId": 10326,
+        "date": "2023-06-27",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 100000000.0,
+        "description": "ABONO MOTOFUTURO"
+    },
+    {
+        "id": "cb12f537-c65c-414d-967f-072ef948a8d0",
+        "dId": 10327,
+        "date": "2023-06-28",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 49000000.0,
+        "description": "PAGO INTERBANC FERNANDEZ PARRA"
+    },
+    {
+        "id": "720cde2e-e554-4f72-9a7d-0e3b75f77f89",
+        "dId": 10328,
+        "date": "2023-06-28",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 50000000.0,
+        "description": "GIRO LAURA HERRERA"
+    },
+    {
+        "id": "da69d775-fa9c-4af7-838b-2de845b64e14",
+        "dId": 10329,
+        "date": "2023-06-28",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 77000000.0,
+        "description": "GIRO LAURA HERRERA"
+    },
+    {
+        "id": "9d36523b-b4ed-45d9-b25e-28684f99aef7",
+        "dId": 10330,
+        "date": "2023-06-29",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 15400000.0,
+        "description": "GIRO LAURA HERNANDEZ"
+    },
+    {
+        "id": "b2d546cd-0e70-48dc-ac3c-c9ee7cf8bd51",
+        "dId": 10331,
+        "date": "2023-06-29",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 20000000.0,
+        "description": "PRESTAMO \u00c9XITO 77"
+    },
+    {
+        "id": "892e86f5-cc7c-441c-a696-a0530ee9c8b5",
+        "dId": 10332,
+        "date": "2023-06-29",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 2600000.0,
+        "description": "GIRO FERNANDEZ PARRA"
+    },
+    {
+        "id": "d01ab3b7-0c48-43f9-8765-4fd3f3d71979",
+        "dId": 10333,
+        "date": "2023-06-29",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 26000000.0,
+        "description": "PRESTAMO \u00c9XITO 77"
+    },
+    {
+        "id": "85425f69-a051-4570-bd50-cb5f514cce16",
+        "dId": 10334,
+        "date": "2023-06-29",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 30000000.0,
+        "description": "GIRO PRESTAMO \u00c9XITO 77"
+    },
+    {
+        "id": "7ec107a1-8293-46ae-9d1c-3f9641be18b9",
+        "dId": 10335,
+        "date": "2023-06-30",
+        "client": 901387221,
+        "account": 2022586957.0,
+        "amount": 320000000.0,
+        "description": "GIRO CUENTA BANCOLOMBIA"
+    },
+    {
+        "id": "3cff594b-dafa-40e4-baef-477402bc5c20",
+        "dId": 10336,
+        "date": "2023-06-30",
+        "client": 901333444,
+        "account": 2022573239.0,
+        "amount": 28000000.0,
+        "description": "ABONO PRESTAMO MOTOFUTURO"
+    }
+]

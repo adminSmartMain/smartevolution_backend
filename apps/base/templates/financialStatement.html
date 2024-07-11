@@ -1,0 +1,452 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resumen de Indicadores Financieros</title>
+<style type="text/css">
+
+body {
+  background: #ffffff;
+  min-width: 20cm;
+}
+
+page {
+  background: white;
+  margin: 0 auto;
+  margin-bottom: 0.5cm;
+  box-shadow: 0 0 0.5cm rgba(0,0,0,0.5);
+}
+
+page[size="A3"] {  
+  width: 29.7cm;
+  height: 42cm; 
+} 
+
+ @media print {
+  body, page {
+    margin: 0cm;
+    box-shadow: 0;
+  }
+} 
+
+.wrapper {
+		width: 100%;
+		table-layout: fixed;
+		background-color: #ffffff;
+	}
+
+.main {
+		background-color: #ffffff;
+		margin: auto;
+		width: 100%;
+		max-width: 29.7cm;
+		border-spacing: 0;
+		font-family: sans-serif;
+		color: #4a4a4a;
+        font-size: 12px;
+
+	}
+
+.subtitulos {
+    font-weight: bold;
+    font-size: 18px;
+    color: #45546A;
+    vertical-align: top;
+    text-align: left; 
+    margin-bottom: 15px;  
+}
+
+.etiquetas {
+    color: #45546A;
+    font-weight: bold;
+}
+
+.datos {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.b2 {
+    background-color: #ffffff;
+    text-align: left;
+    line-height: 20px;
+}
+
+.contenedor-columnas {
+    text-align: center;
+    vertical-align: top;
+}
+
+
+.tables-headers {
+    background-color: #45546A;
+    color: #ffffff;
+    font-weight: bold;
+    text-align: center;    
+
+}
+
+.tables-body {
+    text-align: center;
+    border-spacing: 1px;
+}
+
+.tables-body tr:nth-child(even) {
+    background: #f2f2f2;
+
+}
+
+	</style>
+</head>
+
+<body>
+
+    <center class="wrapper">
+
+        <table class="main" width="100%" style="padding: 20px; margin: auto;">
+
+<!-- TITULO -->
+
+        <tr>
+             <td height="50px" style="background-color: #45546A; color:#ffffff; font-size: 24px; text-align: center;"><strong>Resumen de Indicadores Financieros</strong></td>
+         </tr>
+
+
+<!-- DATOS CLIENTE -->           
+
+         <tr>
+            <td class="b2">
+                <table width="100%" style="margin: 50px 0 30px;">
+                    <caption class="subtitulos">Datos Generales del Cliente</caption>
+                    <tr>
+                        <td class ="etiquetas" width="15%">Nombre del Cliente
+                        </td>
+                        <td class ="datos" width="85%">{{client}}</td>
+                    </tr>
+                    <tr>
+                        <td class = "etiquetas" width="15%">Nro. Identificación
+                        </td>
+                        <td class ="datos" width="85%">{{document}}</td>
+                    </tr>
+                    <tr>
+                        <td class = "etiquetas" width="15%">Actividad
+                        </td>
+                        <td class ="datos" width="85%">{{activity}}</td>
+                    </tr>
+                </table>
+            </td>
+         </tr>
+
+
+<!-- INDICADORES DE ACTIVIDAD/EFICIENCIA -->  
+
+<tr>
+    <td>
+        <table width="100%" style="margin: 30px 0 30px;">
+            <tr>
+                <td class="contenedor-columnas" width="40%">
+                    
+                    <table class="tables-body" width="100%">
+                        <caption class="subtitulos">Indicadores de Actvidad/Eficiencia</caption>
+                        <tr class="tables-headers">
+                            <th>Indicador</th>
+                            <th>{{indicators.activityEfficiency.period_3.period | stringformat:"i"}}</th>
+                            <th>{{indicators.activityEfficiency.period_2.period | stringformat:"i"}}</th>
+                            <th>{{indicators.activityEfficiency.period_1.period | stringformat:"i"}}</th>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Rotación Cartera</td>
+                            <td>{{indicators.activityEfficiency.period_3.walletRotation}}</td>
+                            <td>{{indicators.activityEfficiency.period_2.walletRotation}}</td>
+                            <td>{{indicators.activityEfficiency.period_1.walletRotation}}</td>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Rotación Inventario</td>
+                            <td>{{indicators.activityEfficiency.period_3.inventoryRotation}}</td>
+                            <td>{{indicators.activityEfficiency.period_2.inventoryRotation}}</td>
+                            <td>{{indicators.activityEfficiency.period_1.inventoryRotation}}</td>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Ciclo Operacional</td>
+                            <td>{{indicators.activityEfficiency.period_3.operationalCycle}}</td>
+                            <td>{{indicators.activityEfficiency.period_2.operationalCycle}}</td>
+                            <td>{{indicators.activityEfficiency.period_1.operationalCycle}}</td>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Rotación Proveedores</td>
+                            <td>{{indicators.activityEfficiency.period_3.providersRotation}}</td>
+                            <td>{{indicators.activityEfficiency.period_2.providersRotation}}</td>
+                            <td>{{indicators.activityEfficiency.period_1.providersRotation}}</td>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Rotación Gastos Acumulados</td>
+                            <td>{{indicators.activityEfficiency.period_3.accumulatedExpensesRotation}}</td>
+                            <td>{{indicators.activityEfficiency.period_2.accumulatedExpensesRotation}}</td>
+                            <td>{{indicators.activityEfficiency.period_1.accumulatedExpensesRotation}}</td>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Ciclo Conversión de Efectivo</td>
+                            <td>{{indicators.activityEfficiency.period_3.cashConversionCycle}}</td>
+                            <td>{{indicators.activityEfficiency.period_2.cashConversionCycle}}</td>
+                            <td>{{indicators.activityEfficiency.period_1.cashConversionCycle}}</td>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Rotación Activos</td>
+                            <td>{{indicators.activityEfficiency.period_3.assetsRotation}}</td>
+                            <td>{{indicators.activityEfficiency.period_2.assetsRotation}}</td>
+                            <td>{{indicators.activityEfficiency.period_1.assetsRotation}}</td>
+                        </tr>
+
+                    </table>
+
+                </td>
+
+                <td class="columna" width="60%" style="text-align: center; height: 250px;">
+                    Graficos
+                </td>
+
+            </tr>
+        </table>
+    </td>
+ </tr>
+
+ <!-- INDICADORES DE RENTABILIDAD -->  
+
+<tr>
+    <td>
+        <table width="100%" style="margin: 30px 0 30px; vertical-align: top;">
+            <tr>
+                <td class="contenedor-columnas" width="40%">
+                    
+                    <table class="tables-body" width="100%">
+                        <caption class="subtitulos">Indicadores de Rentabilidad</caption>
+                        <tr class="tables-headers">
+                            <th>Indicador</th>
+                            <th>{{indicators.rentability.period_3.period | stringformat:"i"}}</th>
+                            <th>{{indicators.rentability.period_2.period | stringformat:"i"}}</th>
+                            <th>{{indicators.rentability.period_1.period | stringformat:"i"}}</th>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Margen Bruto</td>
+                            <th>{{indicators.rentability.period_3.grossMargin}}</th>
+                            <th>{{indicators.rentability.period_2.grossMargin}}</th>
+                            <th>{{indicators.rentability.period_1.grossMargin}}</th>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Margen Operacional</td>
+                            <th>{{indicators.rentability.period_3.operationalMargin}}</th>
+                            <th>{{indicators.rentability.period_2.operationalMargin}}</th>
+                            <th>{{indicators.rentability.period_1.operationalMargin}}</th>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">EBITDA</td>
+                            <th>{{indicators.rentability.period_3.EBITDA}}</th>
+                            <th>{{indicators.rentability.period_2.EBITDA}}</th>
+                            <th>{{indicators.rentability.period_1.EBITDA}}</th>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Margen EBITDA</td>
+                            <th>{{indicators.rentability.period_3.EBITDAMargin}}</th>
+                            <th>{{indicators.rentability.period_2.EBITDAMargin}}</th>
+                            <th>{{indicators.rentability.period_1.EBITDAMargin}}</th>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Margen Neto</td>
+                            <th>{{indicators.rentability.period_3.netMargin}}</th>
+                            <th>{{indicators.rentability.period_2.netMargin}}</th>
+                            <th>{{indicators.rentability.period_1.netMargin}}</th>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Rentabilidad del Activo Total</td>
+                            <th>{{indicators.rentability.period_3.rentabilityTotalAssets}}</th>
+                            <th>{{indicators.rentability.period_2.rentabilityTotalAssets}}</th>
+                            <th>{{indicators.rentability.period_1.rentabilityTotalAssets}}</th>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Rentabilidad del Patrimonio</td>
+                            <th>{{indicators.rentability.period_3.patrimonyRentability}}</th>
+                            <th>{{indicators.rentability.period_2.patrimonyRentability}}</th>
+                            <th>{{indicators.rentability.period_1.patrimonyRentability}}</th>
+                        </tr>
+
+                    </table>
+
+                </td>
+
+                <td width="60%" style="text-align: center; height: 250px;">
+                    Graficos
+                </td>
+
+            </tr>
+        </table>
+    </td>
+ </tr>
+
+
+<!-- INDICADORES DE RIESGO FINANCIERO -->  
+
+</div>
+<tr style="margin-top:10px">
+    <td>
+        <table width="100%" style="margin: 500px 0px 30px 0px;">
+            <tr>
+                <td class="contenedor-columnas" width="40%">
+                    
+                    <table class="tables-body" width="100%">
+                        <caption class="subtitulos" style="margin-top: 30px !important;">Indicadores de Riesgo Financiero</caption>
+                        <tr class="tables-headers">
+                            <th>Indicador</th>
+                            <th>{{indicators.financialRisk.period_3.period | stringformat:"i"}}</th>
+                            <th>{{indicators.financialRisk.period_2.period | stringformat:"i"}}</th>
+                            <th>{{indicators.financialRisk.period_1.period | stringformat:"i"}}</th>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Razón Corriente</td>
+                            <th>{{indicators.financialRisk.period_3.currentReason}}</th>
+                            <th>{{indicators.financialRisk.period_2.currentReason}}</th>
+                            <th>{{indicators.financialRisk.period_1.currentReason}}</th>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Capital de Trabajo</td>
+                            <th>{{indicators.financialRisk.period_3.workingCapital}}</th>
+                            <th>{{indicators.financialRisk.period_2.workingCapital}}</th>
+                            <th>{{indicators.financialRisk.period_1.workingCapital}}</th>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Endeudamiento</td>
+                            <th>{{indicators.financialRisk.period_3.debt}}</th>
+                            <th>{{indicators.financialRisk.period_2.debt}}</th>
+                            <th>{{indicators.financialRisk.period_1.debt}}</th>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Costo Prom. Deuda Financiera</td>
+                            <th>{{indicators.financialRisk.period_3.avgFinancialDebt}}</th>
+                            <th>{{indicators.financialRisk.period_2.avgFinancialDebt}}</th>
+                            <th>{{indicators.financialRisk.period_1.avgFinancialDebt}}</th>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Deuda Financiera / EBITDA</td>
+                            <th>{{indicators.financialRisk.period_3.financialDebt_EBITDA}}</th>
+                            <th>{{indicators.financialRisk.period_2.financialDebt_EBITDA}}</th>
+                            <th>{{indicators.financialRisk.period_1.financialDebt_EBITDA}}</th>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">EBITDA / Gastos Financieros</td>
+                            <th>{{indicators.financialRisk.period_3.EBITDA_financialExpenses}}</th>
+                            <th>{{indicators.financialRisk.period_2.EBITDA_financialExpenses}}</th>
+                            <th>{{indicators.financialRisk.period_1.EBITDA_financialExpenses}}</th>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">EBITDA / Serv. de la Deuda</td>
+                            <th>{{indicators.financialRisk.period_3.EBITDA_debtServices}}</th>
+                            <th>{{indicators.financialRisk.period_2.EBITDA_debtServices}}</th>
+                            <th>{{indicators.financialRisk.period_1.EBITDA_debtServices}}</th>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Pagado + Prima / Patrimonio</td>
+                            <th>{{indicators.financialRisk.period_3.payedCapital_prim_totalPatrimony}}</th>
+                            <th>{{indicators.financialRisk.period_2.payedCapital_prim_totalPatrimony}}</th>
+                            <th>{{indicators.financialRisk.period_1.payedCapital_prim_totalPatrimony}}</th>
+                        </tr>
+
+                    </table>
+
+                </td>
+
+                <td width="60%" style="text-align: center; height: 250px;">
+                    Graficos
+                </td>
+
+            </tr>
+        </table>
+    </td>
+ </tr>
+
+<!-- INDICADORES DE RESULTADO -->  
+
+<tr>
+    <td>
+        <table width="100%" style="margin: 30px 0 30px;">
+            <tr>
+                <td class="contenedor-columnas" width="40%">
+                    
+                    <table class="tables-body" width="100%">
+                        <caption class="subtitulos">Indicadores de Resultado</caption>
+                        <tr class="tables-headers">
+                            <th>Indicador</th>
+                            <th>{{indicators.results.period_3.period | stringformat:"i"}}</th>
+                            <th>{{indicators.results.period_2.period | stringformat:"i"}}</th>
+                            <th>{{indicators.results.period_1.period | stringformat:"i"}}</th>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Ventas</td>
+                            <th>{{indicators.results.period_3.sales}}</th>
+                            <th>{{indicators.results.period_2.sales}}</th>
+                            <th>{{indicators.results.period_1.sales}}</th>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Facturación Prom. Mes</td>
+                            <th>{{indicators.results.period_3.avgMonthBilling}}</th>
+                            <th>{{indicators.results.period_2.avgMonthBilling}}</th>
+                            <th>{{indicators.results.period_1.avgMonthBilling}}</th>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">% Descuentos y Rebajas / Ventas%</td>
+                            <th>{{indicators.results.period_3.discountsSalesRefunds}}</th>
+                            <th>{{indicators.results.period_2.discountsSalesRefunds}}</th>
+                            <th>{{indicators.results.period_1.discountsSalesRefunds}}</th>
+                        </tr>
+
+                        <tr>
+                            <td style="text-align: left; font-weight: bold; padding: 3px 0 3px;">Costo Prom. Deuda Financiera</td>
+                            <th>{{indicators.financialRisk.period_3.avgFinancialDebt}}</th>
+                            <th>{{indicators.financialRisk.period_2.avgFinancialDebt}}</th>
+                            <th>{{indicators.financialRisk.period_1.avgFinancialDebt}}</th>
+                        </tr>
+
+                    </table>
+
+                </td>
+
+                <td width="60%" style="text-align: center; height: 250px;">
+                    Graficos
+                </td>
+
+            </tr>
+        </table>
+    </td>
+ </tr>
+
+        </table>
+
+</center>
+</body>
+
+</html>

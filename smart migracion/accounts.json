@@ -1,0 +1,338 @@
+[
+  {
+    "id": "b3e9fd3e-8f50-4984-ba80-7eafe3c981f9",
+    "client": 900518285,
+    "account_number": 2023652674,
+    "primary": false,
+    "state": true,
+    "observations": "CUENTA DE EMILIO ZEA"
+  },
+  {
+    "id": "7b636839-288c-4331-ae21-b5f2b62f2e77",
+    "client": 35360125,
+    "account_number": 2023656362,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "2b8002ef-4af1-40fc-ab56-ad01e44e3fb0",
+    "client": 20616539,
+    "account_number": 2023633165,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "f76b00d5-a70d-4c74-95e9-a649c211ea12",
+    "client": 86061597,
+    "account_number": 2023634156,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "78d43ceb-99d6-4bd3-b4b9-cc9f0d778eab",
+    "client": 900518285,
+    "account_number": 2023671979,
+    "primary": false,
+    "state": true,
+    "observations": "CUENTA DE IGNACIO ZEA"
+  },
+  {
+    "id": "093d868c-b224-4fd3-995c-ec9f0fb056bf",
+    "client": 16778093,
+    "account_number": 2022566444,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "9ab87a34-3dbf-43f7-898a-534b17283f51",
+    "client": 19106161,
+    "account_number": 2022552674,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "548ebe30-2f3e-4faa-8c2f-f7db9591f39c",
+    "client": 19445601,
+    "account_number": 2022556362,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "45c973f0-7dfc-4592-ac63-d20417a7160f",
+    "client": 20100919,
+    "account_number": 2022533165,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "b5e6501f-62c6-4321-9c02-8f5a4845ba9e",
+    "client": 35462767,
+    "account_number": 2022534156,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "e6c031ea-321b-4a72-b2cf-fcc0f8a09818",
+    "client": 38249027,
+    "account_number": 2022571979,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "82fa897c-7307-4f1e-bdc9-2069ddf5b622",
+    "client": 52255093,
+    "account_number": 2022511121,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "dad0e287-6bbd-4632-9a1f-cb587701092d",
+    "client": 802011972,
+    "account_number": 2022570858,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "12d773fb-a177-469c-b9e0-e2c152511ef9",
+    "client": 830123485,
+    "account_number": 2022575160,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "e6b18cf3-abc9-415d-926a-ff0618532f16",
+    "client": 830125410,
+    "account_number": 2022566723,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "76a6d859-7254-454c-8e34-71df357e3803",
+    "client": 900884741,
+    "account_number": 2022513628,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "f032a76b-dac1-4b94-8ede-f139784a708e",
+    "client": 901319693,
+    "account_number": 2022543123,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "27b77652-7780-48fa-96e7-6d3526f9bbef",
+    "client": 901323336,
+    "account_number": 2022579010,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "8e4cc46c-b370-4102-a9e0-b9e18bb72de7",
+    "client": 901333444,
+    "account_number": 2022573239,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "8563f5da-1b37-40ae-8d47-9ec89aa86a37",
+    "client": 901387221,
+    "account_number": 2022586957,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "8c801cba-1c26-46b7-a68c-8a4f145755b8",
+    "client": 1020768812,
+    "account_number": 2022579716,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "6afdd30e-c6e8-447f-9177-c540f731ca14",
+    "client": 1088270382,
+    "account_number": 2022514499,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "fcfd49f3-0e3f-4fc0-b483-902f3dc4e6b0",
+    "client": 30048894,
+    "account_number": 2022585965,
+    "primary": true,
+    "state": false,
+    "observations": ""
+  },
+  {
+    "id": "e96390ca-291c-4ce5-b5e9-5b2a8416b39c",
+    "client": 42071780,
+    "account_number": 2022539121,
+    "primary": true,
+    "state": false,
+    "observations": ""
+  },
+  {
+    "id": "a3e670eb-66b0-4919-99a6-e35cbf155b18",
+    "client": 65767998,
+    "account_number": 2022551989,
+    "primary": true,
+    "state": false,
+    "observations": ""
+  },
+  {
+    "id": "387ed674-8710-454f-932f-51e76c94a7a0",
+    "client": 74436081,
+    "account_number": 2022571369,
+    "primary": true,
+    "state": false,
+    "observations": ""
+  },
+  {
+    "id": "7615071c-0a06-4485-91e1-be570bc08c15",
+    "client": 79268897,
+    "account_number": 2022514280,
+    "primary": true,
+    "state": false,
+    "observations": ""
+  },
+  {
+    "id": "ee8393d9-143d-48ba-a622-b1bfcb0b23e9",
+    "client": 79456098,
+    "account_number": 2022557397,
+    "primary": true,
+    "state": false,
+    "observations": ""
+  },
+  {
+    "id": "00066b0c-a51f-4888-90cc-0eda8a48a1fa",
+    "client": 80100023,
+    "account_number": 2022547496,
+    "primary": true,
+    "state": false,
+    "observations": ""
+  },
+  {
+    "id": "b866eb5a-bb48-482c-b0bc-0e33436e5acc",
+    "client": 80416264,
+    "account_number": 2022533853,
+    "primary": true,
+    "state": false,
+    "observations": ""
+  },
+  {
+    "id": "db3277bb-c1ec-4e3d-a663-008e0851f3ad",
+    "client": 860076394,
+    "account_number": 2022559816,
+    "primary": true,
+    "state": false,
+    "observations": ""
+  },
+  {
+    "id": "dfeccd5f-b679-4ae5-930a-d03c40cb1a46",
+    "client": 900536206,
+    "account_number": 2022561826,
+    "primary": true,
+    "state": false,
+    "observations": ""
+  },
+  {
+    "id": "514881d5-5780-4954-9a57-aeccd1de090a",
+    "client": 900797325,
+    "account_number": 2022531103,
+    "primary": true,
+    "state": false,
+    "observations": ""
+  },
+  {
+    "id": "12d859db-4cdd-42c8-839e-b31aca1a0c5a",
+    "client": 1121841120,
+    "account_number": 2022532347,
+    "primary": true,
+    "state": false,
+    "observations": ""
+  },
+  {
+    "id": "8972b943-afcd-45d4-b9b0-43eb6156b211",
+    "client": 1121844590,
+    "account_number": 2022576384,
+    "primary": true,
+    "state": false,
+    "observations": ""
+  },
+  {
+    "id": "432c7f89-3412-4677-a65d-bb3e4a9ec6eb",
+    "client": 900518285,
+    "account_number": 2022575968,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "b5a8bc5c-f275-41ca-8a6e-1dd33ac737c8",
+    "client": 900518285,
+    "account_number": 2022518509,
+    "primary": false,
+    "state": false,
+    "observations": "Cuenta hijos"
+  },
+  {
+    "id": "2e187af6-9fec-4c97-bb7e-afd55b8dd864",
+    "client": 800140170,
+    "account_number": 2022539883,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "8efd5b9d-35cf-4564-ae44-366f775eb37b",
+    "client": 1088270382,
+    "account_number": 2022106644,
+    "primary": false,
+    "state": true,
+    "observations": "CUENTA SECUNDARIA LUISA GONZALEZ"
+  },
+  {
+    "id": "698bc3b6-8d45-4e09-938b-bb88a7b3deae",
+    "client": 20100919,
+    "account_number": 2022115267,
+    "primary": false,
+    "state": true,
+    "observations": "CUENTA ANDR\u00c9S"
+  },
+  {
+    "id": "d0b31dea-9f99-41c7-b840-fb041b6598fb",
+    "client": 900032888,
+    "account_number": 2022125264,
+    "primary": true,
+    "state": true,
+    "observations": ""
+  },
+  {
+    "id": "106a42a4-b9f3-4059-a1b2-e24446cf22f5",
+    "client": 900518285,
+    "account_number": 2023666444,
+    "primary": false,
+    "state": true,
+    "observations": "CUENTA DE JOS\u00c9 MARIA ZEA"
+  }
+]

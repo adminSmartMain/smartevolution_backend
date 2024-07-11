@@ -1,0 +1,3184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Calibri;
+    }
+
+    .title {
+      display: flex;
+      flex-direction: row;
+    }
+    .title__img {
+      position: absolute;
+      top: 16px;
+      right: 40px;
+    }
+  </style>
+  <body>
+    {% load humanize %}
+    <div class="title">
+      <div style="height: 20px; width: 270px"></div>
+      <div style="margin-top: 35px">
+        <p style="font-size: 12px; font-weight: bold">
+          FICHA DE CLIENTE - PERSONA JURÍDICA
+        </p>
+      </div>
+      <div>
+        <img
+          class="title__img"
+          src="https://smartevolution.s3.amazonaws.com/assets/Logo+Smart+-+Lite.svg"
+          alt="smart-evolution-logo"
+          width="140px"
+        />
+      </div>
+    </div>
+
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        margin-top: 15px;
+        margin-left: 20px;
+      "
+    >
+      <div
+        style="
+          border: 1px solid black;
+          width: 180px;
+          display: flex;
+          flex-direction: row;
+          padding: 2px;
+        "
+      >
+        <p style="font-size: 10px; font-weight: bold">
+          Fecha Diligenciamiento:
+        </p>
+      <p style="font-size: 10px">{{ created_at|slice:"0:10"}}</p>
+      </div>
+      <div
+        style="
+          border: 1px solid black;
+          width: 180px;
+          display: flex;
+          flex-direction: row;
+          padding: 2px;
+        "
+      >
+        <p style="font-size: 10px; font-weight: bold">Tipo de Vinculación:</p>
+        {% if typeVinculation == 0 %}
+        <p style="font-size: 10px">Emisor</p>
+        {% endif %}
+        {% if typeVinculation == 1 %}
+        <p style="font-size: 10px">Comprador</p>
+        {% endif %}
+        {% if typeVinculation == 2 %}
+        <p style="font-size: 10px">Pagador</p>
+        {% endif %}
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column">
+      <div
+        style="
+          text-align: center;
+          background-color: #2379ae;
+          color: white;
+          border: 0.5px solid black;
+          border-bottom: none;
+          border-left: none;
+          border-right: none;
+          width: 93%;
+          margin-left: 20px;
+          margin-top: 10px;
+        "
+      >
+        <p style="font-size: 12px">DATOS BÁSICOS DEL CLIENTE</p>
+      </div>
+
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 33.3%;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            NOMBRE DE LA EMPRESA:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{companyName}}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 33.3%;
+            border: 1px solid black;
+            border-left: none;
+            border-right: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            NIT:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{nit}}-{{verificationDigit}}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 33.3%;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            FECHA DE CONSTITUCIÓN:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{dateOfConstitution}}
+          </p>
+        </div>
+      </div>
+
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            DOMICILIO PRINCIPAL:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{principalAddress}} - {{city.description}},{{country.name_es}}
+          </p>
+        </div>
+      </div>
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 70%;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            CORREO ELECTRÓNICO:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{email}}
+          </p>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 30%;
+            border: 1px solid black;
+            border-left: none;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            TELÉFONO:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{companyPhone}}
+          </p>
+        </div>
+      </div>
+
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            border: 1px solid black;
+            border-top: none;
+            border-bottom: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            OBJETO SOCIAL:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{ciiu.code}} - {{ciiu.activity.description}}
+          </p>
+        </div>
+      </div>
+
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 70%;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            COBERTURA, SEDES, PRESENCIA EN OTRAS CIUDADES:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{presenceInOtherCities}}
+          </p>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 30%;
+            border: 1px solid black;
+            border-left: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            NÚMERO DE EMPLEADOS (DIRECTOS Y TEMPORALES):
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{numberOfEmployees}}
+          </p>
+        </div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; margin-top: -10px">
+      <div
+        style="
+          text-align: center;
+          background-color: #2379ae;
+          color: white;
+          border: 0.5px solid black;
+          border-bottom: none;
+          border-left: none;
+          border-right: none;
+          width: 93%;
+          margin-left: 20px;
+          margin-top: 10px;
+        "
+      >
+        <p style="font-size: 12px">DATOS DEL REPRESENTANTE LEGAL</p>
+      </div>
+
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 25%;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            NOMBRE DEL REPRESENTANTE LEGAL:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{legalRepresentativeName}} {{legalRepresentativeLastName}}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 25%;
+            border: 1px solid black;
+            border-left: none;
+            border-right: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            NRO. DOCUMENTO DE IDENTIDAD:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{legalRepresentativeTypeDocument.abbreviation}} - {{legalRepresentativeDocumentNumber}}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 25%;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            FECHA DE NACIMIENTO:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{legalRepresentativeBirthDate}}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 25%;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            NACIONALIDAD:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{legalRepresentativeCountry.name_es}}
+          </p>
+        </div>
+      </div>
+      <div
+        style="
+          display: flex;
+          flex-direction: column;
+          width: 93%;
+          border: 1px solid black;
+          border-top: none;
+          margin-left: 20px;
+        "
+      >
+        <p
+          style="
+            font-size: 6px;
+            text-align: left;
+            margin-left: 5px;
+            margin-top: 3px;
+          "
+        >
+          DOMICILIO PRINCIPAL:
+        </p>
+        <p
+          style="
+            font-size: 10px;
+            text-align: left;
+            margin-left: 5px;
+            margin-top: 1px;
+          "
+        >
+          {{legalRepresentativeAddress}}
+        </p>
+      </div>
+
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 70%;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            CORREO ELECTRÓNICO:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{legalRepresentativeEmail}}
+          </p>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 30%;
+            border: 1px solid black;
+            border-left: none;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            TELÉFONO:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{legalRepresentativePhone}}
+          </p>
+        </div>
+      </div>
+
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 60%;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            CARGO:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{legalRepresentativePosition}}
+          </p>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 40%;
+            border: 1px solid black;
+            border-left: none;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            ATRIBUCIONES Y LIMITACIONES:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{attributionsAndLimitations}}
+          </p>
+        </div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; margin-top: -10px">
+      <div
+        style="
+          text-align: center;
+          background-color: #2379ae;
+          color: white;
+          border: 0.5px solid black;
+          border-bottom: none;
+          border-left: none;
+          border-right: none;
+          width: 93%;
+          margin-left: 20px;
+          margin-top: 10px;
+        "
+      >
+        <p style="font-size: 12px">DATOS DE LAS PERSONAS DE CONTACTO</p>
+      </div>
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          height: 60px;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 20%;
+            height: 60px;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            NOMBRE Y APELLIDO:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% for x in legalClientContacts %}
+
+            {{x.name}}
+            <br>
+
+            {% endfor %}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 20%;
+            height: 60px;
+            border: 1px solid black;
+            border-left: none;
+            border-right: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            AREA:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+          {% for x in legalClientContacts %}
+
+          {{x.area}}
+          <br>
+
+          {% endfor %}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 20%;
+            height: 60px;
+            border: 1px solid black;
+            border-right: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            CARGO:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+          {% for x in legalClientContacts %}
+
+          {{x.position}} 
+          <br>
+          {% endfor %}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 20%;
+            height: 60px;
+            border: 1px solid black;
+            border-right: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            TELÉFONO:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+          {% for x in legalClientContacts %}
+
+          {{x.phone}}
+          <br>
+
+          {% endfor %}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 20%;
+            height: 60px;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            CORREO ELECTRÓNICO:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+          {% for x in legalClientContacts %}
+
+          {{x.email}}
+          <br> 
+
+          {% endfor %}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; margin-top: -10px">
+      <div
+        style="
+          text-align: center;
+          background-color: #2379ae;
+          color: white;
+          border: 0.5px solid black;
+          border-bottom: none;
+          border-left: none;
+          border-right: none;
+          width: 93%;
+          margin-left: 20px;
+          margin-top: 10px;
+        "
+      >
+        <p style="font-size: 12px">INFORMACIÓN TRIBUTARIA</p>
+      </div>
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          height: 60px;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 25%;
+            height: 60px;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            GRAN CONTRIBUYENTE:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% if greatContributor == False %}
+            NO
+            {% else %}
+            SI
+            {% endif %}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 25%;
+            height: 60px;
+            border: 1px solid black;
+            border-left: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            TARIFA ICA:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+          {{retIca}}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 25%;
+            height: 60px;
+            border: 1px solid black;
+            border-left: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            AUTORETENEDOR:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+          {% if greatContributor == False %}
+          NO
+          {% else %}
+          SI
+          {% endif %}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 25%;
+            height: 60px;
+            border: 1px solid black;
+            border-left: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            TARIFA RETENCIÓN EN LA FUENTE:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+          {{retFte}}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; margin-top: -10px">
+      <div
+        style="
+          text-align: center;
+          background-color: #2379ae;
+          color: white;
+          border: 0.5px solid black;
+          border-bottom: none;
+          border-left: none;
+          border-right: none;
+          width: 93%;
+          margin-left: 20px;
+          margin-top: 10px;
+        "
+      >
+        <p style="font-size: 12px">INFORMACIÓN DE LA JUNTA DIRECTIVA</p>
+      </div>
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          height: 60px;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 50%;
+            height: 80px;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            MIEMBROS PRINCIPALES:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% for x in managementBoard %}
+            {% if x.type == "1"%}
+            {{x.name}}
+            <br>
+            {% endif %}
+            {% endfor %}
+          </p>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 50%;
+            height: 80px;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            MIEMBROS SUPLENTES:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+          {% for x in managementBoard %}
+          {% if x.type == "0"%}
+          {{x.name}}
+          <br>
+          {% endif %}
+          {% endfor %}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; margin-top: -10px">
+      <div
+        style="
+          text-align: center;
+          background-color: #2379ae;
+          color: white;
+          border: 0.5px solid black;
+          border-bottom: none;
+          border-left: none;
+          border-right: none;
+          width: 93%;
+          margin-left: 20px;
+          margin-top: 10px;
+        "
+      >
+        <p style="font-size: 12px">INFORMACIÓN DE SOCIOS Y ACCIONISTAS</p>
+      </div>
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          height: 60px;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 50%;
+            height: 80px;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            NOMBRES Y APELLIDOS:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% for x in partnersAndShareHolders %}
+            {{x.name}}
+            <br>
+            {% endfor %}
+          </p>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 50%;
+            height: 80px;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            NRO. IDENTIFICACIÓN:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+          {% for x in partnersAndShareHolders %}
+          {{x.documentNumber}}
+          <br>
+          {% endfor %}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 20%;
+            height: 80px;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            PARTICIPACIÓN:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+          {% for x in partnersAndShareHolders %}
+          {{x.percentage}}%
+          <br>
+          {% endfor %}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; margin-top: -10px">
+      <div
+        style="
+          text-align: center;
+          background-color: #2379ae;
+          color: white;
+          border: 0.5px solid black;
+          border-bottom: none;
+          border-left: none;
+          border-right: none;
+          width: 93%;
+          margin-left: 20px;
+          margin-top: 10px;
+        "
+      >
+        <p style="font-size: 12px">
+          ACTIVIDADES EN OPERACIONES INTERNACIONALES
+        </p>
+      </div>
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          height: 60px;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 40px;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            OPERACIONES INTERNACIONALES:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% if internationalOperations == False %}
+            NO APLICA
+            {% else %}
+            {{internationalOperationsDescription}}
+            {% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; margin-top: -30px">
+      <div
+        style="
+          text-align: center;
+          background-color: #f2f2f2;
+          color: white;
+          border: 0.5px solid black;
+          border-bottom: none;
+          width: 93%;
+          margin-left: 20px;
+          margin-top: 10px;
+        "
+      >
+        <p style="font-size: 12px; color: black">
+          INFORMACIÓN DE CUENTAS EN MONEDA EXTRANJERA
+        </p>
+      </div>
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          height: 25px;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 20%;
+            height: 25px;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            TIPO DE CUENTA:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% if foreignAccount == False %}
+            NO APLICA
+            {% else %}
+            {{foreignAccountType}}
+            <br>
+            {% endif %}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 20%;
+            height: 25px;
+            border: 1px solid black;
+            border-left: none;
+            border-right: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            NUMERO DE CUENTA:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% if foreignAccount == False %}
+            NO APLICA
+            {% else %}
+            {{foreignAccountNumber}}
+            <br>
+            {% endif %}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 20%;
+            height: 25px;
+            border: 1px solid black;
+            border-right: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            ENTIDAD:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% if foreignAccount == False %}
+            NO APLICA
+            {% else %}
+            {{foreignAccountInstitution}}
+            <br>
+            {% endif %}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 20%;
+            height: 25px;
+            border: 1px solid black;
+            border-right: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            PAÍS/CIUDAD:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% if foreignAccount == False %}
+            NO APLICA
+            {% else %}
+            {{foreignAccountCountry.description}}
+            <br>
+            {% endif %}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 20%;
+            height: 25px;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            MONEDA:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% if foreignAccount == False %}
+            NO APLICA
+            {% else %}
+            {{foreignAccountCurrency}}
+            <br>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; margin-top: -10px">
+      <div
+        style="
+          text-align: center;
+          background-color: #2379ae;
+          color: white;
+          border: 0.5px solid black;
+          border-top: none;
+          border-bottom: none;
+          width: 93%;
+          margin-left: 20px;
+          margin-top: 10px;
+        "
+      >
+        <p style="font-size: 12px; color: white">INFORMACIÓN COMERCIAL</p>
+      </div>
+      <div
+        style="
+          text-align: center;
+          background-color: #f2f2f2;
+          color: white;
+          border: 0.5px solid black;
+          width: 93%;
+          margin-left: 20px;
+        "
+      >
+        <p style="font-size: 12px; color: black">PRODUCTOS Y/O SERVICIOS</p>
+      </div>
+
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          height: 60px;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 70%;
+            height: 40px;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+          PRINCIPALES LÍNEAS DE PRODUCCIÓN Y/O SERVICIOS:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% for x in principalProducts %}
+            {{x.name}}
+            <br>
+            {% endfor %}
+          </p>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 30%;
+            height: 40px;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            % VENTAS:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% for x in principalProducts %}
+            {{x.percentage}}%
+            <br>
+            {% endfor %}
+          </p>
+        </div>
+      </div>
+
+      <div
+        style="
+          text-align: center;
+          background-color: #f2f2f2;
+          color: white;
+          border: 0.5px solid black;
+          border-top: none;
+          width: 93%;
+          margin-left: 20px;
+          margin-top: -20px;
+        "
+      >
+        <p style="font-size: 12px; color: black">PRINCIPALES CLIENTES</p>
+      </div>
+
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          height: 60px;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 50%;
+            height: 40px;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            NOMBRE DEL CLIENTE:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% for x in principalClients %}
+            {{x.name}}
+            <br>
+            {% endfor %}
+          </p>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 25%;
+            height: 40px;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            PLAZO OTORGADO:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% for x in principalClients %}
+            {{x.deadline}}
+            <br>
+            {% endfor %}
+          </p>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 25%;
+            height: 40px;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            % VENTAS:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% for x in principalClients %}
+            {{x.salePercentage}}%
+            <br>
+            {% endfor %}
+          </p>
+        </div>
+      </div>
+
+      <div
+        style="
+          text-align: center;
+          background-color: #f2f2f2;
+          color: white;
+          border: 0.5px solid black;
+          border-top: none;
+          width: 93%;
+          margin-left: 20px;
+          margin-top: -20px;
+        "
+      >
+        <p style="font-size: 12px; color: black">PRINCIPALES PROVEEDORES</p>
+      </div>
+
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          height: 70px;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 50%;
+            height: 80px;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            NOMBRE DEL PROVEEDOR:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% for x in principalProviders %}
+            {{x.name}}
+            <br>
+            {% endfor %}
+          </p>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 25%;
+            height: 80px;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            PLAZO PACTADO:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% for x in principalProviders %}
+            {{x.deadline}}
+            <br>
+            {% endfor %}
+          </p>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 25%;
+            height: 80px;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            % COMPRAS:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% for x in principalProviders %}
+            {{x.salePercentage}}%
+            <br>
+            {% endfor %}
+          </p>
+        </div>
+      </div>
+
+      <div
+        style="
+          text-align: center;
+          background-color: #f2f2f2;
+          color: white;
+          border: 0.5px solid black;
+          width: 93%;
+          margin-left: 20px;
+          margin-top: -20px;
+        "
+      >
+        <p style="font-size: 12px; color: black">PRINCIPALES COMPETIDORES</p>
+      </div>
+
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          height: 60px;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 70%;
+            height: 40px;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            NOMBRE DEL COMPETIDOR:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% for x in principalCompetitors %}
+            {{x.name}}
+            <br>
+            {% endfor %}
+          </p>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 30%;
+            height: 40px;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            PARTICIPACIÓN DE MERCADO:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% for x in principalCompetitors %}
+            {{x.percentage}}%
+            <br>
+            {% endfor %}
+          </p>
+        </div>
+      </div>
+
+      <div
+        style="
+          text-align: center;
+          background-color: #f2f2f2;
+          color: white;
+          border: 0.5px solid black;
+          width: 93%;
+          margin-left: 20px;
+          margin-top: -20px;
+        "
+      >
+        <p style="font-size: 12px; color: black">OTRA INFORMACIÓN COMERCIAL</p>
+      </div>
+
+      <div
+        style="
+          display: flex;
+          flex-direction: column;
+          width: 93%;
+          margin-left: 20px;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 30px;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            ESTACIONALIDAD DEL NEGOCIO:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{businessSeasonality}}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 30px;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            CAPACIDAD INSTALADA VS. CAPACIDAD UTILIZADA:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{installedCapacityVsUsedCapacity}}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 30px;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            PROYECTOS FUTUROS Y PROYECCIONES:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{futureProjects}}
+          </p>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; margin-top: 55px">
+        <div
+          style="
+            text-align: center;
+            background-color: #2379ae;
+            color: white;
+            border: 0.5px solid black;
+            border-top: none;
+            border-bottom: none;
+            width: 93%;
+            margin-left: 20px;
+            margin-top: 10px;
+          "
+        >
+          <p style="font-size: 12px; color: white">
+            RELACIONES CON EL SISTEMA FINANCIERO
+          </p>
+        </div>
+        <div
+          style="
+            text-align: center;
+            background-color: white;
+            width: 93%;
+            height: 60px;
+            margin-left: 20px;
+            display: flex;
+            flex-direction: row;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 25%;
+              height: 30px;
+              border: 1px solid black;
+            "
+          >
+            <p
+              style="
+                font-size: 6px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 3px;
+              "
+            >
+              NOMBRE DE LA ENTIDAD:
+            </p>
+            <p
+              style="
+                font-size: 10px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 1px;
+              "
+            >
+              {% for x in financialRelations %}
+              {{x.name}}
+              <br>
+              {% endfor %}
+            </p>
+          </div>
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 25%;
+              height: 30px;
+              border: 1px solid black;
+              border-left: none;
+            "
+          >
+            <p
+              style="
+                font-size: 6px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 3px;
+              "
+            >
+              MONTO:
+            </p>
+            <p
+              style="
+                font-size: 10px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 1px;
+              "
+            >
+            {% for x in financialRelations %}
+            {{x.amount}}
+            <br>
+            {% endfor %}
+            </p>
+          </div>
+
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 25%;
+              height: 30px;
+              border: 1px solid black;
+            "
+          >
+            <p
+              style="
+                font-size: 6px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 3px;
+              "
+            >
+              PLAZO:
+            </p>
+            <p
+              style="
+                font-size: 10px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 1px;
+              "
+            >
+            {% for x in financialRelations %}
+            {{x.deadline}}
+            <br>
+            {% endfor %}
+            </p>
+          </div>
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 25%;
+              height: 30px;
+              border: 1px solid black;
+              border-left: none;
+            "
+          >
+            <p
+              style="
+                font-size: 6px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 3px;
+              "
+            >
+              TASA:
+            </p>
+            <p
+              style="
+                font-size: 10px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 1px;
+              "
+            >
+            {% for x in financialRelations %}
+            {{x.tax}}%
+            <br>
+            {% endfor %}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; margin-top: -40px">
+      <div
+        style="
+          text-align: center;
+          background-color: #2379ae;
+          color: white;
+          border: 0.5px solid black;
+          border-top: none;
+          border-bottom: none;
+          width: 93%;
+          margin-left: 20px;
+          margin-top: 10px;
+        "
+      >
+        <p style="font-size: 12px; color: white">
+          PARTICIPACIÓN POLÍTICA (REPRESENTANTE LEGAL, SOCIOS O ACCIONISTAS)
+        </p>
+      </div>
+      <div style="display: flex; flex-direction: column">
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            width: 93%;
+            height: 30px;
+            margin-left: 20px;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 75%;
+              height: 100%;
+              border: 1px solid black;
+              padding: 7.5px;
+            "
+          >
+            <p
+              style="
+                font-size: 9px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 3px;
+              "
+            >
+              ¿POR SU CARGO O ACTIVIDAD, MANEJA RECURSOS PÚBLICOS?
+            </p>
+          </div>
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 25%;
+              height: 100%;
+              border: 1px solid black;
+              padding: 7px;
+            "
+          >
+            <p
+              style="
+                font-size: 9px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 1px;
+              "
+            >
+              {% if publicResources == False %}
+              NO
+              {% else %}
+              SI
+              {% endif %}
+
+            </p>
+          </div>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            width: 93%;
+            height: 30px;
+            margin-left: 20px;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 75%;
+              height: 100%;
+              border: 1px solid black;
+              padding: 7.5px;
+            "
+          >
+            <p
+              style="
+                font-size: 9px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 3px;
+              "
+            >
+            ¿POR SU CARGO O ACTIVIDAD, EJERCE ALGÚN GRADO DE PODER PÚBLICO?
+            </p>
+          </div>
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 25%;
+              height: 100%;
+              border: 1px solid black;
+              padding: 7px;
+            "
+          >
+            <p
+              style="
+                font-size: 9px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 1px;
+              "
+            >
+              {% if publicPower == False %}
+              NO
+              {% else %}
+              SI
+              {% endif %}
+            </p>
+          </div>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            width: 93%;
+            height: 30px;
+            margin-left: 20px;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 75%;
+              height: 100%;
+              border: 1px solid black;
+              padding: 7.5px;
+            "
+          >
+            <p
+              style="
+                font-size: 9px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 3px;
+              "
+            >
+            ¿POR SU ACTIVIDAD U OFICIO, GOZA USTED DE RECONOCIMIENTO PÚBLICO GENERAL?
+            </p>
+          </div>
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 25%;
+              height: 100%;
+              border: 1px solid black;
+              padding: 7px;
+            "
+          >
+            <p
+              style="
+                font-size: 9px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 1px;
+              "
+            >
+              {% if publicAcknowledgment == False %}
+              NO
+              {% else %}
+              SI
+              {% endif %}
+            </p>
+          </div>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            width: 93%;
+            height: 30px;
+            margin-left: 20px;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 75%;
+              height: 100%;
+              border: 1px solid black;
+              padding: 7.5px;
+            "
+          >
+            <p
+              style="
+                font-size: 9px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 3px;
+              "
+            >
+            ¿EXISTE ALGÚN VÍNCULO ENTRE USTED Y UNA PERSONA CONSIDERADA PÚBLICAMENTE?
+            </p>
+          </div>
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 25%;
+              height: 100%;
+              border: 1px solid black;
+              padding: 7px;
+            "
+          >
+            <p
+              style="
+                font-size: 9px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 1px;
+              "
+            >
+              {% if publicPersonLink == False %}
+              NO
+              {% else %}
+              SI
+              {% endif %}
+            </p>
+          </div>
+        </div>
+      </div>
+      <div
+        style="
+          display: flex;
+          flex-direction: column;
+          width: 93%;
+          border: 1px solid black;
+          margin-left: 20px;
+        "
+      >
+        <p
+          style="
+            font-size: 6px;
+            text-align: left;
+            margin-left: 5px;
+            margin-top: 3px;
+          "
+        >
+        DESCRIPCIÓN DEL VÍNCULO:
+        </p>
+        <p
+          style="
+            font-size: 9px;
+            text-align: left;
+            margin-left: 5px;
+            margin-top: 1px;
+          "
+        >
+          {% if publicPersonLink == False %}
+          NO APLICA
+          {% else %}
+          {{ publicPersonLinkDescription }}
+          {% endif %}
+        </p>
+      </div>
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          width: 93%;
+          height: 30px;
+          margin-left: 20px;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 75%;
+            height: 100%;
+            border: 1px solid black;
+            padding: 7.5px;
+          "
+        >
+          <p
+            style="
+              font-size: 9px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+          ¿ES USTED SUJETO DE OBLIGACIONES TRIBUTARIAS EN OTROS PAÍSES O GRUPOS DE PAÍSES?
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 25%;
+            height: 100%;
+            border: 1px solid black;
+            padding: 7px;
+          "
+        >
+          <p
+            style="
+              font-size: 9px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% if foreignCountryTax == False %}
+            NO
+            {% else %}
+            SI
+            {% endif %}
+          </p>
+        </div>
+      </div>
+      <div
+      style="
+        display: flex;
+        flex-direction: column;
+        width: 93%;
+        border: 1px solid black;
+        margin-left: 20px;
+      "
+    >
+      <p
+        style="
+          font-size: 6px;
+          text-align: left;
+          margin-left: 5px;
+          margin-top: 3px;
+        "
+      >
+      DESCRIPCIÓN DE LA OBLIGACIÓN:
+      </p>
+      <p
+        style="
+          font-size: 9px;
+          text-align: left;
+          margin-left: 5px;
+          margin-top: 1px;
+        "
+      >
+        {% if foreignCountryTax == False %}
+        NO APLICA
+        {% else %}
+        {{ foreignCountryTaxDescription }}
+        {% endif %}
+      </p>
+    </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; margin-top: -10px">
+      <div
+        style="
+          text-align: center;
+          background-color: #2379ae;
+          color: white;
+          border: 0.5px solid black;
+          border-top: none;
+          border-bottom: none;
+          width: 93%;
+          margin-left: 20px;
+          margin-top: 10px;
+        "
+      >
+        <p style="font-size: 12px; color: white">
+          SISTEMA DE GESTIÓN DEL RIESGO - SARLAFT
+        </p>
+      </div>
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          width: 93%;
+          height: 30px;
+          margin-left: 20px;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 75%;
+            height: 100%;
+            border: 1px solid black;
+            padding: 7.5px;
+          "
+        >
+          <p
+            style="
+              font-size: 9px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+          ¿CUENTA LA EMPRESA CON POLÍTICAS Y PROCEDIMIENTOS DE PREVENCIÓN DE RIESGOS?
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 25%;
+            height: 100%;
+            border: 1px solid black;
+            padding: 7px;
+          "
+        >
+          <p
+            style="
+              font-size: 9px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% if occupationalRiskPolicy == False %}
+            NO
+            {% else %}
+            SI
+            {% endif %}
+          </p>
+        </div>
+      </div>
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          width: 93%;
+          height: 30px;
+          margin-left: 20px;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 75%;
+            height: 100%;
+            border: 1px solid black;
+            padding: 7.5px;
+          "
+        >
+          <p
+            style="
+              font-size: 7px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+          ¿CUENTA LA EMPRESA CON RESPONSABLES DEL CUMPLIMIENTO DE LAS POLÍTICAS Y PROCEDIMIENTOS PARA LA PREVENCIÓN DE RIESGOS ASOCIADOS AL LAVADO DE ACTIVOS Y FINANCIAMIENTO AL TERRORISMO (LA/FT)?
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 25%;
+            height: 100%;
+            border: 1px solid black;
+            padding: 7px;
+          "
+        >
+          <p
+            style="
+              font-size: 9px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% if assetLaunderingPolicy == False %}
+            NO 
+            {% else %}
+            SI
+            {% endif %}
+          </p>
+        </div>
+      </div>
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          width: 93%;
+          height: 30px;
+          margin-left: 20px;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 75%;
+            height: 100%;
+            border: 1px solid black;
+            padding: 7.5px;
+          "
+        >
+          <p
+            style="
+              font-size: 9px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+          ¿CUENTA LA EMPRESA CON UN ÁREA PARA GESTIÓN DE RIESGOS LA/FT?
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 25%;
+            height: 100%;
+            border: 1px solid black;
+            padding: 7px;
+          "
+        >
+          <p
+            style="
+              font-size: 9px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% if laftRiskPolicy == False %}
+            NO
+            {% else %}
+            SI
+            {% endif %}
+          </p>
+        </div>
+      </div>
+      <div
+        style="
+          display: flex;
+          flex-direction: row;
+          width: 93%;
+          height: 30px;
+          margin-left: 20px;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 75%;
+            height: 100%;
+            border: 1px solid black;
+            padding: 7.5px;
+          "
+        >
+          <p
+            style="
+              font-size: 7px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+          ¿LA REVISORÍA FISCAL EN SUS DICTÁMENES ANUALES INCLUYE RECOMENDACIONES Y CONCLUSIONES SOBRE EL RIESGO DE LA LA/FT?
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 25%;
+            height: 100%;
+            border: 1px solid black;
+            padding: 7px;
+          "
+        >
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% if laftAnualDictamen == False %}
+            NO
+            {% else %}
+            SI
+            {% endif %}
+          </p>
+        </div>
+      </div>
+      <div
+      style="
+        display: flex;
+        flex-direction: row;
+        width: 93%;
+        height: 30px;
+        margin-left: 20px;
+      "
+    >
+      <div
+        style="
+          display: flex;
+          flex-direction: column;
+          width: 75%;
+          height: 100%;
+          border: 1px solid black;
+          padding: 7.5px;
+        "
+      >
+        <p
+          style="
+            font-size: 8px;
+            text-align: left;
+            margin-left: 5px;
+            margin-top: 3px;
+          "
+        >
+        ¿LA EMPRESA CUENTA CON UN AUDITOR INTERNO QUE EFECTÚA REVISIONES PERIÓDICAS AL SISTEMA DE PREVENCIÓN DEL RIESGO DE LA LA/FT E INFORMA SOBRE EL FUNCIONAMIENTO A LOS ESTAMENTOS DIRECTIVOS Y/O ADMINISTRATIVOS?
+        </p>
+      </div>
+      <div
+        style="
+          display: flex;
+          flex-direction: column;
+          width: 25%;
+          height: 100%;
+          border: 1px solid black;
+          padding: 7px;
+        "
+      >
+        <p
+          style="
+            font-size: 10px;
+            text-align: left;
+            margin-left: 5px;
+            margin-top: 1px;
+          "
+        >
+          {% if laftInternalAuditor == False %}
+          NO
+          {% else %}
+          SI
+          {% endif %}
+        </p>
+      </div>
+    </div>
+    </div>
+    <div style="display: flex; flex-direction: column; margin-top: -10px">
+      <div
+        style="
+          text-align: center;
+          background-color: #2379ae;
+          color: white;
+          border: 0.5px solid black;
+          border-top: none;
+          border-bottom: none;
+          width: 93%;
+          margin-left: 20px;
+          margin-top: 10px;
+        "
+      >
+        <p style="font-size: 12px; color: white">
+          DECLARACIÓN DE PREVENCIÓN DE RIESGOS DE LA/FT
+        </p>
+      </div>
+      <div style="border:1px solid black;width: 93%;margin-left: 20px;padding: 7px;">
+        <p style="font-size: 10px;text-align: justify;">Manifestamos que nuestros dineros provienen de actividades lícitas y que en ningún caso utilizaremos dineros provenientes de cualquier forma con el tráfico de estupefacientes, lavado de activos y/o cualquier otra actividad penalizada por la legislación Nacional o Internacional. Igualmente, adoptaremos integralmente las políticas y procedimientos que SMART EVOLUTION S.A.S. defina para la administración y prevención de los riesgos asociados al LA/FT.</p>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; margin-top: -10px">
+      <div
+        style="
+          text-align: center;
+          background-color: #2379ae;
+          color: white;
+          border: 0.5px solid black;
+          border-top: none;
+          border-bottom: none;
+          width: 93%;
+          margin-left: 20px;
+          margin-top: 10px;
+        "
+      >
+        <p style="font-size: 12px; color: white">
+          DECLARACIÓN DE RESPONSABILIDAD POR LA INFORMACIÓN APORTADA
+        </p>
+      </div>
+      <div style="border:1px solid black;width: 93%;margin-left: 20px;padding: 7px;">
+        <p style="font-size: 10px;text-align: justify;">
+          Certificamos que la información presentada en este formulario y los documentos anexos es verídica y corresponde a la realidad. En caso de inexactitud, falsedad o inconsistencia en la información aportada, la entidad que represento será civilmente responsable ante SMART EVOLUTION S.A.S. y terceros afectados, por los perjuicios que esta circunstancia pudiera ocasionarles. Acepto que en el evento en que la empresa, los socios o el representante legal se encuentren reportados en algunas de las listas restrictivas definidas por SMART EVOLUTION S.A.S., al momento de la vinculación o durante la relación contractual, SMART EVOLUTION S.A.S. podrá dar por terminado unilateralmente el contrato en cualquier momento y sin previo aviso, por configurarse una causal objetiva de terminación del mismo. Aceptamos y damos por entendido que cualquier irregularidad en el proceso de vinculación, hará que este no continúe y constituirá una causal de terminación anticipada del vínculo contractual que se llegara a tener con SMART EVOLUTION S.A.S., sin que por ello se genere el reconocimiento de indemnizaciones o pagos de perjuicios.
+        </p>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; margin-top: -10px">
+      <div
+        style="
+          text-align: center;
+          background-color: #2379ae;
+          color: white;
+          border: 0.5px solid black;
+          border-top: none;
+          border-bottom: none;
+          width: 93%;
+          margin-left: 20px;
+          margin-top: 10px;
+        "
+      >
+        <p style="font-size: 12px; color: white">
+          AUTORIZACIÓN DE VISITA, VERIFICACIÓN DE INFORMACIÓN, CONSULTA Y REPORTE
+        </p>
+      </div>
+      <div style="border:1px solid black;width: 93%;margin-left: 20px;padding: 7px;">
+        <p style="font-size: 10px;text-align: justify;">
+          Autorizamos a SMART EVOLUTION S.A.S. para que
+        </p>
+        <p style="font-size: 10px;text-align: justify;">
+          1) Directamente o a través de quien ella designe, mediante consulta en bases de datos o visita a nuestras instalaciones verifique los datos que entregamos en este documento y sus anexos;
+        </p>
+        <p style="font-size: 10px;text-align: justify;">
+          2) Realice toda clase de consultas y reportes a las centrales de riesgos y cualquier otra fuente de información de antecedentes disciplinarios, penales, contractuales, fiscales, comerciales, financieros y de cualquier otra naturaleza, de la empresa, sus administradores, representantes legales o socios con más del 5% de participación en el capital social;
+        </p>
+        <p style="font-size: 10px;text-align: justify;">
+          3) Haga uso de los datos personales aportados en este formulario para los fines de la relación comercial con SMART EVOLUTION S.A.S. y conforme a la Política de Tratamiento de Datos de SMART EVOLUTION S.A.S.
+        </p>
+        </p>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; margin-top: -10px">
+      <div
+        style="
+          text-align: center;
+          background-color: #2379ae;
+          color: white;
+          border: 0.5px solid black;
+          border-top: none;
+          border-bottom: none;
+          width: 93%;
+          margin-left: 20px;
+          margin-top: 10px;
+        "
+      >
+        <p style="font-size: 12px; color: white">
+          AUTORIZACIÓN DE VISITA, VERIFICACIÓN DE INFORMACIÓN, CONSULTA Y REPORTE
+        </p>
+      </div>
+      <div style="border:1px solid black;width: 93%;margin-left: 20px;padding: 7px;">
+        <p style="font-size: 10px;text-align: justify;">
+          Yo <strong>{{legalRepresentativeName}} {{legalRepresentativeLastName}}</strong>, identificado con el documento de identidad número <strong>{{legalRepresentativeTypeDocument.abbreviation}} {{legalRepresentativeDocumentNumber}}</strong>, obrando en nombre propio y en representación legal de <strong>{{companyName}} </strong>declaro que la información contenida en el presente documento goza de plena validez a la luz del artículo 5 de la Ley 527 de 1999, por medio del cual se reconoce jurídicamente los efectos de los mensajes de datos. De igual forma, reconozco y autorizo el uso de la firma electrónica y los mecanismos técnicos que permiten verificar mi identidad y tanto  autenticidad como integridad de la información plasmada.
+        </p>
+      </div>
+      <br>
+
+      <div style="width: 93%;margin-left: 20px;text-align: justify;">
+        <p style="font-size: 8px;">
+          DOCUMENTACIÓN ANEXA: Certificación bancaria con vigencia no mayor a 30 días, certificado de existencia y representación legal con vigencia no mayor a 60 días (Registro/ Matrícula Mercantil y existencia y representante legal), estados Financieros de los últimos 3 años (incluir corte del año corriente) firmados por Representante Legal, Revisor Fiscal y/o Contador, declaración de Renta de los Últimos dos Periodos, estado de Cuenta DIAN, documento de identidad del representante legal, declaración de renta de los últimos dos períodos del representante legal.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

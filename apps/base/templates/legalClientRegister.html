@@ -1,0 +1,196 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Insight HTML Email Template</title>
+    <style type="text/css">
+      body {
+        margin: 0;
+        background-color: #f5f5f5;
+      }
+      table {
+        border-spacing: 0;
+      }
+      td {
+        padding: 0;
+      }
+      img {
+        border: 0;
+      }
+
+      .wrapper {
+        width: 100%;
+        table-layout: fixed;
+        background-color: #f5f5f5;
+      }
+
+      .main {
+        background-color: #ffffff;
+        margin: auto;
+        width: 100%;
+        max-width: 600px;
+        border-spacing: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        color: #4a4a4a;
+      }
+      .single-column {
+        text-align: center;
+        font-size: 0;
+        vertical-align: top;
+      }
+
+      .single-column .column {
+        width: 100%;
+        vertical-align: top;
+        text-align: center;
+      }
+
+      .button {
+        background-color: #2379ae;
+        border: none;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <center class="wrapper">
+      <table class="main" width="100%" style="padding: 20px; margin: auto">
+        <!-- LOGO SECTION -->
+
+        <tr>
+          <td>
+            <table width="100%">
+              <tr>
+                <td class="single-column">
+                  <table class="column">
+                    <tr>
+                      <td>
+                        <a href="https://smartevolution.com.co"
+                          ><img
+                            src="https://drive.google.com/uc?id=1_zLUVsJ0iA4m3BGRvTAxVczxYG6nk5tC"
+                            alt=""
+                            width="150px"
+                            title="Smart Evolution"
+                            align="center"
+                        /></a>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- TITLE, TEXT & BUTTON -->
+
+        <tr>
+          <td>
+            <table width="100%">
+              <tr>
+                <td style="text-align: justify">
+                  <p>
+                    Estimado (a)
+                    {{legalRepresentativeName}} {{legalRepresentativeLastName}}
+                  </p>
+                  <p>
+                    Hemos recibido una solicitud de vinculación a nombre de
+                    {{description}}
+                    con los siguientes datos:
+                  </p>
+                  <ul>
+                    <li>
+                      Empresa:
+                      {{description}}
+                    </li>
+                    <li>
+                      NIT:
+                      {{nit}}
+                    </li>
+                    <li>
+                      Tipo de Vinculación:
+                      {% if typeVinculation == 0 %}
+                      Emisor
+                      {% endif %} {% if typeVinculation == 1 %}
+                      Comprador
+                      {% endif %} {% if typeVinculation == 2 %}
+                      Pagador
+                      {% endif %}
+                    </li>
+                    <li>
+                      Fecha de solicitud:
+                      {{date}}
+                    </li>
+                    <li>
+                      Correo de solicitud:
+                      {{email}}
+                    </li>
+                  </ul>
+                  <p>
+                    A fin de continuar con el proceso, le solicitamos que firme
+                    electrónicamente la Ficha de Cliente. Puede acceder al
+                    documento haciendo clic en el siguiente botón:
+                  </p>
+                </td>
+              </tr>
+
+              <tr>
+                <td style="text-align: center">
+                  <p style="color: white;">
+                    <a href="{{url}}" class="button" style="text-decoration: none;"
+                      >Firmar Documento</a
+                    >
+                  </p>
+                </td>
+              </tr>
+
+              <tr>
+                <td style="text-align: justify">
+                  <p>
+                    La firma electrónica se realiza mediante la plataforma
+                    Click&Sign y cumple con lo establecido en la Ley 527 de 1999
+                    referente a los efectos jurídicos de los mensajes de datos.
+                  </p>
+                  <p>
+                    Si tiene alguna inquietud o requiere asistencia, le
+                    invitamos a ponerse en contacto con nosotros a través de los
+                    siguientes canales:
+                  </p>
+                  <img
+                    style="float: left; padding-right: 5px"
+                    src="https://drive.google.com/uc?id=1-up5yfz59JVzyuW0m8jyT2FNTnMYGKmF"
+                    width="19"
+                    height="19"
+                  />
+                  <p>
+                    <a href="mailto:viculacion@smartevolution.com.co"
+                      >viculacion@smartevolution.com.co</a
+                    >
+                  </p>
+                  <img
+                    style="float: left; padding-right: 5px"
+                    src="https://drive.google.com/uc?id=1FE0xGlH-4zkbt_XG1dUeFF7Jyg7xp7co"
+                    width="19"
+                    height="19"
+                  />
+                  <p>
+                    <a href="https://api.whatsapp.com/send?phone=573244296262"
+                      >+57 324 4296262</a
+                    >
+                  </p>
+                  <p>- <br />Smart Evolution SAS <br />NIT: 90133344-4</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </center>
+  </body>
+</html>

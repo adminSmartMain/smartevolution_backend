@@ -1,0 +1,123 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Calibri;
+    }
+
+    header {
+      width: 98%;
+      color: #44546a;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 100;
+      margin-top: 25px;
+      display: flex;
+      justify-content: space-around;
+    }
+  </style>
+
+  <body>
+    <header>
+      <div>
+        <img
+          class="header__img"
+          src="https://smartevolution.s3.amazonaws.com/assets/Logo+Smart+-+Lite.svg"
+          alt="smart-evolution-logo"
+          width="170px"
+        />
+      </div>
+
+      <div style="display: flex; flex-direction: column; margin-left: 80px">
+        <p
+          style="
+            font-family: Calibri Light;
+            color: #232b2b;
+            font-size: 15pt;
+            font-weight: 400;
+          "
+        >
+          Smart Evolution SAS
+        </p>
+        <p
+          style="
+            font-family: Calibri Light;
+            color: #232b2b;
+            font-size: 12pt;
+            font-weight: 400;
+            margin-bottom: 5px;
+          "
+        >
+          NIT 901.333.444-4
+        </p>
+        <div
+          style="
+            font-size: 20pt;
+            color: #44546a;
+            font-family: Calibri Light;
+            margin-top: 10px;
+            font-weight: 300;
+          "
+        >
+          Comprobante de Egreso
+        </div>
+      </div>
+
+      <div style="width: 25%"></div>
+    </header>
+
+    <div style="display: flex; width: 98%; flex-direction: row; margin-left: 8px; justify-content: flex-end; margin-top: 30px;">
+        <div style="display: flex; flex-direction: column; text-align: center; width: 150px; background-color: #f8f4f4;">
+          <P style="font-weight: bold; color: #44546a; background-color: white;padding: 5px;">Fecha</P>
+          <div>{{date}}</div>
+        </div>
+        <div style="display: flex; flex-direction: column; text-align: center; margin-left: 5px; width: 150px; background-color: #f8f4f4;">
+          <p style="font-weight: bold; color: #44546a; background-color: white;padding: 5px;">Recibo</p>
+          <div>{{id}}</div>
+        </div>
+        <div style="display: flex; flex-direction: column; text-align: center; margin-left: 5px;  width: 150px; background-color: #f8f4f4;">
+          <p style="font-weight: bold; color: #44546a; background-color: white;padding: 5px;">Monto</p>
+          <div>${{amount}}</div>
+        </div>
+    </div>
+
+    <div style="margin-top: 50px; width: 96%; margin-left: 8px; display: flex; flex-direction: row; justify-content: space-around; align-items: center;">
+        <p style="font-weight: bold; color: #44546a; background-color: white;padding: 5px;">Beneficiario</p>
+        <div style="background-color: #f8f4f4;width: 50%;">{{client}}</div>
+        <p style="font-weight: bold; color: #44546a; background-color: white;padding: 5px;">NIT/CC</p>
+        <div style="background-color: #f8f4f4; width: 15%; height: 10%;">{{document}}</div>
+    </div>
+    <div style="margin-top: 20px; width: 96%; margin-left: 22px; display: flex; flex-direction: row; justify-content: flex-start; align-items: center;">
+      <p style="font-weight: bold; color: #44546a; background-color: white;padding: 5px;">Cantidad </p>
+      <div style="background-color: #f8f4f4;width: 80%; margin-left: 50px;">{{amount_text}} (Pesos MC)</div>
+    </div>
+
+    <div style="margin-top: 20px; width: 96%; margin-left: 22px; display: flex; flex-direction: row; justify-content: flex-start; align-items: center;">
+      <p style="font-weight: bold; color: #44546a; background-color: white;padding: 5px;">Concepto</p>
+      <div style="background-color: #f8f4f4;width: 80%; margin-left: 45px;">REINTEGRO DE RECURSOS PARA COMPRA DE TÍTULOS</div>
+    </div>
+
+    <div style="margin-top: 20px; width: 96%; margin-left: 22px; display: flex; flex-direction: row; justify-content: flex-start; align-items: center;">
+      <p style="font-weight: bold; color: #44546a; background-color: white;padding: 5px;">Datos Bancarios</p>
+    </div>
+
+    <div style="margin-top: 20px; width: 96%; margin-left: 8px; display: flex; flex-direction: row; justify-content: space-evenly; align-items: center;">
+      <p style="font-weight: bold; color: #44546a; background-color: white;padding: 5px;">Titular</p>
+      <div style="background-color: #f8f4f4;width: 20%;">{{beneficiary}}</div>
+      <p style="font-weight: bold; color: #44546a; background-color: white;padding: 5px;">Banco</p>
+      <div style="background-color: #f8f4f4; width: 15%; height: 10%;">{{bank}}</div>
+      <p style="font-weight: bold; color: #44546a; background-color: white;padding: 5px;">Cuenta</p>
+      <div style="background-color: #f8f4f4; width: 25%; height: 10%;">{{account}}</div>
+  </div>
+      
+  </body>
+</html>

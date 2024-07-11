@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>Document</title>
+</head>
+<style>
+
+* {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+header {
+width: 98%;
+text-align: center;
+}
+
+header h1 {
+    color:#5EA3A3;
+    text-align: left;
+    font-size: 34px;
+    font-weight: 500;
+    margin-left: 20px;
+}
+
+.emitter__table {
+    width: 95%;
+}
+
+.financial-central__table {
+    width: 95%;
+}
+
+.emitter__table__head {
+    justify-content: center;
+    align-items: center;
+    background-color: #5EA3A3;
+    color: white;
+    text-align: center;
+    width: 95%;
+    height: 30px;
+    display: flex;
+    border-radius: 3px;
+}
+
+.header__img {
+    position: absolute;
+    top: 22px;
+    right: 40px;
+}
+
+.emitter__table__td {
+    font-weight: 700;
+}
+
+.emitter__table__tr {
+    color: #5EA3A3;
+    width: 20%;
+    font-weight: 500;
+    padding: 4px 0 4px 0;
+}
+
+.financial-central__table__head {
+margin-top: 40px;
+color:#5EA3A3;
+font-weight: 700;
+font-size: 20px;
+margin-bottom: 14px;
+align-self: flex-start;
+margin-left: 34px;
+}
+
+.financial-central__table__td-title {
+    text-align: center;
+    background-color: #5EA3A3;
+    color: white;
+    width: 33%;
+    height: 30px;
+} 
+
+.financial-central__table__td {
+    font-weight: 500;
+    text-align: center;
+    border-bottom: 1px solid #999999;
+}
+
+.qualitative-overview__table {
+    width: 95%;
+    margin-bottom: 45px;
+}
+
+
+.qualitative-overview__table__head {
+    margin-top: 45px;
+    margin-bottom: 10px;
+    color:#5EA3A3;
+    font-weight: 700;
+    align-self: flex-start;
+    margin-left: 35px;
+    font-size: 20px;
+}
+
+.qualitative-overview__text {
+    font-weight: 400;
+    line-height: 1.8rem;
+
+}
+
+.financial-overview__table {
+    width: 95%;
+    margin-bottom: 80px;
+}
+
+.financial-overview__table__head {
+    justify-content: center;
+    align-items: center;
+    background-color: #5EA3A3;
+    color: white;
+    text-align: center;
+    width: 95%;
+    height: 30px;
+    display: flex;
+    border-radius: 3px;
+    margin-top: 40px;
+}
+
+.financial-overview__table__td-title {
+    background-color: #5EA3A3;
+    font-weight: 500;
+    text-align: center;
+    color: white;
+    padding: 10px 0 10px 0;
+}
+
+.financial-overview__table__td-title__first {
+    background-color: #5EA3A3;
+    font-weight: 400;
+    text-align: center;
+    color: white;
+    width: 28%;
+    font-weight: 500;
+}
+
+.financial-overview__table__td {
+    color: black;
+    font-weight: 500;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #999999;
+    padding: 10px 0 10px 0;
+}
+
+.financial-overview__table__td__text {
+    font-weight: 500;
+    text-align: center;
+    border-bottom: 1px solid #999999;
+}
+
+
+.offert-conditions__container-1 {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-around;
+    width: 95vw;
+    height: 40px;
+    align-items: center;
+}
+
+.offert-conditions__container-2 {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-around;
+}
+.offert-conditions__container-3 {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-around;
+    width: 95vw;
+    height: 40px;
+    align-items: center;
+    margin-left: 28px;
+    margin-top: 15px;
+}
+
+.offert-conditions__td {
+    color: black;
+    font-weight: 500;
+    padding-bottom: 12px;
+    padding: 10px 0 10px 0;
+}
+
+.offert-conditions__tr {
+    font-weight: 700;
+    font-size: 14px;
+    text-align: left;
+}
+
+.offert-conditions__head {
+    margin-top: 45px;
+    margin-bottom: 10px;
+    color:#5EA3A3;
+    font-weight: 700;
+    align-self: flex-start;
+    margin-left: 35px;
+    font-size: 20px;
+}
+
+.header-offer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 50px;
+}
+
+.header-offer img {
+    width: 250px;
+    height: 40px;
+}
+
+.Operation__table__container {
+    width: 95%;
+    margin-top: 40px;
+}
+
+.Operation__table {
+    width: 50%;
+}
+</style>
+<body>
+    <header class="header-offer">
+        <h1>Orden de Compra</h1>
+        <img   src="https://smartevolution.s3.amazonaws.com/assets/Logo+Smart+-+Lite.svg" alt="smart-evolution-logo2" width="170px" height="20px">
+    </header>
+
+        <table class="emitter__table">
+
+            <tr>
+                <td class="emitter__table__tr">Operacion Nro.</td>
+                <td class="emitter__table__td">{{opId}}</td>
+            </tr>
+            <tr>
+                <td class="emitter__table__tr">Nombre del Inversionista</td>
+                <td class="emitter__table__td">{{investorName}}</td>
+            </tr>
+            <tr>
+                <td class="emitter__table__tr">NIT / CC</td>
+                <td class="emitter__table__td">{{investorDocumentNumber}}</td>
+            </tr>
+            <tr>
+                <td class="emitter__table__tr">Dirección</td>
+                <td class="emitter__table__td">{{investorAddress}}</td>
+            </tr>
+            <tr>
+                <td class="emitter__table__tr">Teléfono</td>
+                <td class="emitter__table__td">{{investorPhoneNumber}}</td>
+            </tr>
+            <tr>
+                <td class="emitter__table__tr">Correo Electrónico</td>
+                <td class="emitter__table__td">{{investorEmail}}</td>
+            </tr>
+            <tr>
+                <td class="emitter__table__tr">Corredor</td>
+                <td class="emitter__table__td">{{investorBroker}}</td>
+            </tr>
+        </table>
+
+        <div class="Operation__table__container">
+        <table class="Operation__table">
+            <tr>
+                <td class="financial-overview__table__td-title">Cantidad Operaciones</td>
+                <td class="financial-overview__table__td-title">Total VR Compra</td>
+                <td class="financial-overview__table__td-title">Total VR Futuro</td>
+                <td class="financial-overview__table__td-title">Total GM</td>
+            </tr>
+            <tr>
+                <td class="financial-overview__table__td__text" style="border:none">{{bills}}</td>
+                <td class="financial-overview__table__td__text" style="border:none">{{total}}</td>
+                <td class="financial-overview__table__td__text" style="border:none">{{future}}</td>
+                <td class="financial-overview__table__td__text" style="border:none">{{gm}}</td>
+            </tr>
+        </table>
+        </div>
+
+        <div class="Operation__table__container" style="margin-top:60px;">
+            <table class="Operation__table" style="width: 100%;">
+                <tr>
+                    <td class="financial-overview__table__td-title" style="height: 40px;">Fecha Op</td>
+                    <td class="financial-overview__table__td-title" style="height: 40px;">Fecha Prob</td>
+                    <td class="financial-overview__table__td-title" style="height: 40px;">Fecha Final</td>
+                    <td class="financial-overview__table__td-title" style="height: 40px;">Doc</td>
+                    <td class="financial-overview__table__td-title" style="height: 40px;">Nro. Doc</td>
+                    <td class="financial-overview__table__td-title" style="height: 40px; ">Emisor</td>
+                    <td class="financial-overview__table__td-title" style="height: 40px;">Pagador</td>
+                    <td class="financial-overview__table__td-title" style="height: 40px;">Tasa inv.</td>
+                    <td class="financial-overview__table__td-title" style="height: 40px;">Dias Op.</td>
+                    <td class="financial-overview__table__td-title" style="height: 40px;">VR Compra</td>
+                    <td class="financial-overview__table__td-title" style="height: 40px;">VR Futuro</td>
+                    <td class="financial-overview__table__td-title" style="height: 40px;">GM</td>
+                </tr>
+                {% for x in billsList %}
+                <tr>
+                    <td class="financial-overview__table__td__text" style="padding: 10px 0 10px 0; font-size: 14px;">{{x.dateOP}}</td>
+                    <td class="financial-overview__table__td__text" style="padding: 10px 0 10px 0; font-size: 14px;">{{x.probDate}}</td>
+                    <td class="financial-overview__table__td__text" style="padding: 10px 0 10px 0; font-size: 14px;">{{x.dateExp}}</td>
+                    <td class="financial-overview__table__td__text" style="padding: 10px 0 10px 0; font-size: 14px;">FACT</td>
+                    <td class="financial-overview__table__td__text" style="padding: 10px 0 10px 0; font-size: 14px;">{{x.number}}</td>
+                    <td class="financial-overview__table__td__text" style="padding: 10px 0 10px 0; font-size: 14px;">{{x.emitter}}</td>
+                    <td class="financial-overview__table__td__text" style="padding: 10px 0 10px 0; font-size: 14px;">{{x.payer}} </td>
+                    <td class="financial-overview__table__td__text" style="padding: 10px 0 10px 0; font-size: 14px;">{{x.invTax}}</td>
+                    <td class="financial-overview__table__td__text" style="padding: 10px 0 10px 0; font-size: 14px;">{{x.daysOP}}</td>
+                    <td class="financial-overview__table__td__text" style="padding: 10px 0 10px 0; font-size: 14px;">{{x.VRBuy}}</td>
+                    <td class="financial-overview__table__td__text" style="padding: 10px 0 10px 0; font-size: 14px;">{{x.VRFuture}}</td>
+                    <td class="financial-overview__table__td__text" style="padding: 10px 0 10px 0; font-size: 14px;">{{x.totalGM}}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+
+
+        <table class="qualitative-overview__table" style="margin-top: 120px;">
+                    <thead>
+                        <tr class="qualitative-overview__text">
+                            <td>
+                                Señores SMART EVOLUTION S.A.S.: Notifico que acepto adquirir los documentos relacionados en las condiciones aquí
+                                expresadas, conforme a la oferta de venta que me fue presentada. Les solicito custodiar los documentos y les autorizo
+                                para que por mi cuenta sean endosados a su nombre y realicen labores de cobro y recaudo en cuentas bancarias de Smart
+                                Evolution S.A.S. Asimismo, otorgo poder amplio y suficiente a SMART EVOLUTION S.A.S. para que, en caso de ser necesario,
+                                se adelanten acciones ejecutivas, se presente la acreencia en proceso concursal y se concilie o transija judicial o
+                                extrajudicialmente los derechos de los titulos aquí adquiridos. La información contenida en el presente documento, goza
+                                de plena validez a la luz del artículo 5 de la Ley 527 de 1999, por medio del cual se reconoce jurídicamente los efectos
+                                de los mensajes de datos.
+
+                                Finalmente, reconozco el uso de la firma electrónica y los mecanismos técnicos que permiten verificar mi identidad y que
+                                verifican tanto autenticidad como integridad de la información plasmada.
+                                <br>
+                                <br>
+                                Atentamente,
+
+                                        <div style="width: 95%; margin-top: 15%;">
+                                            <h1 style="font-weight: 700;">ANDRES RUIZ GARCIA</h1>
+                                            <h2 style="font-weight: 500;">CC. 80471340</h2>
+                                            <h2 style="font-weight: 500;">telf. 573108093225</h2>
+                                            <h2 style="font-weight: 500;">Email: andres.ruiz@smartevolution.com.co</h2>
+                                        
+                                            <h1 style="font-weight: 700; margin-top: 30px;">SMART EVOLUTION S.A.S.</h1>
+                                            <h2 style="font-weight: 500;">NIT: 901333444</h2>
+                                        </div>
+                            </td>
+                        </tr>
+                    </thead>
+                </table>
+
+
+</body>
+</html>

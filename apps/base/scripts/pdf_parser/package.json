@@ -1,0 +1,12 @@
+{
+  "name": "node_pdf_parser",
+  "version": "1.0.0",
+  "description": "node script to parse from html to a pdf base 64 file",
+  "main": "index.js",
+  "author": "Anderson Sanchez",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "puppeteer": "^21.3.6"
+  }
+}

@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Calibri;
+    }
+
+    .title {
+      display: flex;
+      flex-direction: row;
+    }
+    .title__img {
+      position: absolute;
+      top: 16px;
+      right: 40px;
+    }
+  </style>
+  <body>
+    {% load humanize %}
+    <div class="title">
+      <div style="height: 20px; width: 270px"></div>
+      <div style="margin-top: 35px">
+        <p style="font-size: 12px; font-weight: bold">
+          FICHA DE CLIENTE - PERSONA NATURAL
+        </p>
+      </div>
+      <div>
+        <img
+          class="title__img"
+          src="https://smartevolution.s3.amazonaws.com/assets/Logo+Smart+-+Lite.svg"
+          alt="smart-evolution-logo"
+          width="140px"
+        />
+      </div>
+    </div>
+
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        margin-top: 15px;
+        margin-left: 20px;
+      "
+    >
+      <div
+        style="
+          border: 1px solid black;
+          width: 180px;
+          display: flex;
+          flex-direction: row;
+          padding: 2px;
+        "
+      >
+        <p style="font-size: 10px; font-weight: bold">
+          Fecha Diligenciamiento:
+        </p>
+        <p style="font-size: 10px">{{ created_at|slice:"0:10"}}</p>
+      </div>
+      <div
+        style="
+          border: 1px solid black;
+          width: 180px;
+          display: flex;
+          flex-direction: row;
+          padding: 2px;
+        "
+      >
+        <p style="font-size: 10px; font-weight: bold">Tipo de Vinculación:</p>
+        {% if typeVinculation == 0 %}
+        <p style="font-size: 10px">Emisor</p>
+        {% endif %} {% if typeVinculation == 1 %}
+        <p style="font-size: 10px">Comprador</p>
+        {% endif %} {% if typeVinculation == 2 %}
+        <p style="font-size: 10px">Pagador</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column">
+      <div
+        style="
+          text-align: center;
+          background-color: #2379ae;
+          color: white;
+          border: 0.5px solid black;
+          border-bottom: none;
+          border-left: none;
+          border-right: none;
+          width: 93%;
+          margin-left: 20px;
+          margin-top: 10px;
+        "
+      >
+        <p style="font-size: 12px">DATOS BÁSICOS DEL CLIENTE</p>
+      </div>
+
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 33.3%;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            NOMBRE DEL CLIENTE:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{firstName}} {{lastName}}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 33.3%;
+            border: 1px solid black;
+            border-left: none;
+            border-right: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            DOCUMENTO DE IDENTIDAD:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{typeDocument.abbreviation}} {{documentNumber}}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 33.3%;
+            border: 1px solid black;
+            border-right: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            FECHA DE NACIMIENTO:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{birthDate}}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 33.3%;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            NACIONALIDAD:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{country.name_es}}
+          </p>
+        </div>
+      </div>
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            DOMICILIO PRINCIPAL:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{address}}, {{city.description}}, {{department.description}}
+          </p>
+        </div>
+      </div>
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 70%;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            CORREO ELECTRÓNICO:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{email}}
+          </p>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 30%;
+            border: 1px solid black;
+            border-left: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            TELÉFONO:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{phone}}
+          </p>
+        </div>
+      </div>
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 55%;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            PROFESIÓN U OCUPACIÓN:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{profession}}
+          </p>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 45%;
+            border: 1px solid black;
+            border-left: none;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            CONDICIÓN LABORAL:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% if activity == 0 %} EMPLEADO {% else %} INDEPENDIENTE {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 55%;
+            border: 1px solid black;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            NOMBRE DE LA EMPRESA DONDE TRABAJA:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% if activity == 0 %} 
+            {{companyName}}
+             {% else %} 
+             NO APLICA 
+             {% endif %}
+          </p>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 45%;
+            border: 1px solid black;
+            border-left: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            CARGO QUE DESEMPEÑA:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% if activity == 0 %} {{position}} {% else %} NO APLICA {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 60%;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            DIRECCIÓN DE LA EMPRESA:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% if activity == 0 %} 
+            {{companyAddress}}
+             {% else %} 
+             NO APLICA 
+             {% endif %}
+          </p>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 40%;
+            border: 1px solid black;
+            border-left: none;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+            TELÉFONO DE OFICINA:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% if activity == 0 %} {{companyPhone}}
+             {% else %} 
+             NO APLICA 
+             {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <div
+      style="
+        text-align: center;
+        background-color: white;
+        width: 93%;
+        margin-left: 20px;
+        display: flex;
+        flex-direction: row;
+      "
+    >
+      <div
+        style="
+          display: flex;
+          flex-direction: column;
+          width: 100%;
+          border: 1px solid black;
+        "
+      >
+        <p
+          style="
+            font-size: 6px;
+            text-align: left;
+            margin-left: 5px;
+            margin-top: 3px;
+          "
+        >
+        ACTIVIDAD ECONÓMICA PRINCIPAL:
+        </p>
+        <p
+          style="
+            font-size: 10px;
+            text-align: left;
+            margin-left: 5px;
+            margin-top: 1px;
+          "
+        >
+        {% if ciiu %} 
+        {{ciiu.code}} - {{ciiu.activity.description}}
+         {% else %} 
+         NO APLICA 
+         {% endif %}
+          
+        </p>
+      </div>
+    </div>
+
+    <div
+    style="
+      text-align: center;
+      background-color: white;
+      width: 93%;
+      margin-left: 20px;
+      display: flex;
+      flex-direction: row;
+    "
+  >
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        border: 1px solid black;
+      "
+    >
+      <p
+        style="
+          font-size: 6px;
+          text-align: left;
+          margin-left: 5px;
+          margin-top: 3px;
+        "
+      >
+      ACTIVIDAD ECONÓMICA SECUNDARIA:
+      </p>
+      <p
+        style="
+          font-size: 10px;
+          text-align: left;
+          margin-left: 5px;
+          margin-top: 1px;
+        "
+      >
+      {% if secondaryCiiu %} 
+      {{secondaryCiiu.code}} - {{secondaryCiiu.activity.description}}
+       {% else %} 
+       NO APLICA
+       {% endif %}
+        
+      </p>
+    </div>
+  </div>
+  <div
+  style="
+    text-align: center;
+    background-color: white;
+    width: 93%;
+    margin-left: 20px;
+    display: flex;
+    flex-direction: row;
+  "
+>
+  <div
+    style="
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      border: 1px solid black;
+    "
+  >
+    <p
+      style="
+        font-size: 6px;
+        text-align: left;
+        margin-left: 5px;
+        margin-top: 3px;
+      "
+    >
+    DETALLE DEL PRODUCTO O SERVICIO QUE COMERCIALIZA:
+    </p>
+    <p
+      style="
+        font-size: 10px;
+        text-align: left;
+        margin-left: 5px;
+        margin-top: 1px;
+      "
+    >
+      {% if typeProducts %}
+            {{typeProducts}}
+      {% else %}
+            NO APLICA
+      {% endif %}
+    </p>
+  </div>
+</div>
+
+
+
+    </div>
+
+    <div style="display: flex; flex-direction: column;margin-top: -10px;">
+        <div
+          style="
+            text-align: center;
+            background-color: #2379ae;
+            color: white;
+            border: 0.5px solid black;
+            border-bottom: none;
+            border-left: none;
+            border-right: none;
+            border-top: none;
+            width: 93%;
+            margin-left: 20px;
+            margin-top: 10px;
+          "
+        >
+          <p style="font-size: 12px">INFORMACIÓN FINANCIERA</p>
+        </div>
+  
+        <div
+          style="
+            text-align: center;
+            background-color: white;
+            width: 93%;
+            margin-left: 20px;
+            display: flex;
+            flex-direction: row;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 33.3%;
+              border: 1px solid black;
+            "
+          >
+            <p
+              style="
+                font-size: 6px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 3px;
+              "
+            >
+            INGRESOS MENSUALES:
+            </p>
+            <p
+              style="
+                font-size: 10px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 1px;
+              "
+            >
+              {{mensualIncome|floatformat:"g"|intcomma}}
+            </p>
+          </div>
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 33.3%;
+              border: 1px solid black;
+              border-left: none;
+              border-right: none;
+            "
+          >
+            <p
+              style="
+                font-size: 6px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 3px;
+              "
+            >
+            EGRESOS MENSUALES:
+            </p>
+            <p
+              style="
+                font-size: 10px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 1px;
+              "
+            >
+              {{mensualExpenses|floatformat:"g"|intcomma}}
+            </p>
+          </div>
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 33.3%;
+              border: 1px solid black;
+              border-right: none;
+            "
+          >
+            <p
+              style="
+                font-size: 6px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 3px;
+              "
+            >
+            ACTIVOS:
+            </p>
+            <p
+              style="
+                font-size: 10px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 1px;
+              "
+            >
+              {{assets|floatformat:"g"|intcomma}}
+            </p>
+          </div>
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 33.3%;
+              border: 1px solid black;
+            "
+          >
+            <p
+              style="
+                font-size: 6px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 3px;
+              "
+            >
+            PASIVOS:
+            </p>
+            <p
+              style="
+                font-size: 10px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 1px;
+              "
+            >
+              {{passives|floatformat:"g"|intcomma}}
+            </p>
+          </div>
+        </div>
+        <div
+          style="
+            text-align: center;
+            background-color: white;
+            width: 93%;
+            margin-left: 20px;
+            display: flex;
+            flex-direction: row;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 33.3%;
+              border: 1px solid black;
+            "
+          >
+            <p
+              style="
+                font-size: 6px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 3px;
+              "
+            >
+            PATRIMONIO:
+            </p>
+            <p
+              style="
+                font-size: 10px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 1px;
+              "
+            >
+              {{patrimony|floatformat:"g"|intcomma}}
+            </p>
+          </div>
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 33.3%;
+              border: 1px solid black;
+              border-left: none;
+              border-right: none;
+            "
+          >
+            <p
+              style="
+                font-size: 6px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 3px;
+              "
+            >
+            OTROS INGRESOS:
+            </p>
+            <p
+              style="
+                font-size: 10px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 1px;
+              "
+            >
+              {{otherIncome|floatformat:"g"|intcomma}}
+            </p>
+          </div>
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 33.3%;
+              border: 1px solid black;
+            "
+          >
+            <p
+              style="
+                font-size: 6px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 3px;
+              "
+            >
+            CONCEPTO DE OTROS INGRESOS:
+            </p>
+            <p
+              style="
+                font-size: 10px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 1px;
+              "
+            >
+              {{conceptOtherIncome}}
+            </p>
+          </div>
+        </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; margin-top: -10px">
+        <div
+          style="
+            text-align: center;
+            background-color: #2379ae;
+            color: white;
+            border: 0.5px solid black;
+            border-top: none;
+            border-bottom: none;
+            width: 93%;
+            margin-left: 20px;
+            margin-top: 10px;
+          "
+        >
+          <p style="font-size: 12px; color: white">
+            PARTICIPACIÓN POLÍTICA
+          </p>
+        </div>
+        <div style="display: flex; flex-direction: column">
+          <div
+            style="
+              display: flex;
+              flex-direction: row;
+              width: 93%;
+              height: 30px;
+              margin-left: 20px;
+            "
+          >
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                width: 75%;
+                height: 100%;
+                border: 1px solid black;
+                padding: 7.5px;
+              "
+            >
+              <p
+                style="
+                  font-size: 6px;
+                  text-align: left;
+                  margin-left: 5px;
+                  margin-top: 3px;
+                "
+              >
+                ¿POR SU CARGO O ACTIVIDAD, MANEJA RECURSOS PÚBLICOS?
+              </p>
+            </div>
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                width: 25%;
+                height: 100%;
+                border: 1px solid black;
+                padding: 7px;
+              "
+            >
+              <p
+                style="
+                  font-size: 10px;
+                  text-align: left;
+                  margin-left: 5px;
+                  margin-top: 1px;
+                "
+              >
+                {% if managePublicResources == False %}
+                NO
+                {% else %}
+                SI
+                {% endif %}
+  
+              </p>
+            </div>
+          </div>
+          <div
+            style="
+              display: flex;
+              flex-direction: row;
+              width: 93%;
+              height: 30px;
+              margin-left: 20px;
+            "
+          >
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                width: 75%;
+                height: 100%;
+                border: 1px solid black;
+                padding: 7.5px;
+              "
+            >
+              <p
+                style="
+                  font-size: 6px;
+                  text-align: left;
+                  margin-left: 5px;
+                  margin-top: 3px;
+                "
+              >
+              ¿POR SU ACTIVIDAD U OFICIO, GOZA USTED DE RECONOCIMIENTO PÚBLICO GENERAL?
+              </p>
+            </div>
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                width: 25%;
+                height: 100%;
+                border: 1px solid black;
+                padding: 7px;
+              "
+            >
+              <p
+                style="
+                  font-size: 10px;
+                  text-align: left;
+                  margin-left: 5px;
+                  margin-top: 1px;
+                "
+              >
+                {% if publicRecognition == False %}
+                NO
+                {% else %}
+                SI
+                {% endif %}
+              </p>
+            </div>
+          </div>
+          <div
+            style="
+              display: flex;
+              flex-direction: row;
+              width: 93%;
+              height: 30px;
+              margin-left: 20px;
+            "
+          >
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                width: 75%;
+                height: 100%;
+                border: 1px solid black;
+                padding: 7.5px;
+              "
+            >
+              <p
+                style="
+                  font-size: 6px;
+                  text-align: left;
+                  margin-left: 5px;
+                  margin-top: 3px;
+                "
+              >
+              ¿EXISTE ALGÚN VÍNCULO ENTRE USTED Y UNA PERSONA CONSIDERADA PÚBLICAMENTE?
+              </p>
+            </div>
+            <div
+              style="
+                display: flex;
+                flex-direction: column;
+                width: 25%;
+                height: 100%;
+                border: 1px solid black;
+                padding: 7px;
+              "
+            >
+              <p
+                style="
+                  font-size: 10px;
+                  text-align: left;
+                  margin-left: 5px;
+                  margin-top: 1px;
+                "
+              >
+                {% if publicPersonRecognition == False %}
+                NO
+                {% else %}
+                SI
+                {% endif %}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 93%;
+            border: 1px solid black;
+            margin-left: 20px;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+          DESCRIPCIÓN DEL VÍNCULO:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {% if publicPersonRecognition == False %}
+            NO APLICA
+            {% else %}
+            {{ publicPersonRecognitionDescription }}
+            {% endif %}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: row;
+            width: 93%;
+            height: 30px;
+            margin-left: 20px;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 75%;
+              height: 100%;
+              border: 1px solid black;
+              padding: 7.5px;
+            "
+          >
+            <p
+              style="
+                font-size: 6px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 3px;
+              "
+            >
+            ¿ES USTED SUJETO DE OBLIGACIONES TRIBUTARIAS EN OTROS PAÍSES O GRUPOS DE PAÍSES?
+            </p>
+          </div>
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              width: 25%;
+              height: 100%;
+              border: 1px solid black;
+              padding: 7px;
+            "
+          >
+            <p
+              style="
+                font-size: 10px;
+                text-align: left;
+                margin-left: 5px;
+                margin-top: 1px;
+              "
+            >
+              {% if foreignTax == False %}
+              NO
+              {% else %}
+              SI
+              {% endif %}
+            </p>
+          </div>
+        </div>
+        <div
+        style="
+          display: flex;
+          flex-direction: column;
+          width: 93%;
+          border: 1px solid black;
+          margin-left: 20px;
+        "
+      >
+        <p
+          style="
+            font-size: 6px;
+            text-align: left;
+            margin-left: 5px;
+            margin-top: 3px;
+          "
+        >
+        DESCRIPCIÓN DE LA OBLIGACIÓN:
+        </p>
+        <p
+          style="
+            font-size: 10px;
+            text-align: left;
+            margin-left: 5px;
+            margin-top: 1px;
+          "
+        >
+          {% if foreignTax == False %}
+          NO APLICA
+          {% else %}
+          {{ foreignTaxDescription }}
+          {% endif %}
+        </p>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; margin-top: -10px">
+        <div
+          style="
+            text-align: center;
+            background-color: #2379ae;
+            color: white;
+            border: 0.5px solid black;
+            border-top: none;
+            border-bottom: none;
+            width: 93%;
+            margin-left: 20px;
+            margin-top: 10px;
+          "
+        >
+          <p style="font-size: 12px; color: white">
+            REFERENCIAS
+          </p>
+        </div>
+
+        <div
+          style="
+            text-align: center;
+            background-color: #f2f2f2;
+            color: white;
+            border: 0.5px solid black;
+            border-top: none;
+            width: 93%;
+            margin-left: 20px;
+          "
+        >
+          <p style="font-size: 12px; color: black">
+            REFERENCIAS PERSONALES
+          </p>
+        </div>
+
+        <div
+        style="
+          text-align: center;
+          background-color: white;
+          width: 93%;
+          margin-left: 20px;
+          display: flex;
+          flex-direction: row;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 33.3%;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+          NOMBRE Y APELLIDO::
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{referenceFirstName}} {{referenceLastName}}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 33.3%;
+            border: 1px solid black;
+            border-left: none;
+            border-right: none;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+          TELÉFONO:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{referencePhone}}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 33.3%;
+            border: 1px solid black;
+            border-right: none;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+          EMPRESA:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{referenceCompany}}
+          </p>
+        </div>
+        <div
+          style="
+            display: flex;
+            flex-direction: column;
+            width: 33.3%;
+            border: 1px solid black;
+            border-top: none;
+          "
+        >
+          <p
+            style="
+              font-size: 6px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 3px;
+            "
+          >
+          CIUDAD:
+          </p>
+          <p
+            style="
+              font-size: 10px;
+              text-align: left;
+              margin-left: 5px;
+              margin-top: 1px;
+            "
+          >
+            {{referenceCity.description}}
+          </p>
+        </div>
+      </div>
+
+      <div
+      style="
+        text-align: center;
+        background-color: #f2f2f2;
+        color: white;
+        border: 0.5px solid black;
+        width: 93%;
+        margin-left: 20px;
+      "
+    >
+      <p style="font-size: 12px; color: black">
+        REFERENCIAS BANCARIAS
+      </p>
+    </div>
+
+    <div
+    style="
+      text-align: center;
+      background-color: white;
+      width: 93%;
+      margin-left: 20px;
+      display: flex;
+      flex-direction: row;
+    "
+  >
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        width: 33.3%;
+        border: 1px solid black;
+        border-top: none;
+      "
+    >
+      <p
+        style="
+          font-size: 6px;
+          text-align: left;
+          margin-left: 5px;
+          margin-top: 3px;
+        "
+      >
+      INSTITUCIÓN:
+      </p>
+      <p
+        style="
+          font-size: 10px;
+          text-align: left;
+          margin-left: 5px;
+          margin-top: 1px;
+        "
+      >
+        {{referenceBank}}
+      </p>
+    </div>
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        width: 33.3%;
+        border: 1px solid black;
+        border-left: none;
+        border-right: none;
+        border-top: none;
+      "
+    >
+      <p
+        style="
+          font-size: 6px;
+          text-align: left;
+          margin-left: 5px;
+          margin-top: 3px;
+        "
+      >
+      TELÉFONO:
+      </p>
+      <p
+        style="
+          font-size: 10px;
+          text-align: left;
+          margin-left: 5px;
+          margin-top: 1px;
+        "
+      >
+        {{referenceBankPhone}}
+      </p>
+    </div>
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        width: 33.3%;
+        border: 1px solid black;
+        border-right: none;
+        border-top: none;
+      "
+    >
+      <p
+        style="
+          font-size: 6px;
+          text-align: left;
+          margin-left: 5px;
+          margin-top: 3px;
+        "
+      >
+      PRODUCTO:
+      </p>
+      <p
+        style="
+          font-size: 10px;
+          text-align: left;
+          margin-left: 5px;
+          margin-top: 1px;
+        "
+      >
+        {{referenceBankProduct}}
+      </p>
+    </div>
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        width: 33.3%;
+        border: 1px solid black;
+        border-top: none;
+      "
+    >
+      <p
+        style="
+          font-size: 6px;
+          text-align: left;
+          margin-left: 5px;
+          margin-top: 3px;
+        "
+      >
+      CIUDAD:
+      </p>
+      <p
+        style="
+          font-size: 10px;
+          text-align: left;
+          margin-left: 5px;
+          margin-top: 1px;
+        "
+      >
+        {{referenceBankCity.description}}
+      </p>
+    </div>
+  </div>
+    </div>
+
+      <div style="display: flex; flex-direction: column; margin-top: -10px">
+        <div
+          style="
+            text-align: center;
+            background-color: #2379ae;
+            color: white;
+            border: 0.5px solid black;
+            border-top: none;
+            border-bottom: none;
+            width: 93%;
+            margin-left: 20px;
+            margin-top: 10px;
+          "
+        >
+          <p style="font-size: 12px; color: white">
+            DECLARACIÓN DE ORIGEN DE FONDOS
+          </p>
+        </div>
+        <div style="border:1px solid black;width: 93%;margin-left: 20px;padding: 7px;">
+          <p style="font-size: 10px;text-align: justify;">
+            Declaro bajo la gravedad del juramento que mi patrimonio y los recursos con los que realizo mis actividades económicas, así como con los que realizo las operaciones por intermedio de SMART EVOLUTION S.A.S., provienen de actividades lícitas, en especial de las fuentes señaladas en este documento.
+          </p>
+        </div>
+      </div>
+  
+      <div style="display: flex; flex-direction: column; margin-top: -10px">
+        <div
+          style="
+            text-align: center;
+            background-color: #2379ae;
+            color: white;
+            border: 0.5px solid black;
+            border-top: none;
+            border-bottom: none;
+            width: 93%;
+            margin-left: 20px;
+            margin-top: 10px;
+          "
+        >
+          <p style="font-size: 12px; color: white">
+            AUTORIZACIÓN DE VISITA, VERIFICACIÓN DE INFORMACIÓN, CONSULTA Y REPORTE
+          </p>
+        </div>
+        <div style="border:1px solid black;width: 93%;margin-left: 20px;padding: 7px;">
+          <p style="font-size: 10px;text-align: justify;">
+            Autorizo a SMART EVOLUTION S.A.S. o a la entidad que ella designe, a realizar la visita correspondiente, con el fin de verificar los datos que entrego en este documento y sus anexos, así mismo autorizo a verificar por cualquier medio la información que ha sido aportada. Para estos efectos autorizo a SMART EVOLUTION S.A.S. a realizar consultas en las fuentes de información que estime necesarias. Autorizo de manera irrevocable a SMART EVOLUTION S.A.S. a realizar las consultas que estime conveniente para conocer los antecedentes disciplinarios, penales, contractuales, fiscales, comerciales, financieros y de cualquier otra naturaleza, incluida la consulta a las centrales de riesgo o a cualquier otra entidad pública o privada que maneje o administre bases de datos de cualquier índole o a las listas nacionales o internacionales que estime pertinente.
+          </p>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; margin-top: -10px">
+        <div
+          style="
+            text-align: center;
+            background-color: #2379ae;
+            color: white;
+            border: 0.5px solid black;
+            border-top: none;
+            border-bottom: none;
+            width: 93%;
+            margin-left: 20px;
+            margin-top: 10px;
+          "
+        >
+          <p style="font-size: 12px; color: white">
+            DECLARACIONES GENERALES
+          </p>
+        </div>
+        <div style="border:1px solid black;width: 93%;margin-left: 20px;padding: 7px;">
+            <p style="font-size: 10px;text-align: justify;">
+                Obrando en nombre propio, declaro, bajo la gravedad del juramento:
+            </p>
+            <br>
+            <p style="font-size: 10px;text-align: justify;">
+                1) Que toda la documentación e información aportada es veraz y exacta y no existe falsedad alguna en la misma, estando SMART EVOLUTION S.A.S., o a quien ésta designe, facultada para efectuar las verificaciones que considere pertinentes y para dar por terminada cualquier relación comercial o jurídica, si verifica que ello no es así.
+            </p>
+            <p style="font-size: 10px;text-align: justify;">
+                2) Que los recursos que serán comprometidos en la operación, no provendrán de ninguna actividad ilícita, ni los recursos que resulten de esta, serán destinados para actividades delictivas.
+            </p>
+            <p style="font-size: 10px;text-align: justify;">
+                3) Que no me encuentro reportado en las listas internacionales vinculantes para Colombia, de conformidad con el derecho internacional (listas de las Naciones Unidas) o en las listas de la OFAC y otras listas de control, estando SMART EVOLUTION S.A.S. facultada para efectuar las verificaciones y consultas a las listas que considere pertinentes y para dar por terminada cualquier relación comercial o jurídica si verifica que figuro en dichas listas.
+            </p>
+            <p style="font-size: 10px;text-align: justify;">
+                4) Que no existen contra mí, investigaciones o procesos penales por delitos dolosos, estando SMART EVOLUTION S.A.S. facultada para efectuar las verificaciones que considere pertinentes en bases de datos y centrales de riesgo informaciones públicas  nacionales o internacionales y para dar por terminada cualquier relación comercial o jurídica, si verifica que existen investigaciones o procesos o existen informaciones en dichas bases de datos públicas que puedan colocar a SMART EVOLUTION S.A.S. frente a un riesgo legal o reputacional.
+            </p>
+            <p style="font-size: 10px;text-align: justify;">
+                5) Que en el evento en que suceda alguna de las circunstancias descritas en los párrafos anteriores, me comprometo a comunicarlo de inmediato a la SMART EVOLUTION S.A.S.
+            </p>
+            <p style="font-size: 10px;text-align: justify;">
+                6) Que autorizo a SMART EVOLUTION S.A.S. a comunicar o reportar a las autoridades nacionales, cualquiera de las situaciones acá descritas, en caso de presentarse, así como a suministrar a dichas autoridades las informaciones que ellas requieran, exonerando a SMART EVOLUTION S.A.S. de toda responsabilidad por tal hecho.
+            </p>
+            <p style="font-size: 10px;text-align: justify;">
+                7) Que ninguna otra persona natural o jurídica, tiene interés no legítimo en el contrato o relación jurídica de la entidad que represento con SMART EVOLUTION S.A.S.
+            </p>
+            <p style="font-size: 10px;text-align: justify;">
+                8) Que conozco que SMART EVOLUTION S.A.S. está en la obligación legal de solicitar las aclaraciones que estime pertinentes, en el evento en que pueda tener dudas razonables sobre mis operaciones o sobre el origen de mis activos, evento en el cual me comprometo a suministrar las respectivas aclaraciones. Si estas no son satisfactorias, autorizo a SMART EVOLUTION S.A.S., o quien ésta designe, para dar por terminada cualquier relación jurídica.
+            </p>
+            <br>
+            <p style="font-size: 10px;text-align: justify;">
+                Mensaje de datos:
+            </p>
+            <br>
+            <br>
+            <br>
+            <p style="font-size: 10px;text-align: justify;">
+                9) Que la información contenida en el presente documento, goza de plena validez a la luz del artículo 5 de la ley 527 de 1999, por medio del cual se reconoce jurídicamente los efectos de los mensajes de datos y autorizo a SMART EVOLUTION S.A.S haga uso de este mecanismo.
+            </p>
+            <br>
+        
+            <p style="font-size: 10px;text-align: justify;">
+                10) Que reconozco el uso de firmas electrónicas como mecanismo técnico que permite verificar la identidad, y que verifican tanto autenticidad como integridad y, como titulares de datos sensibles, autorizo a SMART EVOLUTION S.A.S, a su tratamiento para finalidades de autenticación y firma del presente documento electrónico.
+            </p>
+            
+        </div>
+        <br>
+      </div>
+      <div style="display: flex; flex-direction: column; margin-top: -20px">
+        <div
+          style="
+            text-align: center;
+            background-color: #2379ae;
+            color: white;
+            border: 0.5px solid black;
+            border-top: none;
+            border-bottom: none;
+            width: 93%;
+            margin-left: 20px;
+            margin-top: 10px;
+          "
+        >
+          <p style="font-size: 12px; color: white">
+            RECONOCIMIENTO DE MENSAJE DE DATOS Y FIRMA ELECTRÓNICA
+          </p>
+        </div>
+        <div style="border:1px solid black;width: 93%;margin-left: 20px;padding: 7px;">
+          <p style="font-size: 10px;text-align: justify;">
+            Yo <strong>{{firstName}} {{lastName}}</strong>, identificado(a) con el documento de identidad número <strong>{{typeDocument.abbreviation}} {{documentNumber}}</strong> y actuando en nombre propio declaro que la información contenida en el presente documento goza de plena validez a la luz del artículo 5 de la Ley 527 de 1999, por medio del cual se reconoce jurídicamente los efectos de los mensajes de datos. De igual forma, reconozco y autorizo el uso de la firma electrónica y los mecanismos técnicos que permiten verificar mi identidad y la autenticidad como integridad de la información plasmada.
+          </p>
+        </div>
+      </div>
+    
+  </body>
+</html>
