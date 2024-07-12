@@ -22,5 +22,5 @@ jobs:
             cd "${{secrets.TEST_FOLDER}}"
             git pull origin development
             echo "${{ secrets.DOT_ENV_TEST }}" > core/.env
-            sudo docker compose --env-file docker.env up --build -d 
+            sudo docker compose -f docker-compose.test.yml --env-file docker.env up -d
             exit

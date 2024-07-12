@@ -1,0 +1,49 @@
+services:
+  web:
+    build: 
+      context: .
+    command: python manage.py runserver 0.0.0.0:${DJANGO_PORT:-8000}
+    volumes:
+      - .:/app
+      - ./logs:/app/logs
+    ports:
+      - "${DJANGO_PORT:-8000}:${DJANGO_PORT:-8000}"
+    environment:
+      - DJANGO_PORT=${DJANGO_PORT:-8000}
+    env_file:
+      - docker.env
+    container_name: backend_smart_evolution
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "1G"
+    networks:
+      - mi_red
+
+  db:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_DATABASE: ${DATABASE_NAME}
+      MYSQL_USER: ${DATABASE_USER}
+      MYSQL_PASSWORD: ${DATABASE_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - mi_red
+    container_name: mysql-db
+
+networks:
+  mi_red:
+    driver: bridge
+
+volumes:
+  mysql_data:
