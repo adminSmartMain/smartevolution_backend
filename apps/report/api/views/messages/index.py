@@ -23,88 +23,90 @@ class MessagesAV(APIView):
     
     @checkRole(['admin'])
     def post(self, request, *args, **kwargs):
-        try:
-            balance = request.data['balance']
-            emitter = request.data['emitter']
-            bills   = request.data['bills']
-            averageTerm = request.data['averageTerm']
-            amount = request.data['amount']
-            investorName = ''
-            #split the name of the investor if it has more than one name
-            splitInvestorName = request.data['investor'].split(' ')
-            match len(splitInvestorName):
-                case 1:
-                    investorName = splitInvestorName[0]
-                case 2:
-                    investorName = splitInvestorName[0] + ' ' + splitInvestorName[1]
-                case 3:
-                    investorName = splitInvestorName[0] + ' ' + splitInvestorName[2]
-                case 4:
-                    investorName = splitInvestorName[0] + ' ' + splitInvestorName[2]
-            requestOpId = request.data['opId']
-            sellOffer = generateSellOfferByInvestor(request.data['opId'],request.data['investorId'],'P-')
-            #gen the report
-            template = get_template('buyorder.html')
-            parsedTemplate = template.render(sellOffer)
-            approveCode = genVerificationCode()
-            rejectCode  = genVerificationCode()
-            # get the client
-            client = Client.objects.get(id=request.data['investorId'])
-            pdf = pdfToBase64(parsedTemplate)
-            # save the report
-            serializer = SellOrderSerializer(data={ 'file'        : pdf['pdf'],
-                                                    'opId'        : request.data['opId'],
-                                                    'client'      : client.id,
-                                                    'approveCode' : approveCode,
-                                                    'rejectCode'  : rejectCode }, context={'request': request})
-            if serializer.is_valid():
-                serializer.save()
-            else:
-                return response({'error': True, 'message': serializer.errors}, 400)
+        print("ACA")
+        balance = request.data['balance']
+        emitter = request.data['emitter']
+        bills   = request.data['bills']
+        averageTerm = request.data['averageTerm']
+        amount = request.data['amount']
+        investorName = ''
+        #split the name of the investor if it has more than one name
+        splitInvestorName = request.data['investor'].split(' ')
+        match len(splitInvestorName):
+            case 1:
+                investorName = splitInvestorName[0]
+            case 2:
+                investorName = splitInvestorName[0] + ' ' + splitInvestorName[1]
+            case 3:
+                investorName = splitInvestorName[0] + ' ' + splitInvestorName[2]
+            case 4:
+                investorName = splitInvestorName[0] + ' ' + splitInvestorName[2]
+        print("ACA2")
+        
+        requestOpId = request.data['opId']
+        sellOffer = generateSellOfferByInvestor(request.data['opId'],request.data[''],'P-')
+        #gen the report
+        template = get_template('buyorder.html')
+        parsedTemplate = template.render(sellOffer)
+        approveCode = genVerificationCode()
+        rejectCode  = genVerificationCode()
+        # get the client
+        client = Client.objects.get(id=request.data['investorId'])
+        pdf = pdfToBase64(parsedTemplate)
+        # save the report
+        print("ACA3")
+        
+        serializer = SellOrderSerializer(data={ 'file'        : pdf['pdf'],
+                                                'opId'        : request.data['opId'],
+                                                'client'      : client.id,
+                                                'approveCode' : approveCode,
+                                                'rejectCode'  : rejectCode }, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            return response({'error': True, 'message': serializer.errors}, 400)
 
-            # Get the sell order
-            sellOrder = SellOrder.objects.get(id=serializer.data['id'])
+        # Get the sell order
+        sellOrder = SellOrder.objects.get(id=serializer.data['id'])
 
-            # get the investor operations
-            operations = PreOperation.objects.filter(investor=request.data['investorId'], opId=request.data['opId'])
+        # get the investor operations
+        operations = PreOperation.objects.filter(investor=request.data['investorId'], opId=request.data['opId'])
 
-            # save the operations in the sell order operations
-            for x in operations:
-                SellOrderOperation.objects.create(id=gen_uuid(), sellOrder=sellOrder, operation=x)
+        # save the operations in the sell order operations
+        for x in operations:
+            SellOrderOperation.objects.create(id=gen_uuid(), sellOrder=sellOrder, operation=x)
 
-            # set the messages
+        # set the messages
 
-            # get the payers names from the request and contact them
-            payers = ''
-            for x in request.data['payers']:
-                #remove the . at the final of the name
-                payers += x['name'][:-1]
+        # get the payers names from the request and contact them
+        payers = ''
+        for x in request.data['payers']:
+            #remove the . at the final of the name
+            payers += x['name'][:-1]
 
-            messages = [
-                f'Estimado {investorName}.\nLe informamos que cuenta con un disponible de $ {"{:,}".format(round(balance))} COP. Por lo anterior, nos gustaría ofrecerle la \nsiguiente operación:\nEmisor: {emitter}\nPagador(es):{payers}\nCantidad de Facturas: {bills}\nPlazo Promedio: {averageTerm} días\nMonto: $ {"{:,}".format(amount)} COP\nA continuación le enviaremos la ficha técnica con los detalles de la operación para su consulta.',
-                f'Si está de acuerdo con la operación, por favor responda {approveCode}. En caso contrario, por favor responda {rejectCode}.\nSi desea conversar con nosotros, por favor escriba su requerimiento y nos estaremos comunicando con usted a la brevedad. ¡Muchas gracias!',
-            ]
+        messages = [
+            f'Estimado {investorName}.\nLe informamos que cuenta con un disponible de $ {"{:,}".format(round(balance))} COP. Por lo anterior, nos gustaría ofrecerle la \nsiguiente operación:\nEmisor: {emitter}\nPagador(es):{payers}\nCantidad de Facturas: {bills}\nPlazo Promedio: {averageTerm} días\nMonto: $ {"{:,}".format(amount)} COP\nA continuación le enviaremos la ficha técnica con los detalles de la operación para su consulta.',
+            f'Si está de acuerdo con la operación, por favor responda {approveCode}. En caso contrario, por favor responda {rejectCode}.\nSi desea conversar con nosotros, por favor escriba su requerimiento y nos estaremos comunicando con usted a la brevedad. ¡Muchas gracias!',
+        ]
 
-            # get the legal representative of the investor
-            legalRepresentative = LegalRepresentative.objects.get(client=request.data['investorId'])
-            
+        # get the legal representative of the investor
+        legalRepresentative = LegalRepresentative.objects.get(client=request.data['investorId'])
+        
 
-            # send the notification message
-            sendWhatsApp(f'Oferta de venta operacion Nro {requestOpId} - SMART EVOLUTION', legalRepresentative.phone_number)
-            # send the fist message
-            sendWhatsApp(messages[0], legalRepresentative.phone_number)
-            # send the file
-            sendWhatsApp(f'Ficha técnica de la operación {sellOrder.file.url}', legalRepresentative.phone_number)
-            # send the second message
-            sendWhatsApp(messages[1], legalRepresentative.phone_number)
+        # send the notification message
+        sendWhatsApp(f'Oferta de venta operacion Nro {requestOpId} - SMART EVOLUTION', legalRepresentative.phone_number)
+        # send the fist message
+        sendWhatsApp(messages[0], legalRepresentative.phone_number)
+        # send the file
+        sendWhatsApp(f'Ficha técnica de la operación {sellOrder.file.url}', legalRepresentative.phone_number)
+        # send the second message
+        sendWhatsApp(messages[1], legalRepresentative.phone_number)
 
-            return response({'error': False, 'data': {
-                'approveCode': approveCode,
-                'rejectCode': rejectCode,
-            }}, 200)
-        except Exception as e:
-            return response({'error': True, 'message': str(e)}, 500)
-    
+        return response({'error': False, 'data': {
+            'approveCode': approveCode,
+            'rejectCode': rejectCode,
+        }}, 200)
+   
     def get(self, request):
         return response({'error': False, 'data': 'xd' }, 200)
     
