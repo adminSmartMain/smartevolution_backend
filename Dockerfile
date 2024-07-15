@@ -33,6 +33,6 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-RUN cd apps/base/scripts/pdf_parser/ && npm install
+RUN cd apps/base/scripts/pdf_parser/ && npm install puppeteer --save
 EXPOSE 8000
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
