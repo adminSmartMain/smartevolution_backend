@@ -2,7 +2,7 @@ const puppeteer = require("puppeteer");
 
 (async () => {
   try {
-    const chromiumPath = "/usr/bin/chromium-browser";
+    const chromiumPath = "/usr/bin/chromium";
 
     const browser = await puppeteer.launch({
       executablePath: chromiumPath,
