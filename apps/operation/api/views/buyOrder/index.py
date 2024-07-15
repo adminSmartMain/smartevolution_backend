@@ -30,52 +30,49 @@ class BuyOrderAV(BaseAV):
     
     @checkRole(['admin'])
     def post(self, request, pk=None):
-        try:
-            # Check if an negotiation summary exists for this operation
-            negotiationSummary = NegotiationSummary.objects.filter(opId=request.data['opId']).first()
-            if not negotiationSummary:
-                return response({'error': True, 'message': 'No existe un resumen de negociación para esta operación'}, 400)
-            #Get the operation
-            operation = PreOperation.objects.filter(opId=request.data['opId'], investor=request.data['investorId']).first()
-            requestId = f'ORDEN DE COMPRA OP {operation.opId} {operation.investor.first_name if operation.investor.first_name else operation.investor.social_reason}'
-            sellOffer = generateSellOfferByInvestor(operation.opId,operation.investor.id)
-            # gen the report
-            template       = get_template('newBuyOrderSignatureTemplate.html')
-            parsedTemplate = template.render(sellOffer)
-            pdf            = pdfToBase64(parsedTemplate)
-            
+        # Check if an negotiation summary exists for this operation
+        negotiationSummary = NegotiationSummary.objects.filter(opId=request.data['opId']).first()
+        if not negotiationSummary:
+            return response({'error': True, 'message': 'No existe un resumen de negociación para esta operación'}, 400)
+        #Get the operation
+        operation = PreOperation.objects.filter(opId=request.data['opId'], investor=request.data['investorId']).first()
+        requestId = f'ORDEN DE COMPRA OP {operation.opId} {operation.investor.first_name if operation.investor.first_name else operation.investor.social_reason}'
+        sellOffer = generateSellOfferByInvestor(operation.opId,operation.investor.id)
+        # gen the report
+        template       = get_template('newBuyOrderSignatureTemplate.html')
+        parsedTemplate = template.render(sellOffer)
+        pdf            = pdfToBase64(parsedTemplate)
+        
 
-            # gen the electronic signature
-            electronicSignature = genElectronicSignature(pdf, requestId, 'Orden de compra', requestId, [
-            {
-                'name' : sellOffer['legalRepresentative'],
-                'email': sellOffer['legalRepresentativeEmail'],
-                'phone': sellOffer['legalRepresentativePhone'],
-                'label': True
-            },])
+        # gen the electronic signature
+        electronicSignature = genElectronicSignature(pdf, requestId, 'Orden de compra', requestId, [
+        {
+            'name' : sellOffer['legalRepresentative'],
+            'email': sellOffer['legalRepresentativeEmail'],
+            'phone': sellOffer['legalRepresentativePhone'],
+            'label': True
+        },])
 
-            if electronicSignature['error'] == True:
-                return response({'error': True, 'message': electronicSignature['message']['message']}, 400)
-            buyOrderData = {
-                'operation' : operation.id,
-                'code'      : electronicSignature['message']['document'],
-                'name'      : requestId,
-                'url'       : '',
-                'date'      : timezone.now().date().isoformat(),
-                'status'    : 1,
-                'signStatus': 0,
-            }
+        if electronicSignature['error'] == True:
+            return response({'error': True, 'message': electronicSignature['message']['message']}, 400)
+        buyOrderData = {
+            'operation' : operation.id,
+            'code'      : electronicSignature['message']['document'],
+            'name'      : requestId,
+            'url'       : '',
+            'date'      : timezone.now().date().isoformat(),
+            'status'    : 1,
+            'signStatus': 0,
+        }
 
-            # serializer the buy order
-            serializer = BuyOrderSerializer(data=buyOrderData, context={'request': request})
-            if serializer.is_valid():
-                serializer.save()
-            else:
-                return response({'error': True, 'message': serializer.errors}, 400)
-            
-            return response({'error': False, 'message':'Firma enviada correctamente'}, 200)
-        except Exception as e:
-            return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
+        # serializer the buy order
+        serializer = BuyOrderSerializer(data=buyOrderData, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            return response({'error': True, 'message': serializer.errors}, 400)
+        
+        return response({'error': False, 'message':'Firma enviada correctamente'}, 200)
     
 
     @checkRole(['admin'])
