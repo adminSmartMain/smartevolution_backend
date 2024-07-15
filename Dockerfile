@@ -2,6 +2,11 @@ FROM python:3.11-slim
 RUN apt-get update && apt-get install -y \
     default-libmysqlclient-dev \
     gcc \
+    curl \
+    && apt-get clean
+
+RUN curl -fsSL https://deb.nodesource.com/setup_14.x | bash - \
+    && apt-get install -y nodejs \
     && apt-get clean
 
 WORKDIR /app
