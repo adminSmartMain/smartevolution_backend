@@ -31,10 +31,12 @@ class BuyOrderAV(BaseAV):
     @checkRole(['admin'])
     def post(self, request, pk=None):
         # Check if an negotiation summary exists for this operation
+        print("AQUIII")
         negotiationSummary = NegotiationSummary.objects.filter(opId=request.data['opId']).first()
         if not negotiationSummary:
             return response({'error': True, 'message': 'No existe un resumen de negociación para esta operación'}, 400)
         #Get the operation
+        print("AQUIII22")
         operation = PreOperation.objects.filter(opId=request.data['opId'], investor=request.data['investorId']).first()
         requestId = f'ORDEN DE COMPRA OP {operation.opId} {operation.investor.first_name if operation.investor.first_name else operation.investor.social_reason}'
         sellOffer = generateSellOfferByInvestor(operation.opId,operation.investor.id)
@@ -42,8 +44,8 @@ class BuyOrderAV(BaseAV):
         template       = get_template('newBuyOrderSignatureTemplate.html')
         parsedTemplate = template.render(sellOffer)
         pdf            = pdfToBase64(parsedTemplate)
+        print("AQUIII333")
         
-
         # gen the electronic signature
         electronicSignature = genElectronicSignature(pdf, requestId, 'Orden de compra', requestId, [
         {
@@ -52,7 +54,8 @@ class BuyOrderAV(BaseAV):
             'phone': sellOffer['legalRepresentativePhone'],
             'label': True
         },])
-
+        print("AQUIII444")
+        
         if electronicSignature['error'] == True:
             return response({'error': True, 'message': electronicSignature['message']['message']}, 400)
         buyOrderData = {
@@ -64,7 +67,8 @@ class BuyOrderAV(BaseAV):
             'status'    : 1,
             'signStatus': 0,
         }
-
+        print("AQUIII4445")
+        
         # serializer the buy order
         serializer = BuyOrderSerializer(data=buyOrderData, context={'request': request})
         if serializer.is_valid():
