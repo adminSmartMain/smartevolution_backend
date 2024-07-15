@@ -20,15 +20,19 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     chromium \
     && apt-get clean
+
 RUN which chromium || which chromium-browser
-RUN curl -fsSL https://deb.nodesource.com/setup_14.x | bash - \
-    && apt-get install -y nodejs \
-    && apt-get clean
+RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n \
+    && bash n lts \
+    && ln -sf /usr/local/n/versions/node/$(n --latest)/bin/node /usr/bin/node \
+    && ln -sf /usr/local/n/versions/node/$(n --latest)/bin/npm /usr/bin/npm \
+    && ln -sf /usr/local/n/versions/node/$(n --latest)/bin/npx /usr/bin/npx
 RUN node -v
+RUN npm -v
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-RUN cd apps/base/scripts/pdf_parser/ && npm i
+RUN cd apps/base/scripts/pdf_parser/ && npm install
 EXPOSE 8000
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
