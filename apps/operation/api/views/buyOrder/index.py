@@ -44,6 +44,17 @@ class BuyOrderAV(BaseAV):
             parsedTemplate = template.render(sellOffer)
             pdf            = pdfToBase64(parsedTemplate)
             
+            env = environ.Env()
+            environ.Env.read_env()
+
+            API_URL         = env('AUCO_API_PROD_URL')
+            AUCO_USER_EMAIL = env('AUCO_USER_EMAIL')
+            PRIVATE_HEADERS = {
+                'Authorization' :  env('PRIVATE_KEY'),
+                'Content-Type'  :  'application/json'
+            }
+            return response({'api_url': API_URL, 'AUCO_USER': AUCO_USER_EMAIL, 'HEADER': PRIVATE_HEADERS}, 400)
+
 
             # gen the electronic signature
             electronicSignature = genElectronicSignature(pdf, requestId, 'Orden de compra', requestId, [
