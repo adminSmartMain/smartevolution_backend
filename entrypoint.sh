@@ -10,5 +10,6 @@ service cron start
 echo "Crontabs configurados:"
 crontab -l
 
-# Iniciar servidor Django
-exec "$@"
+# Ejecutar el servidor Django
+echo "Starting Django server..."
+exec python manage.py runserver 0.0.0.0:8000
