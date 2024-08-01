@@ -1,4 +1,5 @@
 #!/bin/sh
+mkdir -p /app/logs
 
 # Configurar crontab
 python manage.py crontab add
