@@ -41,6 +41,8 @@ class RefundSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.updated_at      = timezone.now()
         instance.user_updated_at = self.context['request'].user
+
+        #se agrega validacion par controlar cuando los montos amount y gmAmount no sufran cambios se pueda actualiza los demas campos 
         if instance.amount != validated_data['amount'] or instance.gmAmount != validated_data['gmAmount']:
             # validate account amount
             if instance.account.balance < (validated_data['amount'] + validated_data['gmAmount']):
