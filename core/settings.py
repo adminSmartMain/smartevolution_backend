@@ -55,7 +55,8 @@ THIRD_PARTY_APPS = ['rest_framework',
 INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_PARTY_APPS
 
 CRONJOBS = [
-('0 */6 * * *', 'apps.base.cron.check_bills_by_cufe'),
+    ('*/10 * * * *', 'apps.base.cron.check_bills_by_cufe >> /app/logs/cronjob.log 2>&1'),
+    #('0 */6 * * *', 'apps.base.cron.check_bills_by_cufe >> /app/logs/cronjob.log 2>&1'),
 ]
 
 MIDDLEWARE = [
