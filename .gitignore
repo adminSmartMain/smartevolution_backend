@@ -1,7 +1,7 @@
 *.pyc
 __pycache__
 smart_env
-**/node_modules/
+./node_modules/
 .env*
 venv
 *-lock.json

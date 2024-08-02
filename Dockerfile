@@ -40,7 +40,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 RUN mkdir -p /app/logs
-RUN cd apps/base/scripts/pdf_parser/ && npm install puppeteer --save
+#RUN cd apps/base/scripts/pdf_parser/ && npm install puppeteer --save
 
 # Copiar el script de entrada y hacerlo ejecutable
 COPY entrypoint.sh /entrypoint.sh
