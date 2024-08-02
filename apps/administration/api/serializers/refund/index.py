@@ -41,13 +41,14 @@ class RefundSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.updated_at      = timezone.now()
         instance.user_updated_at = self.context['request'].user
-        # validate account amount
-        if instance.account.balance < (validated_data['amount'] + validated_data['gmAmount']):
-            raise HttpException(400, 'El monto del reintegro no puede ser mayor al saldo de la cuenta')
-        # update account amount
-        instance.account.balance += (instance.amount + instance.gmAmount)
-        instance.account.balance -= validated_data['amount'] + validated_data['gmAmount']
-        instance.account.save()
+        if instance.amount != validated_data['amount'] or instance.gmAmount != validated_data['gmAmount']:
+            # validate account amount
+            if instance.account.balance < (validated_data['amount'] + validated_data['gmAmount']):
+                raise HttpException(400, 'El monto del reintegro no puede ser mayor al saldo de la cuenta')
+            # update account amount
+            instance.account.balance += (instance.amount + instance.gmAmount)
+            instance.account.balance -= validated_data['amount'] + validated_data['gmAmount']
+            instance.account.save()
 
         return super().update(instance, validated_data)
 
