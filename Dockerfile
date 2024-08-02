@@ -26,11 +26,10 @@ RUN apt-get update && apt-get install -y \
 
 RUN which chromium || which chromium-browser
 RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n \
-    && bash n 18.17.0 \  # Cambia 'lts' por la versión específica
+    && bash n 18.17.0 \
     && ln -sf /usr/local/n/versions/node/18.17.0/bin/node /usr/bin/node \
     && ln -sf /usr/local/n/versions/node/18.17.0/bin/npm /usr/bin/npm \
-    && ln -sf /usr/local/n/versions/node/18.17.0/bin/npx /usr/bin/npx
-RUN node -v
+    && ln -sf /usr/local/n/versions/node/18.17.0/bin/npx /usr/bin/npxRUN node -v
 RUN npm -v
 
 WORKDIR /app
