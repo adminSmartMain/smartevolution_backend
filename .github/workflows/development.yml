@@ -20,6 +20,7 @@ jobs:
           port: ${{ secrets.SSH_PORT_TEST }}
           script: |
             cd "${{secrets.TEST_FOLDER}}"
+            git reset --hard
             git pull origin development
             echo "${{ secrets.DOT_ENV_TEST }}" > core/.env
             sudo docker compose -f docker-compose.test.yml --env-file docker.env up -d

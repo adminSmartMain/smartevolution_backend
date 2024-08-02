@@ -20,6 +20,7 @@ jobs:
           port: ${{ secrets.SSH_PORT_PROD }}
           script: |
             cd "${{secrets.PROD_FOLDER}}"
+            git reset --hard
             git pull origin main
             echo "${{ secrets.DOT_ENV_PROD }}" > core/.env
             sudo docker compose --env-file docker.env up --build -d
