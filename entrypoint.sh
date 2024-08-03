@@ -1,6 +1,8 @@
 #!/bin/sh
 
-cd apps/base/scripts/pdf_parser/ && npm install puppeteer --save
+cd apps/base/scripts/pdf_parser/
+rm -rf node_modules
+npm install puppeteer --save
 cd && cd /app
 mkdir -p /app/logs
 
