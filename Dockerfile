@@ -36,15 +36,15 @@ RUN npm -v
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+#RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
-RUN mkdir -p /app/logs
-RUN cd apps/base/scripts/pdf_parser/ && npm install puppeteer --save
+#RUN mkdir -p /app/logs
+#RUN cd apps/base/scripts/pdf_parser/ && npm install puppeteer --save
 
 # Copiar el script de entrada y hacerlo ejecutable
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+#COPY entrypoint.sh /entrypoint.sh
+#RUN chmod +x /entrypoint.sh
 
 EXPOSE 8000
 ENTRYPOINT ["/entrypoint.sh"]

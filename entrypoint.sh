@@ -1,4 +1,9 @@
 #!/bin/sh
+
+cd apps/base/scripts/pdf_parser/ && npm install puppeteer --save
+# Copiar el script de entrada y hacerlo ejecutable
+chmod +x /entrypoint.sh
+
 mkdir -p /app/logs
 
 # Configurar crontab
