@@ -43,8 +43,8 @@ COPY . .
 #RUN cd apps/base/scripts/pdf_parser/ && npm install puppeteer --save
 
 # Copiar el script de entrada y hacerlo ejecutable
-#COPY entrypoint.sh /entrypoint.sh
-#RUN chmod +x /entrypoint.sh
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 8000
 ENTRYPOINT ["/entrypoint.sh"]
