@@ -23,6 +23,8 @@ services:
         limits:
           cpus: "1.0"
           memory: "1G"
+
+#SE ELIMINO LA CREACION DEL NUEVO CONTENEDOR DE BD
 #    networks:
 #      - mi_red
 #
