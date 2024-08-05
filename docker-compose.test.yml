@@ -23,27 +23,27 @@ services:
         limits:
           cpus: "1.0"
           memory: "1G"
-    networks:
-      - mi_red
-
-  db:
-    image: mysql:latest
-    environment:
-      MYSQL_ROOT_PASSWORD: admin
-      MYSQL_DATABASE: ${DATABASE_NAME}
-      MYSQL_USER: ${DATABASE_USER}
-      MYSQL_PASSWORD: ${DATABASE_PASSWORD}
-    ports:
-      - "3307:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-    networks:
-      - mi_red
-    container_name: mysql-db
-
-networks:
-  mi_red:
-    driver: bridge
-
-volumes:
-  mysql_data:
+#    networks:
+#      - mi_red
+#
+#  db:
+#    image: mysql:latest
+#    environment:
+#      MYSQL_ROOT_PASSWORD: admin
+#      MYSQL_DATABASE: ${DATABASE_NAME}
+#      MYSQL_USER: ${DATABASE_USER}
+#      MYSQL_PASSWORD: ${DATABASE_PASSWORD}
+#    ports:
+#      - "3307:3306"
+#    volumes:
+#      - mysql_data:/var/lib/mysql
+#    networks:
+#      - mi_red
+#    container_name: mysql-db
+#
+#networks:
+#  mi_red:
+#    driver: bridge
+#
+#volumes:
+#  mysql_data:
