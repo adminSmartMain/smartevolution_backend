@@ -9,6 +9,8 @@ from django.utils import timezone
 from apps.base.utils.index import gen_uuid
 # Exceptions
 from apps.base.exceptions import HttpException
+#utils
+from apps.base.utils.logBalanceAccount import log_balance_change
 
 
 class DepositSerializer(serializers.ModelSerializer):
@@ -30,6 +32,7 @@ class DepositSerializer(serializers.ModelSerializer):
 
         # update account balance
         validated_data['account'].balance += validated_data['amount']
+        log_balance_change(validated_data['account'], 0, validated_data['account'].balance, validated_data['amount'], 'deposit', validated_data['id'], 'DepositSerializer - create')
         validated_data['account'].save()
 
         return Deposit.objects.create(**validated_data)
@@ -37,14 +40,20 @@ class DepositSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         #check if the account is the same
         if instance.account.id != validated_data['account'].id:
+            log_balance_change(instance.account, instance.account.balance, (instance.account.balance - instance.amount), -instance.amount, 'deposit', instance.id, 'DepositSerializer - update')
             instance.account.balance -= instance.amount
             instance.account.save()
+
             # update the new account balance
+            log_balance_change(validated_data['account'], validated_data['account'].balance, (validated_data['account'].balance + validated_data['amount']), validated_data['amount'], 'deposit', instance.id, 'DepositSerializer - update')
             validated_data['account'].balance += validated_data['amount']
+
             validated_data['account'].save()
         else:
             # update account balance
+            log_balance_change(instance.account, instance.account.balance, (instance.account.balance - instance.amount), -instance.amount, 'deposit', instance.id, 'DepositSerializer - update')
             instance.account.balance -= instance.amount
+            log_balance_change(instance.account, instance.account.balance, (instance.account.balance + validated_data['amount']), validated_data['amount'], 'deposit', instance.id, 'DepositSerializer - update')
             instance.account.balance += validated_data['amount']
             instance.account.save()
         

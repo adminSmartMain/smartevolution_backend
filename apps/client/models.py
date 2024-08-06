@@ -4,6 +4,7 @@ from .api.models.index import (
     Contact,
     LegalRepresentative,
     Account,
+    AccountBalanceHistory,
     Request,
     RiskProfile,
     Assets,

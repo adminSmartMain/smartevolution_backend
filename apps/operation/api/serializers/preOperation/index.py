@@ -18,6 +18,8 @@ import requests
 import datetime
 # Exceptions
 from apps.base.exceptions import HttpException
+#utils
+from apps.base.utils.logBalanceAccount import log_balance_change
 
 class PreOperationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -59,6 +61,8 @@ class PreOperationSerializer(serializers.ModelSerializer):
                 instance.bill.save()
 
         if validated_data['status'] == 1 and instance.status == 0:
+            log_balance_change(instance.clientAccount, instance.clientAccount.balance, (instance.clientAccount.balance - (instance.presentValueInvestor + instance.GM)), -(instance.presentValueInvestor + instance.GM), 'pre_operation', instance.id, 'PreOperation - update')
+
             instance.clientAccount.balance -= (instance.presentValueInvestor + instance.GM)
             instance.clientAccount.save()
 

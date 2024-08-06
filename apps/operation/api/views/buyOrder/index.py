@@ -25,6 +25,9 @@ from collections import defaultdict
 
 # Decorators
 from apps.base.decorators.index import checkRole
+#utils
+from apps.base.utils.logBalanceAccount import log_balance_change
+
 
 class BuyOrderAV(BaseAV):
     
@@ -236,6 +239,8 @@ class BuyOrderWebhookAV(BaseAV):
 
                 for operation in operations:
                     operation.status = 1
+                    log_balance_change(operation.clientAccount, operation.clientAccount.balance, (operation.clientAccount.balance - (operation.presentValueInvestor + operation.GM)), -(operation.presentValueInvestor + operation.GM), 'buy_order', operation.id, 'BuyOrderWebHookAv - post')
+
                     operation.clientAccount.balance -= (operation.presentValueInvestor + operation.GM)
                     operation.clientAccount.save()
                     operation.save()

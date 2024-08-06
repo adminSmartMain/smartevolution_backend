@@ -9,6 +9,8 @@ from apps.administration.api.serializers.index import RefundSerializer, RefundRe
 from apps.base.utils.index import response
 # Decorators
 from apps.base.decorators.index import checkRole
+#utils
+from apps.base.utils.logBalanceAccount import log_balance_change
 
 
 class RefundAV(BaseAV):
@@ -78,6 +80,7 @@ class RefundAV(BaseAV):
         try:
             refund = Refund.objects.get(pk=pk)
             # add amount to account
+            log_balance_change(refund.account, refund.account.balance, (refund.account.balance + (refund.amount + refund.gmAmount)), (refund.amount + refund.gmAmount), 'refund', refund.id, 'RefundAV - delete')
             refund.account.balance += (refund.amount + refund.gmAmount)
             refund.account.save()
             refund.state = False

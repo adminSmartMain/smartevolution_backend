@@ -10,7 +10,8 @@ from apps.base.exceptions import HttpException
 # Serializers
 from apps.misc.api.serializers.index   import BankSerializer, AccountTypeSerializer
 from apps.client.api.serializers.index import ClientSerializer, AccountSerializer
-
+#utils
+from apps.base.utils.logBalanceAccount import log_balance_change
 
 class RefundSerializer(serializers.ModelSerializer):
     class Meta:
@@ -48,7 +49,9 @@ class RefundSerializer(serializers.ModelSerializer):
             if instance.account.balance < (validated_data['amount'] + validated_data['gmAmount']):
                 raise HttpException(400, 'El monto del reintegro no puede ser mayor al saldo de la cuenta')
             # update account amount
+            log_balance_change(instance.account, instance.account.balance, (instance.account.balance + (instance.amount + instance.gmAmount)), (instance.amount + instance.gmAmount), 'refund', instance.id, 'RefundSerializer - update')
             instance.account.balance += (instance.amount + instance.gmAmount)
+            log_balance_change(instance.account, instance.account.balance, (instance.account.balance - (validated_data['amount'] + validated_data['gmAmount'])), -(validated_data['amount'] + validated_data['gmAmount']), 'refund', instance.id, 'RefundSerializer - update')
             instance.account.balance -= validated_data['amount'] + validated_data['gmAmount']
             instance.account.save()
 

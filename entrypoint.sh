@@ -7,6 +7,7 @@ cd && cd /app
 mkdir -p /app/logs
 
 # Configurar crontab
+python manage.py migrate
 python manage.py crontab add
 
 # Iniciar cron

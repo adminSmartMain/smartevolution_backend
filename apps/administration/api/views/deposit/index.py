@@ -7,6 +7,8 @@ from apps.administration.api.serializers.index import DepositSerializer, Deposit
 from apps.base.utils.index import response, BaseAV
 # Decorators
 from apps.base.decorators.index import checkRole
+#utils
+from apps.base.utils.logBalanceAccount import log_balance_change
 
 
 class DepositAV(BaseAV):
@@ -79,6 +81,8 @@ class DepositAV(BaseAV):
         try:
             deposit = Deposit.objects.get(pk=pk)
             deposit.state = 0
+
+            log_balance_change(deposit.account, deposit.account.balance, (deposit.account.balance - deposit.amount), -deposit.amount, 'deposit', deposit.id, 'DepositAV - delete')
             deposit.account.balance -= deposit.amount
             deposit.account.save()
             deposit.save()

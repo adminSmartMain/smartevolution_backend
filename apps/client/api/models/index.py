@@ -2,7 +2,7 @@ from .broker.index import Broker
 from .client.index import Client
 from .contact.index import Contact
 from .legalRepresentative.index import LegalRepresentative
-from .account.index import Account
+from .account.index import Account, AccountBalanceHistory
 from .request.index import Request
 from .riskProfile.index import RiskProfile
 from .financialProfile.financialSituation.index import Assets, Passives, Patrimony, StateOfResult

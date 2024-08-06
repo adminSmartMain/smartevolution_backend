@@ -17,3 +17,27 @@ class Account(BaseModel):
         verbose_name = 'account'
         verbose_name_plural = 'accounts'
         ordering = ['-created_at']
+
+#se crea un modelo para manejar los logs de cambios del balance de la cuenta
+class AccountBalanceHistory(BaseModel):
+    OPERATION_CHOICES = [
+        ('deposit', 'Deposit'),
+        ('pre_operation', 'PreOperation'),
+        ('refund', 'Refund'),
+        ('buy_order', 'BuyOrderWH'),
+        ('adjustment', 'Adjustment'),
+    ]
+
+    account         = models.ForeignKey('Account', on_delete=models.CASCADE, related_name='balance_history')
+    old_balance     = models.FloatField()
+    new_balance     = models.FloatField()
+    amount_changed  = models.FloatField()
+    operation_type  = models.CharField(max_length=20, choices=OPERATION_CHOICES)
+    operation_id  = models.CharField(max_length=128)
+    description  = models.CharField(max_length=128, null=True)
+
+    class Meta:
+        db_table = 'account_balance_history'
+        verbose_name = 'Account Balance History'
+        verbose_name_plural = 'Account Balance Histories'
+        ordering = ['-created_at']

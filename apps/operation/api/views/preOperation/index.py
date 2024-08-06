@@ -18,6 +18,8 @@ from time import strftime, localtime
 from functools import reduce
 # Decorators
 from apps.base.decorators.index import checkRole
+#utils
+from apps.base.utils.logBalanceAccount import log_balance_change
 
 
 class PreOperationAV(BaseAV):
@@ -197,7 +199,10 @@ class PreOperationAV(BaseAV):
                     for operation in operations:
                         operation.status = 2
                         operation.bill.currentBalance += operation.payedAmount
+
+                        log_balance_change(operation.clientAccount, operation.clientAccount.balance, (operation.clientAccount.balance + operation.presentValueInvestor), operation.presentValueInvestor, 'pre_operation', operation.id, 'PreOperation View - patch')
                         operation.clientAccount.balance += operation.presentValueInvestor
+                        log_balance_change(operation.clientAccount, operation.clientAccount.balance, (operation.clientAccount.balance + operation.GM), operation.GM, 'pre_operation', operation.id, 'PreOperation View - patch 2')
                         operation.clientAccount.balance += operation.GM
                         operation.bill.save()
                         operation.clientAccount.save()
@@ -209,6 +214,8 @@ class PreOperationAV(BaseAV):
                     for operation in operations:
                         if operation.status == 0 and operation.status != 1:
                             operation.status = 1
+
+                            log_balance_change(operation.clientAccount, operation.clientAccount.balance, (operation.clientAccount.balance - (operation.presentValueInvestor + operation.GM)), -(operation.presentValueInvestor + operation.GM), 'pre_operation', operation.id, 'PreOperation View - patch 3')
                             operation.clientAccount.balance -= (operation.presentValueInvestor + operation.GM)
                             operation.clientAccount.save()
                             operation.save()
@@ -219,7 +226,11 @@ class PreOperationAV(BaseAV):
                     if request.data['status'] == 2:
                         operations.status = 2
                         operations.bill.currentBalance += operations.payedAmount
+                        
+                        log_balance_change(operations.clientAccount, operations.clientAccount.balance, (operations.clientAccount.balance + operations.presentValueInvestor), operations.presentValueInvestor, 'pre_operation', operations.id, 'PreOperation View - patch 4')
                         operations.clientAccount.balance += operations.presentValueInvestor
+
+                        log_balance_change(operations.clientAccount, operations.clientAccount.balance, (operations.clientAccount.balance + operations.operations.GM), operations.operations.GM, 'pre_operation', operations.id, 'PreOperation View - patch 5')
                         operations.clientAccount.balance += operations.GM
                         operations.clientAccount.save()
                         operations.bill.save()
@@ -228,6 +239,8 @@ class PreOperationAV(BaseAV):
                     elif request.data['status'] == 1:
                         if operations.status == 0 and operations.status != 1:
                             operations.status = 1
+
+                            log_balance_change(operations.clientAccount, operations.clientAccount.balance, (operations.clientAccount.balance - (operations.presentValueInvestor + operations.GM)), -(operations.presentValueInvestor + operations.GM), 'pre_operation', operations.id, 'PreOperation View - patch 6')
                             operations.clientAccount.balance -= (operations.presentValueInvestor + operations.GM)
                             operations.clientAccount.save()
                             operations.save()

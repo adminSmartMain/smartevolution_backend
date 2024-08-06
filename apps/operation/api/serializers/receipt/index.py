@@ -13,7 +13,8 @@ from apps.base.utils.index import gen_uuid
 from apps.base.exceptions import HttpException
 # Enums
 from apps.operation.enums import ReceiptStatusEnum
-
+#utils
+from apps.base.utils.logBalanceAccount import log_balance_change
 
 class ReceiptSerializer(serializers.ModelSerializer):
     class Meta:
@@ -23,6 +24,8 @@ class ReceiptSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         try:
+
+            validated_data['id'] = gen_uuid()
             account   = validated_data['account']
             operation = validated_data['operation']
             
@@ -34,6 +37,8 @@ class ReceiptSerializer(serializers.ModelSerializer):
                 operation.status = 4
                 operation.opPendingAmount = 0
                 operation.save()
+
+                log_balance_change(account, account.balance, (account.balance + round(validated_data['investorInterests'],2)), round(validated_data['investorInterests'],2), 'receipt', validated_data['id'], 'Receipt - create')
                 account.balance += round(validated_data['investorInterests'],2)
                 account.save()
             else:
@@ -47,6 +52,8 @@ class ReceiptSerializer(serializers.ModelSerializer):
                     operation.opPendingAmount -= round((validated_data['payedAmount'] - validated_data['additionalInterests']), 2)
                     operation.save()
                 # add the presentValueInvestor and investor interests to the account
+
+                log_balance_change(account, account.balance, (account.balance + round((validated_data['presentValueInvestor'] + validated_data['investorInterests']), 2)), round((validated_data['presentValueInvestor'] + validated_data['investorInterests']), 2), 'receipt', validated_data['id'], 'Receipt - create 2')
                 account.balance += round((validated_data['presentValueInvestor'] + validated_data['investorInterests']), 2)
                 account.save()
 
@@ -60,7 +67,6 @@ class ReceiptSerializer(serializers.ModelSerializer):
             except Exception as e:
                 validated_data['dId'] = 1
 
-            validated_data['id']              = gen_uuid()
             validated_data['created_at']      = timezone.now()
             validated_data['user_created_at'] = None
             return Receipt.objects.create(**validated_data)
