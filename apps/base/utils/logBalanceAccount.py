@@ -1,5 +1,6 @@
 from django.utils import timezone
 from apps.client.models import Account, AccountBalanceHistory
+from apps.base.utils.index import gen_uuid
 
 def log_balance_change(account, old_balance, new_balance, amount_changed, operation_type, operation_id, description):
     """
@@ -12,6 +13,7 @@ def log_balance_change(account, old_balance, new_balance, amount_changed, operat
     """
     
     AccountBalanceHistory.objects.create(
+        id=gen_uuid(),
         account=account,
         old_balance=old_balance,
         new_balance=new_balance,
