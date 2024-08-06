@@ -41,3 +41,6 @@ class AccountBalanceHistory(BaseModel):
         verbose_name = 'Account Balance History'
         verbose_name_plural = 'Account Balance Histories'
         ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.account.id} - {self.operation_type} - {self.description}"
