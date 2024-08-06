@@ -54,6 +54,13 @@ THIRD_PARTY_APPS = ['rest_framework',
 
 INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_PARTY_APPS
 
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS = [
+        'http://3.93.44.58:5000',
+        # Agrega otras URLs de confianza si es necesario
+    ]
+
+
 CRONJOBS = [
     ('*/10 * * * *', 'apps.base.cron.check_bills_by_cufe >> /app/logs/cronjob.log 2>&1'),
     #('0 */6 * * *', 'apps.base.cron.check_bills_by_cufe >> /app/logs/cronjob.log 2>&1'),
