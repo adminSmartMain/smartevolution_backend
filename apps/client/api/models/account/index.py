@@ -43,4 +43,4 @@ class AccountBalanceHistory(BaseModel):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.account.id} - {self.operation_type} - {self.description}"
+        return f"{self.id} - Cuenta: {self.account.id} -  Tipo de Operacion: {self.operation_type} - Descripcion: {self.description}"
