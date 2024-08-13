@@ -15,7 +15,7 @@ environ.Env.read_env()
 SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG =  True if env('DEBUG') == 'True' else False
 
 ALLOWED_HOSTS = ["*"]
 
@@ -54,7 +54,7 @@ THIRD_PARTY_APPS = ['rest_framework',
 
 INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_PARTY_APPS
 
-if DEBUG:
+if DEBUG is False:
     CSRF_TRUSTED_ORIGINS = [
         'http://3.93.44.58:5000',
         # Agrega otras URLs de confianza si es necesario
@@ -102,35 +102,19 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-if DEBUG:
-
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'smart_evolution_dev',
-            'USER': 'root',
-            'PASSWORD': 'root',
-            'HOST': 'localhost',
-            'PORT': 3306,
-            'OPTIONS':{
-                    'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
-                }
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': env('ENGINE'),
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': env('DB_HOST'),
+        'PORT': env('DB_PORT'),
+        'OPTIONS':{
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
+            }
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': env('ENGINE'),
-            'NAME': env('DB_NAME'),
-            'USER': env('DB_USER'),
-            'PASSWORD': env('DB_PASSWORD'),
-            'HOST': env('DB_HOST'),
-            'PORT': env('DB_PORT'),
-            'OPTIONS':{
-                    'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
-                }
-        }
-    }
+}
 
 
 
