@@ -1,4 +1,6 @@
 from django.contrib import admin
+from import_export import resources
+from import_export.admin import ExportActionModelAdmin
 from .api.models.index import (
     Bill,
     CreditNote,
@@ -6,26 +8,54 @@ from .api.models.index import (
     tempFile
 )
 
+class BillResource(resources.ModelResource):
+    class Meta:
+        model = Bill
+        fields = ('id', 'billId', 'typeBill', 'emitterName', 'payerName')
+        import_id_fields = ('billId',)
+
+class CreditNoteResource(resources.ModelResource):
+    class Meta:
+        model = CreditNote
+        fields = ('id', 'creditNoteId', 'Bill', 'total')
+        import_id_fields = ('creditNoteId',)
+
+class BillEventResource(resources.ModelResource):
+    class Meta:
+        model = BillEvent
+        fields = ('id', 'bill', 'event', 'date')
+        import_id_fields = ('id',)
+
+class tempFileResource(resources.ModelResource):
+    class Meta:
+        model = tempFile
+        fields = ('id', 'file', 'bill')
+        import_id_fields = ('id',)
+
 @admin.register(Bill)
-class BillAdmin(admin.ModelAdmin):
-    list_display = ('id', 'billId', 'typeBill', 'emitterName', 'payerName')  # Personaliza según los campos del modelo
-    search_fields = ('payerName', 'emitterName', 'billId',)  # Si "client" es una ForeignKey
-    list_filter = ('payerName', 'emitterName',)
+class BillAdmin(ExportActionModelAdmin, admin.ModelAdmin):
+    resource_class = BillResource
+    list_display = ('id', 'billId', 'typeBill', 'emitterName', 'payerName')
+    search_fields = ('billId', 'emitterName', 'payerName')
+    list_filter = ('typeBill', 'emitterName', 'payerName')
 
 @admin.register(CreditNote)
-class CreditNoteAdmin(admin.ModelAdmin):
-    list_display = ('id', 'creditNoteId', 'Bill', 'total')  # Personaliza según los campos del modelo
-    search_fields = ('creditNoteId', 'Bill')  # Si "bill" es una ForeignKey
-    list_filter = ('creditNoteId', 'Bill')
+class CreditNoteAdmin(ExportActionModelAdmin, admin.ModelAdmin):
+    resource_class = CreditNoteResource
+    list_display = ('id', 'creditNoteId', 'Bill', 'total')
+    search_fields = ('creditNoteId', 'Bill')
+    list_filter = ('Bill', 'creditNoteId')
 
 @admin.register(BillEvent)
-class BillEventAdmin(admin.ModelAdmin):
-    list_display = ('id', 'bill', 'event', 'date')  # Personaliza según los campos del modelo
-    search_fields = ('bill', 'event', 'date')  # Si "bill" es una ForeignKey
+class BillEventAdmin(ExportActionModelAdmin, admin.ModelAdmin):
+    resource_class = BillEventResource
+    list_display = ('id', 'bill', 'event', 'date')
+    search_fields = ('bill__billId', 'event', 'date')  # Asume que 'bill' es una ForeignKey
     list_filter = ('bill', 'event', 'date')
 
 @admin.register(tempFile)
-class tempFileAdmin(admin.ModelAdmin):
-    list_display = ('id', 'file', 'bill')  # Personaliza según los campos del modelo
-    search_fields = ('file', 'bill')
-    list_filter = ('file', 'bill')
+class tempFileAdmin(ExportActionModelAdmin, admin.ModelAdmin):
+    resource_class = tempFileResource
+    list_display = ('id', 'file', 'bill')
+    search_fields = ('file', 'bill__billId')  # Asume que 'bill' es una ForeignKey
+    list_filter = ('bill',)
