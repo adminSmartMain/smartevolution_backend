@@ -44,7 +44,7 @@ class ReceiptAdmin(ImportExportModelAdmin):
     resource_class = ReceiptResource
     list_display = ('id', 'date', 'account', 'realDays', 'payedAmount', )
     search_fields = ('date', 'account', 'realDays', 'payedAmount',)
-    list_filter = ('date', 'account', 'realDays', 'payedAmount',)
+    list_filter = ('date', 'account',)
 
 @admin.register(BuyOrder)
 class BuyOrderAdmin(ImportExportModelAdmin):
