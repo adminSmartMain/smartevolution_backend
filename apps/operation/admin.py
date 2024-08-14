@@ -43,8 +43,9 @@ class PreOperationAdmin(ImportExportModelAdmin):
 class ReceiptAdmin(ImportExportModelAdmin):
     resource_class = ReceiptResource
     list_display = ('id', 'date', 'account', 'realDays', 'payedAmount', )
-    search_fields = ('date', 'account',)
-    list_filter = ('date',)
+    list_per_page = 15
+    #search_fields = ('date', 'account',)
+    #list_filter = ('date',)
 
 @admin.register(BuyOrder)
 class BuyOrderAdmin(ImportExportModelAdmin):
