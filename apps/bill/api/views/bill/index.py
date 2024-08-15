@@ -194,37 +194,37 @@ class readBillAV(BaseAV):
         parsedBills = []
         duplicatedBills = []
         failedBills = []
-        try:
-            for file in request.data['bills']:      
-                # decode base 64 file
-                # if file has data:text/xml;base64, remove it
-                if file.startswith('data:text/xml;base64,'):
-                    file = file.replace('data:text/xml;base64,', '')
-                fileName = f'{gen_uuid()}.xml'
-                xmlData = b64decode(file, validate=True).decode('utf-8')
-                with open(fileName, 'w') as f:
-                    f.write(xmlData)
-                parseXml = parseBill(fileName)
-                parseXml['file'] = file
-                # add the data:text/xml;base64, to the file
-                parseXml['file'] = f'data:text/xml;base64,{file}'
-                os.remove(fileName)
+        #try:
+        for file in request.data['bills']:      
+            # decode base 64 file
+            # if file has data:text/xml;base64, remove it
+            if file.startswith('data:text/xml;base64,'):
+                file = file.replace('data:text/xml;base64,', '')
+            fileName = f'{gen_uuid()}.xml'
+            xmlData = b64decode(file, validate=True).decode('utf-8')
+            with open(fileName, 'w') as f:
+                f.write(xmlData)
+            parseXml = parseBill(fileName)
+            parseXml['file'] = file
+            # add the data:text/xml;base64, to the file
+            parseXml['file'] = f'data:text/xml;base64,{file}'
+            os.remove(fileName)
 
-                logging.log(logging.INFO, parseXml)
-                # check if the bill has cufe
-                if parseXml['cufe'] == "" or parseXml == None:
-                    failedBills.append(parseXml)
+            logging.log(logging.INFO, parseXml)
+            # check if the bill has cufe
+            if parseXml['cufe'] == "" or parseXml == None:
+                failedBills.append(parseXml)
+            else:
+                # validate if the bill is duplicated
+                bill = Bill.objects.filter(cufe=parseXml['cufe'])
+                if len(bill) > 0:
+                    duplicatedBills.append(parseXml)
                 else:
-                    # validate if the bill is duplicated
-                    bill = Bill.objects.filter(cufe=parseXml['cufe'])
-                    if len(bill) > 0:
-                        duplicatedBills.append(parseXml)
-                    else:
-                        parsedBills.append(parseXml)
+                    parsedBills.append(parseXml)
 
-            return response({'error': False, 'bills': parsedBills, 'duplicatedBills': duplicatedBills, 'failedBills':failedBills}, 200)    
-        except Exception as e:
-            return response({'error': True, 'message': str(e)}, 500)
+        return response({'error': False, 'bills': parsedBills, 'duplicatedBills': duplicatedBills, 'failedBills':failedBills}, 200)    
+        #except Exception as e:
+        #    return response({'error': True, 'message': str(e)}, 500)
 
 
 class readCreditNoteAV(BaseAV):
