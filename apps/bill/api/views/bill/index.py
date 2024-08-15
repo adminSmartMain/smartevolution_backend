@@ -212,6 +212,7 @@ class readBillAV(BaseAV):
 
                 logging.log(logging.INFO, parseXml)
                 # check if the bill has cufe
+                #se lavida si el archivo que se lee posee errores
                 if  hasattr(parseXml, 'error') and parseXml['error'] == True or parseXml['cufe'] == "" or parseXml == None:
                     failedBills.append(parseXml)
                 else:
