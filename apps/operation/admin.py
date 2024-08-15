@@ -42,10 +42,13 @@ class PreOperationAdmin(ImportExportModelAdmin):
 @admin.register(Receipt)
 class ReceiptAdmin(ImportExportModelAdmin):
     resource_class = ReceiptResource
-    list_display = ('id', 'date', 'account', 'realDays', 'payedAmount', )
+    list_display = ('id', 'date', 'account', 'payedAmount', )
     list_per_page = 15
-    #search_fields = ('date', 'account',)
-    #list_filter = ('date',)
+    list_select_related = ('account',)
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('account')
 
 @admin.register(BuyOrder)
 class BuyOrderAdmin(ImportExportModelAdmin):
