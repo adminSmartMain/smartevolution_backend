@@ -8,28 +8,30 @@ from .api.models.index import (
     SellOrderOperation
 )
 
+LIST_PER_PAGE = 20
+
 class PendingAccountResource(resources.ModelResource):
     class Meta:
         model = PendingAccount
-        fields = ('id', 'opId', 'description', 'amount', 'date',)  # Especifica los campos a importar/exportar
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class NegotiationSummaryResource(resources.ModelResource):
     class Meta:
         model = NegotiationSummary
-        fields = ('id', 'opId', 'emitter', 'payer', 'commissionValueBeforeTaxes', 'iva', 'total',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class SellOrderResource(resources.ModelResource):
     class Meta:
         model = SellOrder
-        fields = ('id', 'client', 'opId', 'status',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class SellOrderOperationResource(resources.ModelResource):
     class Meta:
         model = SellOrderOperation
-        fields = ('id', 'sellOrder', 'operation',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 @admin.register(PendingAccount)
@@ -38,6 +40,7 @@ class PendingAccountAdmin(ImportExportModelAdmin):
     list_display = ('id', 'opId', 'description', 'amount', 'date', )
     search_fields = ('opId', 'description', 'amount', 'date',)
     list_filter = ('opId', 'description', 'amount', 'date',)
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(NegotiationSummary)
 class NegotiationSummaryAdmin(ImportExportModelAdmin):
@@ -45,6 +48,7 @@ class NegotiationSummaryAdmin(ImportExportModelAdmin):
     list_display = ('id', 'opId', 'emitter', 'payer', 'commissionValueBeforeTaxes', 'iva', 'total', )
     search_fields = ('opId', 'emitter', 'payer', 'commissionValueBeforeTaxes', 'iva', 'total',)
     list_filter = ('opId', 'emitter', 'payer', 'commissionValueBeforeTaxes', 'iva', 'total',)
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(SellOrder)
 class SellOrderAdmin(ImportExportModelAdmin):
@@ -52,6 +56,7 @@ class SellOrderAdmin(ImportExportModelAdmin):
     list_display = ('id', 'client', 'opId', 'status',)
     search_fields = ('client', 'opId', 'status',)
     list_filter = ('client', 'opId', 'status',)
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(SellOrderOperation)
 class SellOrderOperationAdmin(ImportExportModelAdmin):
@@ -59,3 +64,4 @@ class SellOrderOperationAdmin(ImportExportModelAdmin):
     list_display = ('id', 'sellOrder', 'operation')
     search_fields = ('sellOrder', 'operation')
     list_filter = ('sellOrder', 'operation')
+    list_per_page = LIST_PER_PAGE

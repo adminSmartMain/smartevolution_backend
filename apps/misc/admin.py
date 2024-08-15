@@ -24,124 +24,126 @@ from .api.models.index import (
     Fixes
 )
 
+LIST_PER_PAGE = 20
+
 class TypeCLientResource(resources.ModelResource):
     class Meta:
         model = TypeCLient
-        fields = ('id', 'description',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class CityResource(resources.ModelResource):
     class Meta:
         model = City
-        fields = ('id', 'description', 'department',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class DepartmentResource(resources.ModelResource):
     class Meta:
         model = Department
-        fields = ('id', 'description',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class TypeIdentityResource(resources.ModelResource):
     class Meta:
         model = TypeIdentity
-        fields = ('id', 'description', 'abbreviation',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class BankResource(resources.ModelResource):
     class Meta:
         model = Bank
-        fields = ('id', 'description',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class AccountTypeResource(resources.ModelResource):
     class Meta:
         model = AccountType
-        fields = ('id', 'description',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class SectionResource(resources.ModelResource):
     class Meta:
         model = Section
-        fields = ('id', 'description',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class CIIUResource(resources.ModelResource):
     class Meta:
         model = CIIU
-        fields = ('id', 'section', 'activity', 'code',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class ActivityResource(resources.ModelResource):
     class Meta:
         model = Activity
-        fields = ('id', 'description',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class CountryResource(resources.ModelResource):
     class Meta:
         model = Country
-        fields = ('id', 'name_en', 'name_es', 'code', 'src',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class TypeBillResource(resources.ModelResource):
     class Meta:
         model = TypeBill
-        fields = ('id', 'description',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class TypeOperationResource(resources.ModelResource):
     class Meta:
         model = TypeOperation
-        fields = ('id', 'description',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class TypeEventResource(resources.ModelResource):
     class Meta:
         model = TypeEvent
-        fields = ('id', 'code', 'description',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class TypeReceiptResource(resources.ModelResource):
     class Meta:
         model = TypeReceipt
-        fields = ('id', 'description',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class TypeExpenditureResource(resources.ModelResource):
     class Meta:
         model = TypeExpenditure
-        fields = ('id', 'description',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class AccountingAccountResource(resources.ModelResource):
     class Meta:
         model = AccountingAccount
-        fields = ('id', 'code', 'description', 'accountNumber',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class TypePeriodResource(resources.ModelResource):
     class Meta:
         model = TypePeriod
-        fields = ('id', 'description',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class PeriodRangeResource(resources.ModelResource):
     class Meta:
         model = PeriodRange
-        fields = ('id', 'description',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class ReceiptStatusResource(resources.ModelResource):
     class Meta:
         model = ReceiptStatus
-        fields = ('id', 'description',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class FixesResource(resources.ModelResource):
     class Meta:
         model = Fixes
-        fields = ('id', 'accountId', 'date', 'gmAmount',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 @admin.register(TypeCLient)
@@ -150,6 +152,7 @@ class TypeCLientAdmin(ImportExportModelAdmin):
     list_display = ('id', 'description')
     search_fields = ('description',)
     list_filter = ('description',)
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(City)
 class CityAdmin(ImportExportModelAdmin):
@@ -157,6 +160,7 @@ class CityAdmin(ImportExportModelAdmin):
     list_display = ('id', 'description', 'department')
     search_fields = ('description', 'department')
     list_filter = ('description', 'department')
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(Department)
 class DepartmentAdmin(ImportExportModelAdmin):
@@ -164,6 +168,7 @@ class DepartmentAdmin(ImportExportModelAdmin):
     list_display = ('id', 'description')
     search_fields = ('description',)
     list_filter = ('description',)
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(TypeIdentity)
 class TypeIdentityAdmin(ImportExportModelAdmin):
@@ -171,6 +176,7 @@ class TypeIdentityAdmin(ImportExportModelAdmin):
     list_display = ('id', 'description', 'abbreviation')
     search_fields = ('description', 'abbreviation',)
     list_filter = ('description', 'abbreviation',)
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(Bank)
 class BankAdmin(ImportExportModelAdmin):
@@ -178,6 +184,7 @@ class BankAdmin(ImportExportModelAdmin):
     list_display = ('id', 'description')
     search_fields = ('description',)
     list_filter = ('description',)
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(AccountType)
 class AccountTypeAdmin(ImportExportModelAdmin):
@@ -185,6 +192,7 @@ class AccountTypeAdmin(ImportExportModelAdmin):
     list_display = ('id', 'description')
     search_fields = ('description',)
     list_filter = ('description',)
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(Section)
 class SectionAdmin(ImportExportModelAdmin):
@@ -192,6 +200,7 @@ class SectionAdmin(ImportExportModelAdmin):
     list_display = ('id', 'description')
     search_fields = ('description',)
     list_filter = ('description',)
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(CIIU)
 class CIIUAdmin(ImportExportModelAdmin):
@@ -199,6 +208,7 @@ class CIIUAdmin(ImportExportModelAdmin):
     list_display = ('id', 'section', 'activity', 'code')
     search_fields = ('section', 'activity', 'code')
     list_filter = ('section', 'activity', 'code')
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(Activity)
 class ActivityAdmin(ImportExportModelAdmin):
@@ -206,6 +216,7 @@ class ActivityAdmin(ImportExportModelAdmin):
     list_display = ('id', 'description')
     search_fields = ('description',)
     list_filter = ('description',)
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(Country)
 class CountryAdmin(ImportExportModelAdmin):
@@ -213,6 +224,7 @@ class CountryAdmin(ImportExportModelAdmin):
     list_display = ('id', 'name_en', 'name_es', 'code', 'src')
     search_fields = ('name_en', 'name_es', 'code', 'src')
     list_filter = ('name_en', 'name_es', 'code', 'src')
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(TypeBill)
 class TypeBillAdmin(ImportExportModelAdmin):
@@ -220,6 +232,7 @@ class TypeBillAdmin(ImportExportModelAdmin):
     list_display = ('id', 'description')
     search_fields = ('description',)
     list_filter = ('description',)
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(TypeOperation)
 class TypeOperationAdmin(ImportExportModelAdmin):
@@ -227,6 +240,7 @@ class TypeOperationAdmin(ImportExportModelAdmin):
     list_display = ('id', 'description')
     search_fields = ('description',)
     list_filter = ('description',)
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(TypeEvent)
 class TypeEventAdmin(ImportExportModelAdmin):
@@ -234,6 +248,7 @@ class TypeEventAdmin(ImportExportModelAdmin):
     list_display = ('id', 'code', 'description')
     search_fields = ('code', 'description',)
     list_filter = ('code', 'description',)
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(TypeReceipt)
 class TypeReceiptAdmin(ImportExportModelAdmin):
@@ -241,6 +256,7 @@ class TypeReceiptAdmin(ImportExportModelAdmin):
     list_display = ('id', 'description')
     search_fields = ('description',)
     list_filter = ('description',)
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(TypeExpenditure)
 class TypeExpenditureAdmin(ImportExportModelAdmin):
@@ -248,6 +264,7 @@ class TypeExpenditureAdmin(ImportExportModelAdmin):
     list_display = ('id', 'description')
     search_fields = ('description',)
     list_filter = ('description',)
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(AccountingAccount)
 class AccountingAccountAdmin(ImportExportModelAdmin):
@@ -255,6 +272,7 @@ class AccountingAccountAdmin(ImportExportModelAdmin):
     list_display = ('id', 'code', 'description', 'accountNumber')
     search_fields = ('code', 'description', 'accountNumber')
     list_filter = ('code', 'description', 'accountNumber')
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(TypePeriod)
 class TypePeriodAdmin(ImportExportModelAdmin):
@@ -262,6 +280,7 @@ class TypePeriodAdmin(ImportExportModelAdmin):
     list_display = ('id', 'description')
     search_fields = ('description',)
     list_filter = ('description',)
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(PeriodRange)
 class PeriodRangeAdmin(ImportExportModelAdmin):
@@ -269,6 +288,7 @@ class PeriodRangeAdmin(ImportExportModelAdmin):
     list_display = ('id', 'description')
     search_fields = ('description',)
     list_filter = ('description',)
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(ReceiptStatus)
 class ReceiptStatusAdmin(ImportExportModelAdmin):
@@ -276,6 +296,7 @@ class ReceiptStatusAdmin(ImportExportModelAdmin):
     list_display = ('id', 'description')
     search_fields = ('description',)
     list_filter = ('description',)
+    list_per_page = LIST_PER_PAGE
 
 @admin.register(Fixes)
 class FixesAdmin(ImportExportModelAdmin):
@@ -283,3 +304,4 @@ class FixesAdmin(ImportExportModelAdmin):
     list_display = ('id', 'accountId', 'date', 'gmAmount')
     search_fields = ('accountId', 'date', 'gmAmount',)
     list_filter = ('accountId', 'date', 'gmAmount',)
+    list_per_page = LIST_PER_PAGE

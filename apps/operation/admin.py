@@ -8,28 +8,30 @@ from .api.models.index import (
     IntegrationHistory
 )
 
+LIST_PER_PAGE = 20
+
 class PreOperationResource(resources.ModelResource):
     class Meta:
-        model = PreOperation
-        fields = ('id', 'opType', 'emitter', 'payer', 'bill', 'amount', 'GM', 'status',)
+        model = PreOperation    
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class ReceiptResource(resources.ModelResource):
     class Meta:
         model = Receipt
-        fields = ('id', 'date', 'account', 'realDays', 'payedAmount',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class BuyOrderResource(resources.ModelResource):
     class Meta:
         model = BuyOrder
-        fields = ('id', 'operation', 'code', 'name', 'status',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 class IntegrationHistoryResource(resources.ModelResource):
     class Meta:
         model = IntegrationHistory
-        fields = ('id', 'integrationCode', 'status', 'message',)
+        fields = '__all__'
         import_id_fields = ('id',)
 
 @admin.register(PreOperation)
@@ -38,12 +40,13 @@ class PreOperationAdmin(ImportExportModelAdmin):
     list_display = ('id', 'opType', 'emitter', 'payer', 'bill', 'amount', 'GM', 'status', )
     search_fields = ('opType', 'emitter', 'payer', 'bill',)
     list_filter = ('opType', 'emitter', 'payer', 'bill',)
+    list_per_page = LIST_PER_PAGE  # Usa la variable constante para la paginación
 
 @admin.register(Receipt)
 class ReceiptAdmin(ImportExportModelAdmin):
     resource_class = ReceiptResource
     list_display = ('id', 'date', 'account', 'payedAmount', )
-    list_per_page = 15
+    list_per_page = LIST_PER_PAGE  # Usa la variable constante para la paginación
     list_select_related = ('account',)
     
     def get_queryset(self, request):
@@ -56,6 +59,7 @@ class BuyOrderAdmin(ImportExportModelAdmin):
     list_display = ('id', 'operation', 'code', 'name', 'status')
     search_fields = ('operation', 'code', 'name', 'status',)
     list_filter = ('operation', 'code', 'name', 'status',)
+    list_per_page = LIST_PER_PAGE  # Usa la variable constante para la paginación
 
 @admin.register(IntegrationHistory)
 class IntegrationHistoryAdmin(ImportExportModelAdmin):
@@ -63,3 +67,4 @@ class IntegrationHistoryAdmin(ImportExportModelAdmin):
     list_display = ('id', 'integrationCode', 'status', 'message')
     search_fields = ('integrationCode', 'status', 'message')
     list_filter = ('integrationCode', 'status', 'message')
+    list_per_page = LIST_PER_PAGE  # Usa la variable constante para la paginación
