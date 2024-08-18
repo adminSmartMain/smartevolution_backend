@@ -39,7 +39,7 @@ class PreOperationAdmin(ImportExportModelAdmin):
     resource_class = PreOperationResource
     list_display = ('id', 'opType', 'emitter', 'payer', 'bill', 'amount', 'GM', 'status', )
     search_fields = ('opType', 'emitter', 'payer', 'bill',)
-    list_filter = ('opType', 'emitter', 'payer', 'bill',)
+    list_filter = ('opType', 'emitter', 'payer',)
     list_per_page = LIST_PER_PAGE  # Usa la variable constante para la paginación
 
 @admin.register(Receipt)
