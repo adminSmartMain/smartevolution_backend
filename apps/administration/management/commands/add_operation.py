@@ -4,8 +4,10 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from apps.operation.models import PreOperation
-from apps.bills.models import Bill
-from apps.accounts.models import Account
+from apps.bill.models import Bill
+from apps.client.models import Account
+from apps.base.utils.index import gen_uuid
+
 class Command(BaseCommand):
     help = 'Crea nuevos registros desde un archivo Excel aplicando descuentos en la cuenta del inversionista'
 
@@ -13,54 +15,56 @@ class Command(BaseCommand):
         excel_file_path = os.path.join(settings.BASE_DIR, 'apps/administration/management/commands/add_operation/file.xlsx')
         df = pd.read_excel(excel_file_path)
 
-        with transaction.atomic():
-            for index, row in df.iterrows():
-                try:
-                    # Validar que la factura existe
+        # Asegúrate de que todas las columnas de fecha estén formateadas correctamente
+        date_columns = [
+            'created_at', 'updated_at', 'opDate', 'DateBill', 
+            'DateExpiration', 'probableDate', 'opExpiration'
+        ]
+        
+        for col in date_columns:
+            df[col] = pd.to_datetime(df[col], errors='coerce').dt.strftime('%Y-%m-%d')
+
+        for index, row in df.iterrows():
+            try:
+                with transaction.atomic():
+                    #self.stderr.write(f'Fila {index + 1}: {row}.')
+
                     bill_id = row['bill_id']
                     amount_to_negotiate = row['amount']
 
                     bill = Bill.objects.filter(id=bill_id).first()
                     if not bill:
                         self.stderr.write(f'Error en la fila {index + 1}: La factura con id {bill_id} no existe.')
-                        continue  # Salta a la siguiente fila
+                        continue
 
-                    # Validar que el monto a negociar no excede el currentBalance
-                    if amount_to_negotiate > bill.currentBalance:
-                        self.stderr.write(f'Error en la fila {index + 1}: El monto a negociar ({amount_to_negotiate}) excede el saldo disponible ({bill.currentBalance}) para la factura con id {bill_id}.')
-                        continue  # Salta a la siguiente fila
+                    #if amount_to_negotiate > bill.currentBalance:
+                    #    self.stderr.write(f'Error en la fila {index + 1}: El monto a negociar ({amount_to_negotiate}) excede el saldo disponible ({bill.currentBalance}) para la factura con id {bill_id}.')
+                    #    continue
 
-                    # Obtener la cuenta del inversionista relacionada con ClientAccount
                     client_account_id = row['clientAccount_id']
                     account = Account.objects.filter(id=client_account_id).first()
                     if not account:
                         self.stderr.write(f'Error en la fila {index + 1}: La cuenta del inversionista con id {client_account_id} no existe.')
-                        continue  # Salta a la siguiente fila
+                        continue
 
-                    # Descontar los montos del saldo de la cuenta del inversionista
                     present_value_investor = row['presentValueInvestor']
                     gm_value = row['GM']
-
-                    # Validar si el saldo es suficiente
-                    if account.balance < present_value_investor + gm_value:
-                        self.stderr.write(f'Error en la fila {index + 1}: Saldo insuficiente en la cuenta del inversionista ({account.balance}) para descontar {present_value_investor + gm_value}.')
-                        continue  # Salta a la siguiente fila
 
                     account.balance -= (present_value_investor + gm_value)
                     account.save()
 
-                    # Crear un nuevo objeto PreOperation
                     obj = PreOperation.objects.create(
+                        id=gen_uuid(),
                         state=row['state'],
-                        created_at=row['created_at'],
-                        updated_at=row['updated_at'],
+                        created_at=row['created_at'] if pd.notna(row['created_at']) else None,
+                        updated_at=row['updated_at'] if pd.notna(row['updated_at']) else None,
                         opId=row['opId'],
-                        opDate=row['opDate'],
+                        opDate=row['opDate'] if pd.notna(row['opDate']) else None,
                         applyGm=row['applyGm'],
                         billFraction=row['billFraction'],
-                        DateBill=row['DateBill'],
-                        DateExpiration=row['DateExpiration'],
-                        probableDate=row['probableDate'],
+                        DateBill=row['DateBill'] if pd.notna(row['DateBill']) else None,
+                        DateExpiration=row['DateExpiration'] if pd.notna(row['DateExpiration']) else None,
+                        probableDate=row['probableDate'] if pd.notna(row['probableDate']) else None,
                         amount=amount_to_negotiate,
                         payedAmount=row['payedAmount'],
                         discountTax=row['discountTax'],
@@ -80,18 +84,18 @@ class Command(BaseCommand):
                         investorBroker_id=row['investorBroker_id'],
                         opType_id=row['opType_id'],
                         payer_id=row['payer_id'],
-                        user_created_at_id=row['user_created_at_id'],
-                        user_updated_at_id=row['user_updated_at_id'],
+                        user_created_at_id=row['user_created_at_id'] if pd.notna(row['user_created_at_id']) else None,
+                        user_updated_at_id=row['user_updated_at_id'] if pd.notna(row['user_updated_at_id']) else None,
                         opPendingAmount=row['opPendingAmount'],
                         payedPercent=row['payedPercent'],
-                        opExpiration=row['opExpiration'],
+                        opExpiration=row['opExpiration'] if pd.notna(row['opExpiration']) else None,
                         insufficientAccountBalance=row['insufficientAccountBalance'],
                         isRebuy=row['isRebuy'],
                     )
 
                     self.stdout.write(f'Se ha creado un nuevo registro con id {obj.id}')
 
-                except Exception as e:
-                    self.stderr.write(f'Error en la fila {index + 1}: {str(e)}')
+            except Exception as e:
+                self.stderr.write(f'Error en la fila {index + 1}: {str(e)}')
 
         self.stdout.write(self.style.SUCCESS('Datos creados y descuentos aplicados correctamente'))
