@@ -29,121 +29,101 @@ LIST_PER_PAGE = 20
 class TypeCLientResource(resources.ModelResource):
     class Meta:
         model = TypeCLient
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class CityResource(resources.ModelResource):
     class Meta:
         model = City
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class DepartmentResource(resources.ModelResource):
     class Meta:
         model = Department
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class TypeIdentityResource(resources.ModelResource):
     class Meta:
         model = TypeIdentity
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class BankResource(resources.ModelResource):
     class Meta:
         model = Bank
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class AccountTypeResource(resources.ModelResource):
     class Meta:
         model = AccountType
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class SectionResource(resources.ModelResource):
     class Meta:
         model = Section
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class CIIUResource(resources.ModelResource):
     class Meta:
         model = CIIU
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class ActivityResource(resources.ModelResource):
     class Meta:
         model = Activity
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class CountryResource(resources.ModelResource):
     class Meta:
         model = Country
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class TypeBillResource(resources.ModelResource):
     class Meta:
         model = TypeBill
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class TypeOperationResource(resources.ModelResource):
     class Meta:
         model = TypeOperation
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class TypeEventResource(resources.ModelResource):
     class Meta:
         model = TypeEvent
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class TypeReceiptResource(resources.ModelResource):
     class Meta:
         model = TypeReceipt
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class TypeExpenditureResource(resources.ModelResource):
     class Meta:
         model = TypeExpenditure
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class AccountingAccountResource(resources.ModelResource):
     class Meta:
         model = AccountingAccount
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class TypePeriodResource(resources.ModelResource):
     class Meta:
         model = TypePeriod
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class PeriodRangeResource(resources.ModelResource):
     class Meta:
         model = PeriodRange
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class ReceiptStatusResource(resources.ModelResource):
     class Meta:
         model = ReceiptStatus
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class FixesResource(resources.ModelResource):
     class Meta:
         model = Fixes
-        fields = '__all__'
         import_id_fields = ('id',)
 
 @admin.register(TypeCLient)
