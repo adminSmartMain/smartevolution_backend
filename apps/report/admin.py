@@ -13,25 +13,21 @@ LIST_PER_PAGE = 20
 class PendingAccountResource(resources.ModelResource):
     class Meta:
         model = PendingAccount
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class NegotiationSummaryResource(resources.ModelResource):
     class Meta:
         model = NegotiationSummary
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class SellOrderResource(resources.ModelResource):
     class Meta:
         model = SellOrder
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class SellOrderOperationResource(resources.ModelResource):
     class Meta:
         model = SellOrderOperation
-        fields = '__all__'
         import_id_fields = ('id',)
 
 @admin.register(PendingAccount)

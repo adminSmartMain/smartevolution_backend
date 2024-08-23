@@ -36,163 +36,136 @@ LIST_PER_PAGE = 20
 class BrokerResource(resources.ModelResource):
     class Meta:
         model = Broker
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class ClientResource(resources.ModelResource):
     class Meta:
         model = Client
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class ContactResource(resources.ModelResource):
     class Meta:
         model = Contact
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class LegalRepresentativeResource(resources.ModelResource):
     class Meta:
         model = LegalRepresentative
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class AccountResource(resources.ModelResource):
     class Meta:
         model = Account
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class AccountBalanceHistoryResource(resources.ModelResource):
     class Meta:
         model = AccountBalanceHistory
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class RequestResource(resources.ModelResource):
     class Meta:
         model = Request
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class RiskProfileResource(resources.ModelResource):
     class Meta:
         model = RiskProfile
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class AssetsResource(resources.ModelResource):
     class Meta:
         model = Assets
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class PassivesResource(resources.ModelResource):
     class Meta:
         model = Passives
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class PatrimonyResource(resources.ModelResource):
     class Meta:
         model = Patrimony
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class StateOfResultResource(resources.ModelResource):
     class Meta:
         model = StateOfResult
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class FinancialProfileResource(resources.ModelResource):
     class Meta:
         model = FinancialProfile
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class FinancialCentralResource(resources.ModelResource):
     class Meta:
         model = FinancialCentral
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class OverviewResource(resources.ModelResource):
     class Meta:
         model = Overview
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class LegalClientResource(resources.ModelResource):
     class Meta:
         model = LegalClient
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class FinancialRelationsResource(resources.ModelResource):
     class Meta:
         model = FinancialRelations
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class LegalClientContactsResource(resources.ModelResource):
     class Meta:
         model = LegalClientContacts
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class ManagementBoardResource(resources.ModelResource):
     class Meta:
         model = ManagementBoard
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class PartnersAndShareholdersResource(resources.ModelResource):
     class Meta:
         model = PartnersAndShareholders
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class PrincipalClientsResource(resources.ModelResource):
     class Meta:
         model = PrincipalClients
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class PrincipalCompetitorsResource(resources.ModelResource):
     class Meta:
         model = PrincipalCompetitors
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class PrincipalProductsResource(resources.ModelResource):
     class Meta:
         model = PrincipalProducts
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class PrincipalProvidersResource(resources.ModelResource):
     class Meta:
         model = PrincipalProviders
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class NaturalClientResource(resources.ModelResource):
     class Meta:
         model = NaturalClient
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class LegalClientDocumentsResource(resources.ModelResource):
     class Meta:
         model = LegalClientDocuments
-        fields = '__all__'
         import_id_fields = ('id',)
 
 class NaturalClientDocumentsResource(resources.ModelResource):
     class Meta:
         model = NaturalClientDocuments
-        fields = '__all__'
         import_id_fields = ('id',)
 
 @admin.register(Broker)
