@@ -55,13 +55,11 @@ THIRD_PARTY_APPS = ['rest_framework',
 
 INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_PARTY_APPS
 
-if DEBUG is False:
-    CSRF_TRUSTED_ORIGINS = [
-        'http://3.93.44.58:5000',
-        'https://apis.smartevolution.com.co',
-        # Agrega otras URLs de confianza si es necesario
-    ]
-
+CSRF_TRUSTED_ORIGINS = [
+    'http://3.93.44.58:5000',
+    'https://apis.smartevolution.com.co',
+    # Agrega otras URLs de confianza si es necesario
+]
 
 CRONJOBS = [
     ('*/10 * * * *', 'apps.base.cron.check_bills_by_cufe >> /app/logs/cronjob.log 2>&1'),
