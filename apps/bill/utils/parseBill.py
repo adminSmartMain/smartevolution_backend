@@ -35,6 +35,11 @@ def parseBill(file):
             # get bill events
             try:
                 events = billEvents(parsedXml['cufe'],update=True)
+
+                # Validar si el tipo devuelto es 'error'
+                if events['type'] == 'error':
+                    raise Exception("Error type returned from billEvents")
+                
                 parsedXml['typeBill'] = events['type']
                 parsedXml['events']   = events['events']
                 parsedXml['file']     = file
@@ -69,7 +74,7 @@ def parseBill(file):
                         parsedXml['endorsed'] = False  
 
                     parsedXml['currentOwner'] = events['currentOwner']
-            except:
+            except Exception as e:
                 parsedXml['endorsed']     = False
                 parsedXml['events']       = []
                 parsedXml['currentOwner'] = events['emitterName']

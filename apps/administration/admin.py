@@ -32,7 +32,7 @@ class RefundResource(resources.ModelResource):
 class DepositAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     resource_class = DepositResource
     list_display = ('id', 'amount', 'date', 'account')
-    search_fields = ('account__account_number',)
+    search_fields = ('id', 'account__account_number',)
     list_filter = ('date', 'amount')
     list_per_page = LIST_PER_PAGE
 

@@ -213,7 +213,7 @@ class readBillAV(BaseAV):
                 logging.log(logging.INFO, parseXml)
                 # check if the bill has cufe
                 #se lavida si el archivo que se lee posee errores
-                if  hasattr(parseXml, 'error') or parseXml['error'] == True or parseXml['cufe'] == "" or parseXml == None:
+                if  parseXml['cufe'] == "" or parseXml == None:
                     failedBills.append(parseXml)
                 else:
                     # validate if the bill is duplicated
@@ -222,6 +222,9 @@ class readBillAV(BaseAV):
                         duplicatedBills.append(parseXml)
                     else:
                         parsedBills.append(parseXml)
+
+                if len(failedBills):
+                    return response({'error': True, 'message': "hay problemas con una factura por favor intentelo nuevamente"}, 500)
             return response({'error': False, 'bills': parsedBills, 'duplicatedBills': duplicatedBills, 'failedBills':failedBills}, 200)    
         except Exception as e:
             return response({'error': True, 'message': str(e)}, 500)
