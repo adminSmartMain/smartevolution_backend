@@ -14,61 +14,133 @@ from base64 import b64decode
 import os
 import logging
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 class BillAV(BaseAV):
+
     @checkRole(['admin','third'])
     def post(self, request):
         try:
             data = []
             failedBills = []
+
+            logger.debug("Iniciando procesamiento de facturas")
+            logger.debug(f"Datos recibidos: {request.data}")
+            #logger.debug(f"Datos recibidos: {request.data['bills']}")
+
             for x in request.data['bills']:
-                # check if the request has a integrationCode
+                logger.debug(f"Procesando factura: {x}")
 
+                # Validación del 'integrationCode'
                 if 'integrationCode' in x:
-                    if x['integrationCode'] != "" or x['integrationCode'] != None:
-                        if x['cufe'] == None or x['cufe'] == "":
+                    logger.debug(f"Comprobando código de integración: {x['integrationCode']}")
+                    if x['integrationCode'] != "" or x['integrationCode'] is not None:
+                        if x['cufe'] is None or x['cufe'] == "":
                             failedBills.append({
-                                'bill':x,
-                                'error':'Factura sin cufe'
+                                'bill': x,
+                                'error': 'Factura sin cufe'
                             })
-                        elif x['cufe'] != None or x['cufe'] != "":
-                            # check if the bill is already registered by his cufe
+                            logger.warning(f"Factura sin CUFE: {x}")
+                        else:
+                            # Verifica si la factura ya está registrada por su CUFE
                             checkBill = Bill.objects.filter(cufe=x['cufe'])
-
-                            if len(checkBill) > 0:
+                            if checkBill.exists():
                                 failedBills.append({
-                                'bill':x,
-                                'error':'Factura con cufe registrado'
+                                    'bill': x,
+                                    'error': 'Factura con cufe registrado'
                                 })
+                                logger.warning(f"Factura con CUFE ya registrado: {x}")
                             else:
                                 data.append(x)
-                        else:
-                            data.append(x)
+                                logger.debug(f"Factura agregada para procesamiento: {x}")
+                    else:
+                        data.append(x)
+                        logger.debug(f"Factura agregada para procesamiento: {x}")
                 else:
                     data.append(x)
+                    logger.debug(f"Factura agregada para procesamiento: {x}")
 
             if len(failedBills) > 0:
-                return response({'error': False, 'message': 'Algunas facturas presentan errores', 'bills': data, 'failedBills':failedBills}, 400)
+                logger.warning(f"Algunas facturas presentan errores: {failedBills}")
+                return response({'error': False, 'message': 'Algunas facturas presentan errores', 'bills': data,
+                                 'failedBills': failedBills}, 400)
             else:
-                # save the bills
+                # Guardar facturas
                 for row in data:
-                    request.data['creditNotes'] = row['creditNotes'] if 'creditNotes' in row else []
-                    request.data['events'] = row['events'] if 'events' in row else []
-                    # check if the dateBill, datePayment and expirationDate has the correct format it must be YYYY-MM-DDbut if the dateBill is in format YYYY-MM-DDT00:00:00 parse it to YYYY-MM-DD
+                    # Verificar y registrar notas de crédito
+                    credit_notes = row.get('creditNotes', [])
+                    request.data['creditNotes'] = credit_notes
+                    logger.debug(f"Notas de crédito para la factura: {credit_notes}")
+
+                    # Verificar y registrar eventos
+                    events = row.get('events', [])
+                    request.data['events'] = events
+                    logger.debug(f"Eventos para la factura: {events}")
+
+                    # Validar formato de fechas
                     if 'dateBill' in row:
+                        logger.debug(f"Formato original de dateBill: {row['dateBill']}")
+                        logger.debug(f"Formato original de dateBill: {row.keys()}")
                         if 'T' in row['dateBill']:
                             row['dateBill'] = row['dateBill'].split('T')[0]
+                            logger.debug(f"dateBill corregido: {row['dateBill']}")
+                        else:
+                            logger.debug("No se requiere corrección para dateBill")
+
                     if 'datePayment' in row:
-                        if 'T' in row['datePayment']:
-                            row['datePayment'] = row['datePayment'].split('T')[0]
-                    if 'expirationDate' in row:
-                        if 'T' in row['expirationDate']:
-                            row['expirationDate'] = row['expirationDate'].split('T')[0]
-                    serializer = BillSerializer(data=row, context={'request': request})
-                    if serializer.is_valid():
-                        serializer.save()
+                        date_payment = row['datePayment']
+                        logger.debug(f"Formato original de datePayment: {date_payment}")
+
+                        # Verificar si datePayment es None y asignar un valor predeterminado
+                        if date_payment is None:
+                            row['datePayment'] = "SIN_FECHA"
+                            logger.debug("datePayment era None, asignado a 'SIN_FECHA'.")
+                        elif 'T' in date_payment:
+                            row['datePayment'] = date_payment.split('T')[0]
+                            logger.debug(f"datePayment corregido: {row['datePayment']}")
+                        else:
+                            logger.debug("No se requiere corrección para datePayment")
                     else:
+                        logger.debug("datePayment no está presente en los datos de la factura.")
+
+                    if 'expirationDate' in row:
+                        expiration_date = row['expirationDate']
+                        logger.debug(f"Formato original de expirationDate: {expiration_date}")
+
+                        # Verificar si expirationDate es None y asignar un valor predeterminado
+                        if expiration_date is None:
+                            row['expirationDate'] = "SIN_FECHA"
+                            logger.debug("expirationDate era None, asignado a 'SIN_FECHA'.")
+                        elif 'T' in expiration_date:
+                            row['expirationDate'] = expiration_date.split('T')[0]
+                            logger.debug(f"expirationDate corregido: {row['expirationDate']}")
+                        else:
+                            logger.debug("No se requiere corrección para expirationDate")
+                    else:
+                        logger.debug("expirationDate no está presente en los datos de la factura.")
+
+                    # Serialización
+                    logger.debug(f"Intentando serializar los datos de la factura: {row}")
+                    serializer = BillSerializer(data=row, context={'request': request})
+
+                    # Verificar si la serialización es válida
+                    if serializer.is_valid():
+                        logger.debug("Datos validados correctamente por el serializer.")
+                        try:
+                            # Intento de guardado en base de datos
+                            saved_bill = serializer.save()
+
+                        except Exception as save_error:
+                            logger.error(f"Error al guardar la factura: {save_error}")
+                            return response(
+                                {'error': True, 'message': f"Error al guardar la factura: {str(save_error)}"}, 500)
+                    else:
+                        logger.error(f"Errores de validación en la factura: {serializer.errors}")
                         return response({'error': True, 'message': serializer.errors}, 400)
-                return response({'error': False, 'message': 'Facturas creadas',  'failedBills':failedBills}, 201)
+
+                logger.info("Todas las facturas se han procesado y guardado correctamente")
+
+                return response({'error': False, 'message': 'Facturas creadas', 'failedBills': failedBills}, 201)
         except Exception as e:
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
 
