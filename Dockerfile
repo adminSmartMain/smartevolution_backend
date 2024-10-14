@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     cron \
     curl \
     default-libmysqlclient-dev \
+    default-mysql-client \
     fonts-liberation \
     gcc \
     gnupg \
@@ -26,7 +27,7 @@ RUN apt-get update && apt-get install -y \
 
 # Descarga y configuración de Node.js
 ADD https://raw.githubusercontent.com/tj/n/master/bin/n /n
-RUN && bash n lts \
+RUN bash n lts \
     && ln -sf /usr/local/n/versions/node/$(n --latest)/bin/node /usr/bin/node \
     && ln -sf /usr/local/n/versions/node/$(n --latest)/bin/npm /usr/bin/npm \
     && ln -sf /usr/local/n/versions/node/$(n --latest)/bin/npx /usr/bin/npx
@@ -38,6 +39,7 @@ WORKDIR /app
 # Instalar dependencias de Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install pymysql
 
 # Copiar el código de la aplicación
 COPY . .

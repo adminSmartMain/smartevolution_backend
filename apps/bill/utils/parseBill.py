@@ -4,9 +4,10 @@ from .updateBillEvents import billEvents as updateBillEvents
 
 def parseBill(file):
     parsedXml = {}
-    xml = untangle.parse(file)
+    xml = untangle.parse(file) #convierte los nodos del xml en atributos
     try:
         try:
+            #Caso en el que los la factura posee el nodo atttachment Document y ya no falla
             xml2 = untangle.parse(xml.AttachedDocument.cac_Attachment.cac_ExternalReference.cbc_Description.cdata)
             parsedXml['billId']      = xml2.Invoice.cbc_ID.cdata
             parsedXml['emitterName'] = xml2.Invoice.cac_AccountingSupplierParty.cac_Party.cac_PartyTaxScheme.cbc_RegistrationName.cdata
@@ -77,10 +78,15 @@ def parseBill(file):
             except Exception as e:
                 parsedXml['endorsed']     = False
                 parsedXml['events']       = []
-                parsedXml['currentOwner'] = events['emitterName']
+                try:
+                    parsedXml['currentOwner'] = events['emitterName'] # se agregó un try except con el fin de conservar codigo y que podamos volver a reutilizar cuando el tema del cufe esté solucionado
+                    
+                except:
+                    parsedXml['currentOwner'] = parsedXml['emitterName'] ## acá estaba el problema, al no tener la posibilidad de usar el cufe esta linea usaba el objeto event, asi que de manera eventual se toma el mismo'emitterName' del xml ya que este debe coincidir con el obtenido en el cufe. Este se obtiene en la linea 90 de bill Events. 
                 parsedXml['typeBill']     = 'fdb5feb4-24e9-41fc-9689-31aff60b76c9'
             return parsedXml
         except Exception as e:
+            #este es el caso donde los xml solo tienen los nodos Invoice
             parsedXml['billId']      = xml.Invoice.cbc_ID.cdata
             parsedXml['emitterName'] = xml.Invoice.cac_AccountingSupplierParty.cac_Party.cac_PartyTaxScheme.cbc_RegistrationName.cdata
             parsedXml['emitterId']   = xml.Invoice.cac_AccountingSupplierParty.cac_Party.cac_PartyTaxScheme.cbc_CompanyID.cdata
@@ -144,7 +150,11 @@ def parseBill(file):
             except:
                 parsedXml['endorsed']     = False
                 parsedXml['events']       = []
-                parsedXml['currentOwner'] = events['emitterName']
+                try:
+                    parsedXml['currentOwner'] = events['emitterName'] #acá se hizo lo mismo que para el caso de los nodos attachmentData
+                except:
+                    parsedXml['currentOwner'] =  parsedXml['emitterName']
+                    
                 parsedXml['typeBill']     = 'fdb5feb4-24e9-41fc-9689-31aff60b76c9'
             return parsedXml
     except Exception as e:

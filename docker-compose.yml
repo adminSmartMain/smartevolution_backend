@@ -1,6 +1,6 @@
 services:
   web:
-    build: 
+    build:
       context: .
     command: python manage.py runserver 0.0.0.0:${DJANGO_PORT:-8000}
     volumes:
@@ -23,3 +23,9 @@ services:
         limits:
           cpus: "1.0"
           memory: "1G"
+    networks:
+      - smartevolutionbackend_smartevolution_network
+
+networks:
+  smartevolutionbackend_smartevolution_network:
+    external: true

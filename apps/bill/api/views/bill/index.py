@@ -24,16 +24,15 @@ class BillAV(BaseAV):
             data = []
             failedBills = []
 
-            logger.debug("Iniciando procesamiento de facturas")
-            logger.debug(f"Datos recibidos: {request.data}")
-            #logger.debug(f"Datos recibidos: {request.data['bills']}")
+            
+            
 
             for x in request.data['bills']:
-                logger.debug(f"Procesando factura: {x}")
+               
 
                 # Validación del 'integrationCode'
                 if 'integrationCode' in x:
-                    logger.debug(f"Comprobando código de integración: {x['integrationCode']}")
+                    
                     if x['integrationCode'] != "" or x['integrationCode'] is not None:
                         if x['cufe'] is None or x['cufe'] == "":
                             failedBills.append({
@@ -52,13 +51,13 @@ class BillAV(BaseAV):
                                 logger.warning(f"Factura con CUFE ya registrado: {x}")
                             else:
                                 data.append(x)
-                                logger.debug(f"Factura agregada para procesamiento: {x}")
+                               
                     else:
                         data.append(x)
-                        logger.debug(f"Factura agregada para procesamiento: {x}")
+                        
                 else:
                     data.append(x)
-                    logger.debug(f"Factura agregada para procesamiento: {x}")
+                    
 
             if len(failedBills) > 0:
                 logger.warning(f"Algunas facturas presentan errores: {failedBills}")
@@ -70,34 +69,33 @@ class BillAV(BaseAV):
                     # Verificar y registrar notas de crédito
                     credit_notes = row.get('creditNotes', [])
                     request.data['creditNotes'] = credit_notes
-                    logger.debug(f"Notas de crédito para la factura: {credit_notes}")
+                   
 
                     # Verificar y registrar eventos
                     events = row.get('events', [])
                     request.data['events'] = events
-                    logger.debug(f"Eventos para la factura: {events}")
+                    
 
                     # Validar formato de fechas
                     if 'dateBill' in row:
-                        logger.debug(f"Formato original de dateBill: {row['dateBill']}")
-                        logger.debug(f"Formato original de dateBill: {row.keys()}")
+                        
                         if 'T' in row['dateBill']:
                             row['dateBill'] = row['dateBill'].split('T')[0]
-                            logger.debug(f"dateBill corregido: {row['dateBill']}")
+                            
                         else:
                             logger.debug("No se requiere corrección para dateBill")
 
                     if 'datePayment' in row:
                         date_payment = row['datePayment']
-                        logger.debug(f"Formato original de datePayment: {date_payment}")
+                       
 
                         # Verificar si datePayment es None y asignar un valor predeterminado
                         if date_payment is None:
                             row['datePayment'] = "SIN_FECHA"
-                            logger.debug("datePayment era None, asignado a 'SIN_FECHA'.")
+                            
                         elif 'T' in date_payment:
                             row['datePayment'] = date_payment.split('T')[0]
-                            logger.debug(f"datePayment corregido: {row['datePayment']}")
+                            
                         else:
                             logger.debug("No se requiere corrección para datePayment")
                     else:
@@ -105,27 +103,27 @@ class BillAV(BaseAV):
 
                     if 'expirationDate' in row:
                         expiration_date = row['expirationDate']
-                        logger.debug(f"Formato original de expirationDate: {expiration_date}")
+                        
 
                         # Verificar si expirationDate es None y asignar un valor predeterminado
                         if expiration_date is None:
                             row['expirationDate'] = "SIN_FECHA"
-                            logger.debug("expirationDate era None, asignado a 'SIN_FECHA'.")
+                            
                         elif 'T' in expiration_date:
                             row['expirationDate'] = expiration_date.split('T')[0]
-                            logger.debug(f"expirationDate corregido: {row['expirationDate']}")
+                            
                         else:
                             logger.debug("No se requiere corrección para expirationDate")
                     else:
                         logger.debug("expirationDate no está presente en los datos de la factura.")
 
                     # Serialización
-                    logger.debug(f"Intentando serializar los datos de la factura: {row}")
+                    
                     serializer = BillSerializer(data=row, context={'request': request})
 
                     # Verificar si la serialización es válida
                     if serializer.is_valid():
-                        logger.debug("Datos validados correctamente por el serializer.")
+                        
                         try:
                             # Intento de guardado en base de datos
                             saved_bill = serializer.save()
