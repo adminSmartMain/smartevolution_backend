@@ -21,6 +21,7 @@ class EgressReceiptAV(APIView):
         'amount': serializer.data['amount'],
         'amount_text': numberToLetters(serializer.data['amount']),
         'date': serializer.data['date'],
+        'client':serializer.data['client'],
             }
         template = get_template('egressReceipt.html')
         parsedTemplate = template.render(data)

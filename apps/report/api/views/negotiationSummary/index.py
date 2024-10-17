@@ -190,7 +190,10 @@ class NegotiationSummaryAV(BaseAV):
                         'daysOP': x['operationDays'],
                         'VRBuy': x['presentValueInvestor'],
                         'VRFuture': x['payedAmount'],
-                        'totalGM': x['amount']
+                        'totalGM': x['amount'],
+                        'investor':x['investor'],
+                        'Desc':x['payedPercent'],
+                        'TasaDesc':x['discountTax'],
                     })
                 
                 for x in emitterDeposits:
@@ -209,7 +212,7 @@ class NegotiationSummaryAV(BaseAV):
                     })
                 
                 template = get_template('negotiationSummary.html')
-                test = template.render(data)
+                test = template.render(data) ## Aqui el backend envia la información al html con un json dados sus atributos
                 pdf = requests.post('https://j2ncm3xeo7.execute-api.us-east-1.amazonaws.com/dev/api/html-to-pdf', json={'html': test})
                 return response({'error': False, 'pdf': pdf.json()['pdf'], 'data': data}, 200)
             elif request.query_params['opId'] != 'undefined':

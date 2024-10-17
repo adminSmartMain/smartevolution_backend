@@ -31,6 +31,7 @@ def genElectronicSignature(base64PDF, name, message, subject, signProfiles):
         'file'       : str(base64PDF['pdf']),
         'otpCode' :True,
         'options'    : {
+            'otpCode':"email",
             'whatsapp':True,
         }
     }

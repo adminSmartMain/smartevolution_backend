@@ -82,7 +82,7 @@ def parseBill(file):
                     parsedXml['currentOwner'] = events['emitterName'] # se agregó un try except con el fin de conservar codigo y que podamos volver a reutilizar cuando el tema del cufe esté solucionado
                     
                 except:
-                    parsedXml['currentOwner'] = parsedXml['emitterName'] ## acá estaba el problema, al no tener la posibilidad de usar el cufe esta linea usaba el objeto event, asi que de manera eventual se toma el mismo'emitterName' del xml ya que este debe coincidir con el obtenido en el cufe. Este se obtiene en la linea 90 de bill Events. 
+                    parsedXml['currentOwner'] = "No disponible" ## acá estaba el problema, al no tener la posibilidad de usar el cufe esta linea usaba el objeto event, asi que de manera eventual se toma el mismo'emitterName' del xml ya que este debe coincidir con el obtenido en el cufe. Este se obtiene en la linea 90 de bill Events. 
                 parsedXml['typeBill']     = 'fdb5feb4-24e9-41fc-9689-31aff60b76c9'
             return parsedXml
         except Exception as e:
@@ -153,7 +153,7 @@ def parseBill(file):
                 try:
                     parsedXml['currentOwner'] = events['emitterName'] #acá se hizo lo mismo que para el caso de los nodos attachmentData
                 except:
-                    parsedXml['currentOwner'] =  parsedXml['emitterName']
+                    parsedXml['currentOwner'] =  "No disponible"
                     
                 parsedXml['typeBill']     = 'fdb5feb4-24e9-41fc-9689-31aff60b76c9'
             return parsedXml
