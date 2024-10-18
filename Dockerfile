@@ -2,31 +2,32 @@ FROM python:3.11-slim
 
 # Instalar dependencias del sistema
 RUN apt-get update && apt-get install -y \
-    default-libmysqlclient-dev \
-    gcc \
-    curl \
-    wget \
-    gnupg \
     ca-certificates \
+    chromium \
+    cron \
+    curl \
+    default-libmysqlclient-dev \
+    default-mysql-client \
     fonts-liberation \
+    gcc \
+    gnupg \
+    libcups2 \
     libappindicator3-1 \
     libasound2 \
     libatk-bridge2.0-0 \
-    libcups2 \
     libgbm1 \
     libgtk-3-0 \
     libnspr4 \
     libnss3 \
     libxss1 \
     lsb-release \
+    wget \
     xdg-utils \
-    chromium \
-    cron \
     && apt-get clean
 
-RUN which chromium || which chromium-browser
-RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n \
-    && bash n lts \
+# Descarga y configuración de Node.js
+ADD https://raw.githubusercontent.com/tj/n/master/bin/n /n
+RUN bash n lts \
     && ln -sf /usr/local/n/versions/node/$(n --latest)/bin/node /usr/bin/node \
     && ln -sf /usr/local/n/versions/node/$(n --latest)/bin/npm /usr/bin/npm \
     && ln -sf /usr/local/n/versions/node/$(n --latest)/bin/npx /usr/bin/npx
@@ -35,8 +36,12 @@ RUN npm -v
 
 WORKDIR /app
 
+# Instalar dependencias de Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install pymysql
+
+# Copiar el código de la aplicación
 COPY . .
 
 # Copiar el script de entrada y hacerlo ejecutable

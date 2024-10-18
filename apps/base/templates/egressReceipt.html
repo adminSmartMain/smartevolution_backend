@@ -1,89 +1,164 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
-  </head>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Calibri;
-    }
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style type="text/css">
 
-    header {
-      width: 98%;
-      color: #44546a;
-      text-align: center;
-      font-size: 12px;
-      font-weight: 100;
-      margin-top: 25px;
-      display: flex;
-      justify-content: space-around;
-    }
-  </style>
-  <body>
-    <header>
-        <div class="logo">
-            <img
-            class="header__img"
-            src="https://smartevolution.s3.amazonaws.com/assets/Logo+Smart+-+Lite.svg"
-            alt="smart-evolution-logo"
-            width="170px"
-          />
-        </div>
-        
-        <div style="display: flex; flex-direction: column; margin-left: 80px;">
-            <p style="font-family: Calibri Light; color: #232b2b; font-size: 15pt; font-weight: 400;">Smart Evolution SAS</p>
-            <p style="font-family: Calibri Light; color: #232b2b; font-size: 12pt; font-weight: 400;margin-bottom: 5px;">NIT 901.333.444-4</p>
-            <div style="font-size: 25pt;color: #44546a; font-family: Calibri Light; margin-top: 10px; font-weight: 300;">Recibo de Caja</div>
-        </div>
-        
-        <div style="width: 25%;"></div>
+body {
+  background: #ffffff;
+  min-width: 20cm;
+  font-family:'Calibri', sans-serif;
+  font-size: 12px;
+}
 
-    </header>
+page {
+  background: white;
+  margin: 0.5cm;
+}
 
-    <div style="display: flex; width: 98%; flex-direction: row; margin-left: 8px; justify-content: flex-end; margin-top: 30px;">
-      <div style="display: flex; flex-direction: column; text-align: center; width: 150px; background-color: #f8f4f4;">
-        <P style="font-weight: bold; color: #44546a; background-color: white;padding: 5px;">Fecha</P>
-        <div>{{date}}</div>
-      </div>
-      <div style="display: flex; flex-direction: column; text-align: center; margin-left: 5px; width: 150px; background-color: #f8f4f4;">
-        <p style="font-weight: bold; color: #44546a; background-color: white;padding: 5px;">Recibo</p>
-        <div>{{id}}</div>
-      </div>
-      <div style="display: flex; flex-direction: column; text-align: center; margin-left: 5px;  width: 150px; background-color: #f8f4f4;">
-        <p style="font-weight: bold; color: #44546a; background-color: white;padding: 5px;">Monto</p>
-        <div>${{amount}}</div>
-      </div>
-    </div>
+page[size="Letter"] {  
+  width: 21.59cm;
+  height: 27.94cm;
+  orientation: portrait;
+} 
 
-    <div style="margin-top: 50px; width: 96%; margin-left: 8px; display: flex; flex-direction: row; justify-content: space-around; align-items: center;">
-      <p style="font-weight: bold; color: #44546a; background-color: white;padding: 5px;">Hemos Recibido de</p>
-      <div style="background-color: #f8f4f4;width: 50%;">SMART EVOLUTION S.A.S.</div>
-      <p style="font-weight: bold; color: #44546a; background-color: white;padding: 5px;">NIT/CC</p>
-      <div style="background-color: #f8f4f4; width: 15%; height: 10%;">901333444</div>
-    </div>
+table {
+    table-layout: fixed;
+    border-collapse: collapse;
+}
 
-    <div style="margin-top: 20px; width: 96%; margin-left: 15px; display: flex; flex-direction: row; justify-content: flex-start; align-items: center;">
-      <p style="font-weight: bold; color: #44546a; background-color: white;padding: 5px;">La Cantidad de </p>
-      <div style="background-color: #f8f4f4;width: 50%; margin-left: 45px;">{{amount_text}} (Pesos MC)</div>
-    </div>
+ @page {
+   margin: 1cm;
+  }
 
-    <div style="margin-top: 20px; width: 96%; margin-left: 15px; display: flex; flex-direction: row; justify-content: flex-start; align-items: center;">
-      <p style="font-weight: bold; color: #44546a; background-color: white;padding: 5px;">Por Concepto de </p>
-      <div style="background-color: #f8f4f4;width: 50%; margin-left: 35px;">DESEMBOLSO PARA COMPRA DE TITULO</div>
-    </div>
+ @media print {
+  body, page {
+    margin: 0cm;
+    box-shadow: 0;
+  }
+} 
+
+.etiquetas {
+    color: #45546A;
+}
+
+.datos {
+    color: #1d1d1d;
+    font-weight: bold;
+}
+
+.main {
+	background-color: #ffffff;
+	margin: auto;
+	width: 100%;
+    max-width: 21.59cm;
+	border-spacing: 0;
+	color: #4a4a4a;
+    font-size: 12px;
+}
+
+	</style>
+</head>
+
+<body class="main">
 
 
-    <div style="margin-top: 50px; width: 96%; margin-left: 15px; display: flex; flex-direction: row; justify-content: flex-start; align-items: center;">
-      <p style="font-weight: bold; color: #44546a; background-color: white;padding: 5px;">Recibido Por </p>
-      <div style="margin-left: 40px;">
-      <img src="https://smartevolution.s3.amazonaws.com/assets/firma.png" alt="signature">
-      </div>
-    </div>
-    </html> 
-  </body>
+    <table style="border-collapse: collapse; width: 100%;" border="0">
+        <colgroup>
+            <col style="width: 30%;">
+            <col style="width: 70%;">
+        </colgroup>
+        <tbody>
+            <tr>
+                <td><img style="display:inline; margin-left: auto; margin-right: auto;" src="https://devsmartevolution.s3.amazonaws.com/imagenes/Logo%2BSmart%2B-%2BLite.svg" width="150"></td>
+                <td>
+                    <p style="line-height: 1; text-align: center; margin-right: 200px;">Smart Evolution SAS<br>
+                        NIT 901.333.444-4</p>
+                    <p style="font-size: 18px; line-height: 0; text-align: center; margin-right: 200px;">Recibo de Caja</p>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <table style="border-collapse: collapse; width: 50%; height: 50px; margin-top: 30px; margin-bottom: 30px; margin-right: 0px; margin-left: auto;" border="0">
+                        <colgroup>
+                            <col style="width: 33.3637%;">
+                            <col style="width: 33.3637%;">
+                            <col style="width: 33.3637%;">
+                        </colgroup>
+                        <tbody>
+                            <tr class="etiquetas">
+                                <td style="text-align: center;">Fecha</td>
+                                <td style="text-align: center;"># Recibo</td>
+                                <td style="text-align: center;">Monto</td>
+                            </tr>
+                            <tr class="datos">
+                                <td style="text-align: center;">{{date}}</td>
+                                <td style="text-align: center;">{{id}}</td>
+                                <td style="text-align: center;">${{amount}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <table style="border-collapse: collapse; height: 150px; width: 100%; height: 100px; margin-top: 20px;" border="0">
+                        <colgroup>
+                            <col style="width: 20%;">
+                            <col style="width: 30%;">
+                            <col style="width: 5%;">
+                            <col style="width: 25%;">
+                            <col style="width: 5%;">
+                            <col style="width: 15%;">
+                        </colgroup>
+                        <tbody>
+                            <tr>
+                              <tr>
+                                <td class="etiquetas">Hemos Recibido de</td>
+                                <td class="datos" colspan="3">
+                                    {% if client.social_reason %}
+                                        {{ client.social_reason }}
+                                    {% else %}
+                                        {{ client.first_name }} {{ client.last_name }}
+                                    {% endif %}
+                                </td>
+                                <td class="etiquetas">NIT/CC</td>
+                                <td class="datos" style="padding-left: 10px;">{{ client.document_number }}</td>
+                            </tr>
+                            
+                                
+                            </tr>
+                            <tr>
+                                <td class="etiquetas">La Cantidad de</td>
+                                <td class="datos" colspan="5">{{amount_text}} (Pesos M/C)</td>
+                            </tr>
+                            <tr>
+                                <td class="etiquetas">Por Concepto</td>
+                                <td class="datos" colspan="5">DESEMBOLSO PARA COMPRA DE TÍTULOS</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <br>
+                    <br>
+                    <br>
+                    <br>
+                    <br>
+                    <br>
+                    <p>
+                      <img src="https://devsmartevolution.s3.amazonaws.com/imagenes/firma_aut.png" alt="Firma Autorizada" style="height: 80px;">
+            
+                    </p>
+                    <p style="font-size: 10px;">Firma Autorizada</p>
+                    <br>
+                    <br>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+
+</body>
+
+</html>
