@@ -16,6 +16,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+##comentario2
 class BillAV(BaseAV):
 
     @checkRole(['admin','third'])
