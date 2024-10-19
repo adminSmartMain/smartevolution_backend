@@ -1,570 +1,646 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
-  </head>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Calibri;
+</head>
+<style type="text/css">
+
+
+    body, page {
+        background: #ffffff;
+        min-width: 20cm;
+        font-family: 'Calibri', sans-serif;
+        font-size: 12px;
+        margin: 0.5cm;
     }
-
-    header {
-      width: 98%;
-      color: #44546a;
-      text-align: center;
-      font-size: 12px;
-      font-weight: 100;
-      margin-top: 25px;
+    
+    .wrapper, .main {
+        width: 100%;
+        max-width: 21.59cm;
+        margin: auto;
+        background-color: #ffffff;
+        color: #4a4a4a;
+        border-spacing: 0;
     }
-    .header__img {
-      position: absolute;
-      top: 16px;
-      right: 40px;
+    
+    .tables-headers {
+        background-color: #45546A;
+        color: #ffffff;
+        font-weight: bold;
+        text-align: center;
     }
-
-    /* emitter table without using flexbox or grid*/
-  .emitter__table {
-    width: 95%;
-  }
-
-  /* emitter table head */
-  .emitter__table__head {
-    width: 95%;
-    color: white;
-    text-align: center;
-    font-size: 15px;
-    font-weight: 700;
-    margin-top: 25px;
-    background-color: #44546a;
-    margin-left: 10px;
-    height: 20px;
-  }
-
-  /* emitter table rows */
-  .emitter__table__td {
-    font-weight: bold;
-    font-size: 9pt;
-    color: #232b2b;
-  }
-
-  .emitter__table__tr {
-    color: #44546a;
-    width: 30%;
-    font-weight: 500;
-    font-size: 9pt;
-    padding: 4px 0 4px 20px;
-  }
-
-  .financial-central__table {
-    width: 95%;
-    margin-left: 20px;
-  }
-
-  .financial-central__table__head {
-    margin-top: 30px;
-    text-align: center;
-    color: #44546a;
-    font-weight: 700;
-    font-size: 10pt;
-    margin-bottom: 14px;
-    margin-left: 20px;
-    width: 95%;
-  }
-  .financial-central__table__td-title {
-    background-color: gray;
-    color: white;
-    text-align: center;
-    font-size: 10pt;
-    height: 20px;
-  }
-
-  .financial_central__table-row:nth-child(even) {
-  background-color: lightgray;
-  }
-
-  .qualitative-overview__table {
-    width: 95%;
-    margin-left: 20px;
-  }
-
-  .qualitative-overview__table__head {
-    margin-top: 30px;
-    text-align: center;
-    color: #44546a;
-    font-weight: 700;
-    font-size: 10pt;
-    margin-bottom: 14px;
-    margin-left: 20px;
-    width: 95%;
-  }
-
-  .qualitative-overview__text {
-    font-size: 7pt;
-    width: 95%;
-    border: 0.5px solid gray;
-    line-height: 1rem;
-    color: #232b2b;
-  }
-
-  .financial-overview__table{
-    width: 95%;
-    margin-left: 25px;
-  }
-
-  .financial-overview__table__head {
-    text-align: center;
-    color: #44546a;
-    font-weight: 700;
-    font-size: 10pt;
-    margin-bottom: 14px;
-    margin-left: 20px;
-    width: 95%;
-  }
-  
-  .financial-overview__table__td-title {
-    background-color: #44546a;
-    color: white;
-    text-align: center;
-    font-size: 10pt;
-    height: 20px;
-    font-weight: bold;
-  }
-
-  .financial-overview__table__td {
-    padding:3px 0;
-    font-size: 8pt;
-    color: #44546a;
-    font-weight: bold;
-  }
-
-  .financial-overview__table__td__text {
-    padding:3px 0;
-    font-size: 8pt;
-    text-align: center;
-  }
-  .financial-overview__tr:nth-child(even) {
-    background-color: lightgray;
-  }
-  .qualitative-overview__table {
-    width: 95%;
-  }
-  .qualitative-overview__text{
-    font-size: 7pt;
-    width: 95%;
-    border: 0.5px solid gray;
-    line-height: 1rem;
-    color: #232b2b;
-  }
-  .offert-conditions__head {
-    width: 97%;
-    background-color: #44546a;
-    color: white;
-    padding: 5px 0 0 0;
-    text-align: center;
-    font-weight: bold;
-    margin-left: 15px;
-  }
-  .offert-conditions-1-row {
-    display: flex;
-    background-color: rgb(211, 211, 211);
-    width: 97%;
-    margin-left: 15px;
-    height: 40px;
-  }
-
-  .offert-conditions-1-row p {
-    font-size: 10pt;
-    color: #44546a;
-    font-weight: bold;
-    margin-left: 5px;
-    padding-top: 10px;
-  }
-
-  .offert-conditions-2-row {
-    display: flex;
-    background-color: rgb(211, 211, 211);
-    width: 97%;
-    margin-left: 15px;
-    height: 40px;
-  }
-
-  .Operation__table__container {
-    width: 95%;
-    margin-top: 40px;
-  }
-
-  .Operation__table {
-    width: 50%;
-  }
-
-  .operation__table__td-title {
-    font-weight: 500;
-    text-align: center;
-    color: black;
-    padding: 8px 0 8px 0;
-    font-size: 7pt;
-  }
-
-  </style>
-  <body>
-    <header style="padding-top: 10px">
-      <div
-        style="
-          display: flex;
-          flex-direction: row;
-          justify-content: space-around;
-          align-items: center;
-        "
-      >
-        <img
-          src="https://smartevolution.s3.amazonaws.com/assets/Logo+Smart+-+Lite.svg"
-          alt="smart-evolution-logo"
-          width="170px"
-          height="50px"
-        />
-        <div style="margin-left: 20px">
-          <h1>Smart Evolution</h1>
-          <h3>NIT 901.333.444-4</h3>
-          <h2>Resumen de Negociación</h2>
-        </div>
-        <div style="width: 20%"></div>
-      </div>
-    </header>
+    
+    .titulo {
+        font-size: 16px;
+        line-height: 0.56cm;
+        vertical-align: middle;
+    }
+    
+    .subtitulos, .etiquetas {
+        font-size: 12px;
+        font-weight: bold;
+        color: #45546A;
+        vertical-align: middle;
+        text-align: center;
+        margin-bottom: 5px;
+    }
+    
+    .etiquetas, .datos {
+        font-size: 10px;
+    }
+    
+    .datos, .parrafo {
+        color: #585858;
+    }
+    
+    .parrafo {
+        text-align: justify;
+        line-height: 130%;
+    }
+    
+    .b2 {
+        background-color: #ffffff;
+        text-align: left;
+        line-height: 150%;
+    }
+    
+    .contenedor-columnas {
+        text-align: center;
+        vertical-align: top;
+    }
+    
+    
+    .tables-body {
+        font-size: 10px;
+        vertical-align: super;
+    }
+    
+    .tables-body tr:nth-child(odd):not(:first-child) {
+        background: #f2f2f2;
+    }
+    
+    table {
+        
+        border-collapse: collapse;
+        
+    }
+    
+    table td, table th {
+        border: none;
+        padding: 1px;
+        overflow: hidden;
+    }
+    
+    .header h1 {
+        font-size: 22px;
+        font-weight: 600;
+        text-align: center;
+        margin-left: 140px;
+        color: #45546a;
+    }
+    
+    header img {
+        position: absolute;
+    }
+    
+    @page {
+        margin: 0.5cm;
+    }
+    
+    @media print {
+        body, page {
+            margin: 0cm;
+            box-shadow: none;
+        }
+       
+    }
+    
+    
+        </style>
+ <!-- Resumen de negociación --> 
+<body class="main">
+  <div style="page-break-after: always;">
     {% load humanize %}
-    <div style="height: 20px"></div>
-    <div style="width: 95%; background-color: rgb(242,242,242); margin-left: 20px; display: flex; flex-direction: row; height: 100px; justify-content: space-around;">
-        <div style="display: flex; flex-direction: column;">
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px; margin-top: 10px;">Nro Op</p>
-            <p></p>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;">Emisor</p>
-            <p></p>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;">Pagador</p>
-            <p></p>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 15px;">Titulo Negociado</p>
-        </div>
+    <table style="width: 100%; " border="0">
+        <tbody>
+            <tr>
+                <td>
+                    <table style="width: 100%;" border="0">
+                        <colgroup>
+                            <col style="width: 30%;">
+                            <col style="width: 70%;">
+                        </colgroup>
+                        <tbody>
+                            <tr>
+                                <td><img style="display:inline; margin-left: auto; margin-right: auto;" src="https://devsmartevolution.s3.amazonaws.com/imagenes/Logo%2BSmart%2B-%2BLite.svg" width="150"></td>
+                                <td>
+                                    <p style="font-size: 16px; line-height: 1; text-align: center; margin-right: 210px;">Smart Evolution SAS<br>
+                                        NIT 901.333.444-4</p>
+                                    <p style="font-size: 22px; line-height: 0; text-align: center; margin-right: 210px; color: #45546A;">Resumen de la Negociación</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <table style="width: 100%; height: 75px; margin-top: 1px; background-color: #e7e7e7;" border="0">
+                        <colgroup>
+                            <col style="width: 15%;">
+                            <col style="width: 60%;">
+                            <col style="width: 10%;">
+                            <col style="width: 15%;">
+                        </colgroup>
+                        <tbody>
+                            <tr>
+                                <td>Nro Op</td>
+                                <td class="datos">{{negotiationSummary.opId}}</td>
+                                <td>Fecha</td>
+                                <td class="datos">{{negotiationSummary.date|date:'m/d/Y'}}</td>
+                            </tr>
+                            <tr>
+                                <td>Emisor</td>
+                                <td class="datos">{{negotiationSummary.emitter}}</td>
+                                <td>NIT</td>
+                                <td class="datos">{{negotiationSummary.emitterId}}</td>
+                            </tr>
+                            <tr>
+                                <td>Titulo Negociado</td>
+                                <td class="datos">Facturas</td>
+                                <td>NIT</td>
+                                <td class="datos">{{negotiationSummary.payerId}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <table style="width: 100%; margin-top: 1px; border: 0.1px solid #ccc">
+                        <colgroup>
+                            <col style="width: 85%;">
+                            <col style="width: 15%;">
+                        </colgroup>
+                        <tbody>
+                            <tr style="height: 20px;">
+                                <td>Valor Futuro</td>
+                                <td style="text-align: right;">{{negotiationSummary.futureValue}}</td>
+                            </tr>
+                            <tr style="height: 20px;">
+                                <td>% a Descontar</td>
+                                <td style="text-align: right;">[Ver Reporte de Venta]</td>
+                            </tr>
+                            <tr style="height: 20px;">
+                                <td>Valor a Descontar</td>
+                                <td style="text-align: right;">{{negotiationSummary.valueToDiscount}}</td>
+                            </tr>
+                            <tr style="height: 20px;">
+                                <td>Tasa de Descuento</td>
+                                <td style="text-align: right;">{{negotiationSummary.discountTax}}%</td>
+                            </tr>
+                            <tr style="height: 20px;">
+                                <td>D&iacute;as Descontados</td>
+                                <td style="text-align: right;">[Ver Reporte de Venta]</td>
+                            </tr>
+                            <tr style="height: 20px;">
+                                <td>Valor Descuento Smart Evolution</td>
+                                <td style="text-align: right;">{{negotiationSummary.SMDiscount}}</td>
+                            </tr>
+                            <tr style="height: 20px;">
+                                <td>Valor Venta Inversionistas</td>
+                                <td style="text-align: right;">{{negotiationSummary.investorValue}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <table style="width: 100%; margin-top: 1px; border: 0.1px solid #ccc">
+                        <colgroup>
+                            <col style="width: 85%;">
+                            <col style="width: 15%;">
+                        </colgroup>
+                        <tbody>
+                            <tr>
+                                <td style="height: 20px;">Descuento Pronto Pago para Inversionistas</td>
+                                <td style="text-align: right;">{{negotiationSummary.investorDiscount|floatformat|intcomma}}</td>
+                            </tr>
+                            <tr>
+                                <td style="height: 20px;">Valor Comisión Mesa Antes de Impuestos</td>
+                                <td style="text-align: right;">{{negotiationSummary.commissionValueBeforeTaxes|floatformat|intcomma}}</td>
+                            </tr>
+                            <tr style="font-weight: bold;">
+                                <td style="height: 20px;">Costo Operación (Descuento Pronto Pago + Comisión)</td>
+                                <td style="text-align: right;">{{negotiationSummary.operationValue|floatformat|intcomma}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <table style="width: 100%; margin-top: 1px; border: 0.1px solid #ccc">
+                        <colgroup>
+                            <col style="width: 42.5%;">
+                            <col style="width: 42.5%;">
+                            <col style="width: 15%;">
+                        </colgroup>
+                        <tbody>
+                            <tr style="height: 20px;">
+                                <td colspan="2">Comisión Mesa</td>
+                                <td style="text-align: right;">{{negotiationSummary.tableCommission|floatformat|intcomma}}</td>
+                            </tr>
+                            <tr style="height: 20px;">
+                                <td colspan="2">IVA</td>
+                                <td style="text-align: right;">{{negotiationSummary.iva|floatformat|intcomma}}</td>
+                            </tr>
+                            <tr style="height: 20px;">
+                                <td colspan="2">Retención IVA</td>
+                                <td style="text-align: right;">{{negotiationSummary.retIva|floatformat|intcomma}}</td>
+                            </tr>
+                            <tr style="height: 20px;">
+                                <td colspan="2">Retención en la fuente</td>
+                                <td style="text-align: right;">{{negotiationSummary.retFte|floatformat|intcomma}}</td>
+                            </tr>
+                            <tr style="height: 20px;">
+                                <td colspan="2">ICA</td>
+                                <td style="text-align: right;">{{negotiationSummary.retIca|floatformat|intcomma}}</td>
+                            </tr>
+                            <tr style="height: 20px; font-weight: bold;">
+                                <td>Valor Factura</td>
+                                <td style="text-align: center;">FV-{{negotiationSummary.billValue|floatformat|intcomma}} </td> 
+                                <td style="text-align: right;">{{negotiationSummary.billValue|floatformat|intcomma}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <table style="width: 100%; margin-top: 1px; border: 0.1px solid #ccc">
+                        <colgroup>
+                            <col style="width: 100%;">
+                        </colgroup>
+                        <tbody>
+                            <tr style="height: 20px; font-weight: bold; color: #45546A; font-size: 14px;">
+                                <td>Detalle de Saldos Pendientes, Compensaciones y/o Descuentos</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                </td>
 
-        <div style="display: flex; flex-direction: column;">
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px; font-weight: bold; margin-top: 10px;">{{negotiationSummary.opId}}</p>
-            <p></p>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px; font-weight: bold;">{{negotiationSummary.emitter}}</p>
-            <p></p>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px; font-weight: bold;">{{negotiationSummary.payer}}</p>
-            <p></p>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px; font-weight: bold;">Facturas</p>
-        </div>
-        <div></div>
-        <div style="display: flex; flex-direction: column;">
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px; margin-top: 10px;">Fecha</p>
-            <p></p>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;">NIT</p>
-            <p></p>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;">NIT</p>
-        </div>
+            </tr>
+            
+            <tr>
+                <td>
+                    
+                    <table style="width: 100%; margin-top: 1px;border: 0.1px solid #ccc">
+                        <colgroup>
+                            <col style="width: 60%;">
+                            <col style="width: 25%;">
+                            <col style="width: 15%;">
+                        </colgroup>
+                        <tbody>
+                            <tr style="font-weight: bold; color: #45546A;">
+                                <td style="text-align: center; height: 15px;">Descripción</td>
+                                <td style="text-align: center;">Fecha</td>
+                                <td style="text-align: center;">Monto</td>
+                            </tr>
+                            {% for x in pendingAccounts|slice:":5" %} 
+                            <tr>
+                                <td style="height: 20px;">{{x.description}}</td>
+                                <td style="text-align: center;">{{x.date|date:'m/d/Y'}}</td>
+                                <td style="text-align: center;">{{x.amount|floatformat|intcomma}}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                   
+                </td>
+            </tr>
+           
+            <tr>
+                <td>
+                    <table style="width: 100%; margin-top: 1px;" border="0">
+                        <colgroup>
+                            <col style="width: 85%;">
+                            <col style="width: 15%;">
+                        </colgroup>
+                        <tbody>
+                            <tr style="font-weight: bold;">
+                                <td style="height: 20px;">Total Descuentos</td>
+                                <td style="text-align: right;">{{negotiationSummary.totalDiscounts|floatformat|intcomma}}</td>
+                            </tr>
+                            <tr style="font-weight: bold; background-color: #e7e7e7;">
+                                <td style="height: 20px;">TOTAL A DESEMBOLSAR</td>
+                                <td style="text-align: right;">{{negotiationSummary.total|floatformat|intcomma}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <table style="width: 100%; margin-top: 1px;" border="0">
+                        <colgroup>
+                            <col>
+                        </colgroup>
+                        <tbody>
+                            <tr style="font-size: 14px; color: #45546A; font-weight: bold;">
+                                <td style="height: 20px;">Consignaciones de la Operación</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                   
+                </td>
+            </tr>
+            
+                <tr>
+                    <td>
+                        <table style="width: 100%; margin-top: 1px;border: 0.1px solid #ccc">
+                            <colgroup>
+                                <col style="width: 40%;">
+                                <col style="width: 20%;">
+                                <col style="width: 25%;">
+                                <col style="width: 15%;">
+                            </colgroup>
+                            <tbody>
+                                <tr style="height: 20px; font-weight: bold; color: #45546A;">
+                                    <td style="text-align: left;">Beneficiario</td>
+                                    <td style="text-align: center;">Cuenta Bancaria</td>
+                                    <td style="text-align: center;">Fecha</td>
+                                    <td style="text-align: center;">Monto</td>
+                                </tr>
+                                {% for x in emitterDeposits|slice:":5" %}
+                                <tr style="height: 20px;">
+                                    <td>{{ x.beneficiary }}</td>
+                                    <td>{{ x.bankAccount }}</td>
+                                    <td style="text-align: center;">{{ x.date|date:'m/d/Y' }}</td>
+                                    <td style="text-align: center;">{{ x.amount|floatformat|intcomma }}</td>
+                                
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+              
 
-        <div style="display: flex; flex-direction: column;">
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px; font-weight: bold; margin-top: 10px;">{{negotiationSummary.date|date:'m/d/Y'}}</p>
-            <p></p>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px; font-weight: bold;">{{negotiationSummary.emitterId}}</p>
-            <p></p>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px; font-weight: bold;">{{negotiationSummary.payerId}}</p>
-        </div>
-    </div>
-    <div style="display: flex; justify-content: space-between; width: 95%; border: 1px solid #d9d9d9;margin-left: 20px;">
-        <div style="display: flex; flex-direction: column; padding: 10px;">
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px; margin-top: 10px;">Valor Futuro</p>
-            <div style="margin-bottom: 8px;"></div>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px;">% a Descontar</p>
-            <div style="margin-bottom: 8px;"></div>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px;">Valor a Descontar</p>
-            <div style="margin-bottom: 8px;"></div>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px;">Tasa de Descuento</p>
-            <div style="margin-bottom: 8px;"></div>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px;">Dias Descontados</p>
-            <div style="margin-bottom: 8px;"></div>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px;">Valor Descuento Smart Evolution</p>
-            <div style="margin-bottom: 8px;"></div>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px;">Valor Venta Inversionistas</p>
-        </div>
+            <tr>
+                <td>
+                    <table style="width: 100%; margin-top: 1px;" border="0">
+                        <colgroup>
+                            <col style="width: 85%;">
+                            <col style="width: 15%;">
+                        </colgroup>
+                        <tbody>
+                            <tr style="font-weight: bold;">
+                                <td style="height: 20px;">Total Consignaciones</td>
+                                <td style="text-align: right;">{{negotiationSummary.totalDiscounts|floatformat|intcomma}}</td>
+                            </tr>
+                            <tr style="font-weight: bold; background-color: #e7e7e7;">
+                                <td style="height: 20px;">PENDIENTE POR DESEMBOLSAR</td>
+                                <td>{{negotiationSummary.pendingToDeposit|floatformat|intcomma}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <table style="width: 100%; margin-top: 1px;border: 0.1px solid #ccc">
+                        <colgroup>
+                            <col>
+                        </colgroup>
+                        <tbody>
+                            <tr>
+                                <td style="height: 20px; font-weight: bold; color: #45546A;">Observaciones</td>
+                            </tr>
+                            <tr>
+                                <td style="height: 90px; text-align: justify; vertical-align: super;">{{negotiationSummary.observations}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
 
-        <div style="display: flex; flex-direction: column; padding: 10px;">
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px; text-align: end; margin-top: 10px;">{{negotiationSummary.futureValue}}</p>
-            <div style="margin-bottom: 8px;"></div>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px;">[Ver Reporte de Venta]</p>
-            <div style="margin-bottom: 8px;"></div>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px; text-align: end;">{{negotiationSummary.valueToDiscount}}</p>
-            <div style="margin-bottom: 8px;"></div>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px; text-align: end;">{{negotiationSummary.discountTax}}%</p>
-            <div style="margin-bottom: 8px;"></div>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px;">[Ver Reporte de Venta]</p>
-            <div style="margin-bottom: 8px;"></div>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px; text-align: end;">{{negotiationSummary.SMDiscount}}</p>
-            <div style="margin-bottom: 8px;"></div>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px; text-align: end;">{{negotiationSummary.investorValue}}</p>
-        </div>
+    
+    
+    
 
-    </div>
-    <div style="height: 5px;"></div>
-    <div style="display: flex; justify-content: space-between; width: 95%; border: 1px solid #d9d9d9;margin-left: 20px;">
-        <div style="display: flex; flex-direction: column; padding: 10px;">
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px; margin-top: 10px;">Descuento Pronto Pago para Inversionistas</p>
-            <div style="margin-bottom: 8px;"></div>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px;">Valor Comisión Mesa Antes de Impuestos</p>
-            <div style="margin-bottom: 8px;"></div>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px; font-weight: bold;">Costo Operación (Descuento Pronto Pago + Comisión)</p>
-        </div>
-        <div style="display: flex; flex-direction: column; padding: 10px;">
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px; text-align: end; margin-top: 10px;">{{negotiationSummary.investorDiscount|floatformat|intcomma}}</p>
-            <div style="margin-bottom: 8px;"></div>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px;">{{negotiationSummary.commissionValueBeforeTaxes|floatformat|intcomma}}</p>
-            <div style="margin-bottom: 8px;"></div>
-            <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px; text-align: end;">{{negotiationSummary.operationValue|floatformat|intcomma}}</p>
-            <div style="margin-bottom: 8px;"></div>
+    <!-- Reporte de compra -->
+    <center class="wrapper" style="page-break-before: always;"
 
-    </div>
-    </div>
-    <div style="height: 5px;"></div>
-    <div style="display: flex; justify-content: space-between; width: 95%; border: 1px solid #d9d9d9;margin-left: 20px;">
-      <div style="display: flex; flex-direction: column; padding: 10px;">
-          <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px; margin-top: 10px;">Comisión Mesa</p>
-          <div style="margin-bottom: 8px;"></div>
-          <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px;">IVA</p>
-          <div style="margin-bottom: 8px;"></div>
-          <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px; font-weight: bold;">Retención IVA</p>
-          <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px; margin-top: 10px;">Retención en la fuente</p>
-          <div style="margin-bottom: 8px;"></div>
-          <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px;">ICA</p>
-          <div style="margin-bottom: 8px;"></div>
-          <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px; font-weight: bold;">Valor Factura</p>
-      </div>
-      <div style="display: flex; flex-direction: column; padding: 10px;">
-          <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px; text-align: end; margin-top: 10px;">{{negotiationSummary.tableCommission|floatformat|intcomma}}</p>
-          <div style="margin-bottom: 8px;"></div>
-          <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px; text-align: end;">{{negotiationSummary.iva|floatformat|intcomma}}</p>
-          <div style="margin-bottom: 8px;"></div>
-          <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px; text-align: end;">{{negotiationSummary.retIva|floatformat|intcomma}}</p>
-          <div style="margin-bottom: 8px;"></div>
-          <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px; text-align: end; margin-top: 10px;">{{negotiationSummary.retFte|floatformat|intcomma}}</p>
-          <div style="margin-bottom: 8px;"></div>
-          <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px; text-align: end;">{{negotiationSummary.retIca|floatformat|intcomma}}</p>
-          <div style="margin-bottom: 8px;"></div>
-          <p style="font-size: 10pt;color: rgb(96, 87, 101); margin-bottom: 5px;margin-left: -5px; text-align: end; font-weight: bold;">{{negotiationSummary.billValue|floatformat|intcomma}}</p>
-          <div style="margin-bottom: 8px;"></div>
-      </div>
-  </div>
-  <div style="height: 5px;"></div>
-  <h5 style="color:#44546a; margin-left: 20px;">Detalle de Saldos Pendientes, Compensaciones y/o Descuentos</h5>
-  <table style="margin-top:10px; width: 95%; margin-left: 20px; border: 1px solid #d9d9d9;">
-      <tr>
-        <td style=" color: #44546a;text-align: start;font-size: 10pt; font-weight: bold; width: 500px;padding-left: 8px;">Descripción</td>
-        <td></td>
-        <td style="color: #44546a;text-align: center;font-size: 10pt; font-weight: bold;">Fecha</td>
-        <td style="color: #44546a;text-align: center;font-size: 10pt; font-weight: bold;">Monto</td>
-      </tr>
-    {% for x in pendingAccounts %}
+        <table class="main" width="100%" style="padding: 20px; margin: auto;">
+
+    <!-- HEADER -->
+
+            <tr>
+                <td>
+                    <table style="width: 100%;" border="0">
+                        <colgroup>
+                            <col style="width: 30%;">
+                            <col style="width: 70%;">
+                        </colgroup>
+                        <tbody>
+                            <tr>
+                                <td><img style="display:inline; margin-left: auto; margin-right: auto;" src="https://devsmartevolution.s3.amazonaws.com/imagenes/Logo%2BSmart%2B-%2BLite.svg" width="150"></td>
+                                <td>
+                                    <p style="font-size: 16px; line-height: 1; text-align: center; margin-right: 210px;">Smart Evolution SAS<br>
+                                        NIT 901.333.444-4</p>
+                                    <p style="font-size: 22px; line-height: 0; text-align: center; margin-right: 210px; color: #45546A;">Reporte de Compra</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+
+    <!-- DATOS DEL EMISOR -->           
+
+            <tr>
+                <td class="b2">
+                    <table width="100%" style="margin: 10px 0 20px;">
+
+                        <tr>
+                            <td class="etiquetas" width="20%" style="text-align: left;">Nro. Operación</td>
+                            </td>
+                            <td class ="datos" width="80%"><strong>	{{sellReport.opId}}</strong></td>
+                        </tr>
+
+                        <tr>
+                            <td class = "etiquetas" width="20%" style="text-align: left;">Nombre del Emisor
+                            </td>
+                            <td class ="datos" width="80%"><strong>	{{sellReport.emitterName}}</strong></td>
+                        </tr>
+
+                        <tr>
+                            <td class = "etiquetas" width="20%" style="text-align: left;">NIT / CC
+                            </td>
+                            <td class ="datos" width="80%"><strong>{{sellReport.emitterDocumentNumber}}</strong></td>
+                        </tr>
+
+                        <tr>
+                            <td class = "etiquetas" width="20%" style="text-align: left;">Dirección
+                            </td>
+                            <td class ="datos" width="80%"><strong>{{sellReport.emitterAddress}}</strong></td>
+                        </tr>
+
+                        <tr>
+                            <td class = "etiquetas" width="20%" style="text-align: left;">Teléfono
+                            </td>
+                            <td class ="datos" width="80%"><strong>{{sellReport.emitterPhoneNumber}}</strong></td>
+                        </tr>
+
+                        <tr>
+                            <td class = "etiquetas" width="20%" style="text-align: left;">Correo Electrónico
+                            </td>
+                            <td class ="datos" width="80%"><strong>{{sellReport.emitterEmail}}</strong></td>
+                        </tr>
+
+                        <tr>
+                            <td class = "etiquetas" width="20%" style="text-align: left;">Corredor
+                            </td>
+                            <td class ="datos" width="80%"><strong>{{sellReport.emitterBroker}}</strong></td>
+                        </tr>
+
+
+                    </table>
+                </td>
+            </tr>
+
+    <!-- DETALLE OPERACIÓN -->  
+
     <tr>
-      <td style="font-size: 8pt; padding:3px 0; font-size: 8pt; text-align: start;padding-left: 8px;">
-        {{x.description}}
-      </td>
-      <td></td>
-      <td style="font-size: 8pt; padding:3px 0; font-size: 8pt; text-align: center;">
-        {{x.date|date:'m/d/Y'}}
-      </td>
-      <td style="font-size: 8pt; padding:3px 0; font-size: 8pt; text-align: center;">
-        {{x.amount|floatformat|intcomma}}
-      </td>
+        <td>
+            <table width="100%">
+                <tr>
+                    <td>
+                        <table style="font-size: 8px;" align="right">
+                            <tr>
+                                <th>Total VR Venta</th>
+                                <th>Total VR Nominal</th>
+                                <th>Total VR Futuro</th>
+                            </tr>
+                            <tr style="background-color: #f2f2f2; font-weight: bold;">
+                                <td>{{sellReport.sell}}</td>
+                                <td>{{sellReport.nominal}}</td>
+                                <td>{{sellReport.future}}</td>
+                            </tr>
+                        </table>
+                        {% for x in sellReport.billsList %} {% endfor %}
+                        <table class="tables-body" width="100%" rules="none" style="table-layout: fixed; word-wrap: break-word;">
+                            <tr class="tables-headers">
+                                <th style="width: 7%;">Fecha Op</th>
+                                <th style="width: 7%;">Fecha Final</th>
+                                <th style="width: 3%;">Tipo Doc</th>
+                                <th style="width: 6%;">Nro. Doc</th>
+                                <th style="width: 14%; text-align: left;">Nombre Pagador</th>
+                                <th style="width: 8%; text-align: center;">NIT/CC Inversionista</th>
+                                <th style="width: 14%; text-align: left;">Nombre Inversionista</th>
+                                <th style="width: 5%;">% Desc</th>
+                                <th style="width: 5%;">Tasa Desc</th>
+                                <th style="width: 4%;">Días Op</th>
+                                <th style="width: 9%;">VR Venta Inversionista</th>
+                                <th style="width: 9%;">VR Nominal</th>
+                                <th style="width: 9%;">VR Futuro</th>
+                            </tr>
+                            {% for x in sellReport.billsList %}
+                            <tr>
+                                <td style="text-align: center;">{{x.dateOP}}</td>
+                                <td style="text-align: center;">{{x.dateExp}}</td>
+                                <td style="text-align: center;">FACT</td>
+                                <td style="text-align: center;">{{x.number}}</td>
+                                <td style="text-align: left;">{{x.payer}}</td>
+                                <td style="text-align: center;">{{x.investor.document_number}}</td>
+                                <td style="text-align: left;">
+                                    {% if x.investor.social_reason %}
+                                        {{ x.investor.social_reason }}
+                                        {% else %}
+                                        {{ x.investor.first_name }} {{ x.investor.last_name }}
+                                    {% endif %}
+                                </td>
+                                <td style="text-align: center;">{{x.Desc}}</td>
+                                <td style="text-align: center;">{{x.TasaDesc}}</td>
+                                <td style="text-align: center;">{{x.daysOP}}</td>
+                                <td style="text-align: center; width: 10%;">{{x.VRBuy|floatformat|intcomma}}</td>
+                                <td style="text-align: center; width: 10%;">{{x.VRFuture|floatformat|intcomma}}</td>
+                                <td style="text-align: center; width: 10%;">{{x.totalGM|floatformat|intcomma}}</td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
     </tr>
-    {% endfor %}
-  </table>
-  <div style="height: 5px;"></div>
-  <div style="width: 94%; margin-left: 20px; display: flex; justify-content: space-between; margin-top: 5px;">
-  <p style="font-weight: bold; font-size: 12pt; color: rgb(96, 87, 101);">Total Descuentos</p>
-  <p style="font-weight: bold; font-size: 12pt; margin-left: -10px; color: rgb(96, 87, 101);">{{negotiationSummary.totalDiscounts|floatformat|intcomma}}</p>
-</div>
-<div style="height: 5px;"></div>
-<div style="width: 95%; margin-left: 20px; display: flex; justify-content: space-between; margin-top: 5px; background-color:rgb(242,242,242); padding: 5px; align-items: center;">
-  <p style="font-weight: bold; font-size: 8pt; color: rgb(96, 87, 101);">TOTAL A DESEMBOLSAR</p>
-  <p style="font-weight: bold; font-size: 12pt; margin-left: -10px; color: rgb(96, 87, 101);">{{negotiationSummary.total|floatformat|intcomma}}</p>
-</div>
-<div style="height: 5px;"></div>
-<h5 style="color:#44546a; margin-left: 20px;">Consignaciones de la Operación</h5>
-<table style="margin-top:10px; width: 95%; margin-left: 20px; border: 1px solid #d9d9d9;">
-  <tr>
-    <td style=" color: #44546a;text-align: start;font-size: 10pt; font-weight: bold;padding-left: 5px; ">Beneficiario</td>
-    <td style=" color: #44546a;text-align: start;font-size: 10pt; font-weight: bold; ">Cuenta Bancaria</td>
-    <td style="color: #44546a;text-align: center;font-size: 10pt; font-weight: bold;">Fecha</td>
-    <td style="color: #44546a;text-align: center;font-size: 10pt; font-weight: bold;">Monto</td>
-  </tr>
-{% for x in emitterDeposits %}
-<tr>
-  <td style="font-size: 8pt; padding:3px 0; font-size: 8pt; text-align: start;padding-left: 5px">
-    {{x.beneficiary}}
-  </td>
-  <td style="font-size: 8pt; padding:3px 0; font-size: 8pt; text-align: start;">
-    {{x.bankAccount}}
-  </td>
-  <td style="font-size: 8pt; padding:3px 0; font-size: 8pt; text-align: center;">
-    {{x.date|date:'m/d/Y'}}
-  </td>
-  <td style="font-size: 8pt; padding:3px 0; font-size: 8pt; text-align: center;">
-    {{x.amount|floatformat|intcomma}}
-  </td>
-</tr>
-{% endfor %}
-</table>
-<div style="height: 5px;"></div>
-<div style="width: 95%; margin-left: 20px; display: flex; justify-content: space-between; margin-top: 5px; background-color:rgb(242,242,242); padding: 5px; align-items: center;">
-  <p style="font-weight: bold; font-size: 8pt; color: rgb(96, 87, 101);">PENDIENTE POR DESEMBOLSAR</p>
-  <p style="font-weight: bold; font-size: 12pt; margin-left: -10px; color: rgb(96, 87, 101);">{{negotiationSummary.pendingToDeposit|floatformat|intcomma}}</p>
-</div>
-<div style="height: 5px;">
+    
 
-</div>
-<h5 style="color:#44546a; margin-left: 20px;">Observaciones</h5>
-<div style="width: 95%;margin-left: 20px; border: 1px solid #d9d9d9; padding: 8px;">
-    {{negotiationSummary.observations}}
-</div>
+    <!-- DECLARACIONES -->  
 
-<div style="height: 200px;"></div>
-<header style="padding-top: 30px;">
-  <div style="display: flex; flex-direction: row; justify-content: space-around; align-items: center;">
-      <img
-      src="https://smartevolution.s3.amazonaws.com/assets/Logo+Smart+-+Lite.svg"
-      alt="smart-evolution-logo"
-      width="170px"
-      height="50px"
-    />
-    <h1 style="margin-left: 20px;">Reporte de Compra</h1>
-    <div style="width: 20%"></div>
-  </div>
-</header>
-
-<div style="height: 40px;">
-
-</div>
-
-
-<table class="emitter__table">
-
-  <tr>
-    <td class="emitter__table__tr">Operacion Nro.</td>
-    <td class="emitter__table__td">{{sellReport.opId}}</td>
-  </tr>
-  <tr>
-    <td class="emitter__table__tr">Nombre del Inversionista</td>
-    <td class="emitter__table__td">{{sellReport.emitterName}}</td>
-  </tr>
-  <tr>
-    <td class="emitter__table__tr">NIT / CC</td>
-    <td class="emitter__table__td">{{sellReport.emitterDocumentNumber}}</td>
-  </tr>
-  <tr>
-    <td class="emitter__table__tr">Dirección</td>
-    <td class="emitter__table__td">{{sellReport.emitterAddress}}</td>
-  </tr>
-  <tr>
-    <td class="emitter__table__tr">Teléfono</td>
-    <td class="emitter__table__td">{{sellReport.emitterPhoneNumber}}</td>
-  </tr>
-  <tr>
-    <td class="emitter__table__tr">Correo Electrónico</td>
-    <td class="emitter__table__td">{{sellReport.emitterEmail}}</td>
-  </tr>
-  <tr>
-    <td class="emitter__table__tr">Corredor</td>
-    <td class="emitter__table__td">{{sellReport.emitterBroker}}</td>
-  </tr>
-</table>
-
-<div class="Operation__table__container" style="display: flex; justify-content: flex-end; align-items: center; margin-left: 20px;">
-  <table class="Operation__table">
     <tr>
-      <td class="operation__table__td-title"> Total VR Venta- </td>
-      <td class="operation__table__td-title"> Total VR Nominal- </td>
-      <td class="operation__table__td-title"> Total VR Futuro </td>
+        <td>
+            <table width="100%" style="margin: 50px 0 20px 0;">
+                <tr>
+                    <td>
+                        <table class="parrafo" style="border: none">
+                            <tr>
+                                <td style="vertical-align: super;"><div>
+                                    Yo, {{sellReport.legalRepresentative}}, {{sellReport.legalRepresentativeTypeDocument}}.
+                                    {{sellReport.legalRepresentativeDocumentNumber}}, actuando en calidad de Representante Legal de la empresa
+                                    {{sellReport.emitterName}}, {{sellReport.emitterTypeDocument}} {{sellReport.emitterDocumentNumber}}, declaro que SMART
+                                    EVOLUTION S.A.S. me hizo entrega del Resumen de la Negociación. Además declaro que he leído, entiendo y acepto este
+                                    documento y sus anexos, que he comprendido todo lo aquí establecido, que he valorado el riesgo y condiciones de
+                                    descuento de la operación de forma autónoma y bajo mi propia y exclusiva responsabilidad, entendiendo que las mismas no
+                                    serán modificadas en caso de ocurrencia de pagos anticipados u otras condiciones extraordinarias.
+                                </div></td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
     </tr>
+
+    <!-- FIRMAS -->  
+
     <tr>
-      <td class="financial-overview__table__td__text" style="border:none; background-color: #f8f4f4;">{{sellReport.sell}}</td>
-      <td class="financial-overview__table__td__text" style="border:none; background-color: #f8f4f4;">{{sellReport.nominal}}</td>
-      <td class="financial-overview__table__td__text" style="border:none; background-color: #f8f4f4;">{{sellReport.future}}</td>
+        <td>
+            <table width="100%" style="margin: 50px 0px">
+                <tr>
+                    <td>
+                        <table class="parrafo">
+
+                            <tr> <!-- FIRMA PERSONA JURÍDICA -->  
+                                <td style="vertical-align: super;"><div><strong>{{sellReport.legalRepresentative}}</strong><BR>
+                                    {{sellReport.legalRepresentativeTypeDocument}}<BR>
+                                    {{sellReport.legalRepresentativeDocumentNumber}}<BR><BR>
+                                    Telf.: {{sellReport.legalRepresentativePhone}}<BR>
+                                    Email: {{sellReport.legalRepresentativeEmail}}<BR><BR>
+                                    <strong>{{sellReport.emitterName}}</strong><BR>
+                                    {{sellReport.emitterTypeDocument}}: {{sellReport.emitterDocumentNumber}}<BR>
+                                </div></td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
     </tr>
-  </table>
-</div>
 
-<div class="Operation__table__container" style="margin-top:20px; margin-left: 20px;">
-  <table class="Operation__table" style="width: 100%;">
-    <tr>
-      <td class="financial-overview__table__td-title" style="height: 45px;width: 60px;">Fecha Op</td>
-      <td class="financial-overview__table__td-title" style="height: 45px;width: 60px;">Fecha Prob</td>
-      <td class="financial-overview__table__td-title" style="height: 45px;width: 60px;">Fecha Final</td>
-      <td class="financial-overview__table__td-title" style="height: 45px;width: 60px;">Doc</td>
-      <td class="financial-overview__table__td-title" style="height: 45px;width: 60px;">Nro. Doc</td>
-      <td class="financial-overview__table__td-title" style="height: 45px;width: 60px; ">Emisor</td>
-      <td class="financial-overview__table__td-title" style="height: 45px;width: 60px;">Pagador</td>
-      <td class="financial-overview__table__td-title" style="height: 45px;width: 60px;">Tasa inv.</td>
-      <td class="financial-overview__table__td-title" style="height: 45px;width: 60px;">Dias Op.</td>
-      <td class="financial-overview__table__td-title" style="height: 45px;width: 60px;">VR Venta Inversionista</td>
-      <td class="financial-overview__table__td-title" style="height: 45px;width: 60px;">VR Nominal</td>
-      <td class="financial-overview__table__td-title" style="height: 45px;width: 60px;">VR Futuro</td>
-    </tr>
-    {% for x in sellReport.billsList %}
-    <tr>
-      <td class="financial-overview__table__td__text" style="font-size: 8pt;">{{x.dateOP}}
-      </td>
-      <td class="financial-overview__table__td__text" style="font-size: 8pt;">{{x.probDate}}
-      </td>
-      <td class="financial-overview__table__td__text" style="font-size: 8pt;">{{x.dateExp}}
-      </td>
-      <td class="financial-overview__table__td__text" style="font-size: 8pt;">FACT</td>
-      <td class="financial-overview__table__td__text" style="font-size: 8pt;">{{x.number}}
-      </td>
-      <td class="financial-overview__table__td__text" style="font-size: 8pt;">{{x.emitter}}
-      </td>
-      <td class="financial-overview__table__td__text" style="font-size: 8pt;">{{x.payer}}
-      </td>
-      <td class="financial-overview__table__td__text" style="font-size: 8pt;">{{x.invTax}}
-      </td>
-      <td class="financial-overview__table__td__text" style="font-size: 8pt;">{{x.daysOP}}
-      </td>
-      <td class="financial-overview__table__td__text" style="font-size: 8pt;">{{x.VRBuy|floatformat|intcomma}}
-      </td>
-      <td class="financial-overview__table__td__text" style="font-size: 8pt;">{{x.VRFuture|floatformat|intcomma}}
-      </td>
-      <td class="financial-overview__table__td__text" style="font-size: 8pt;">{{x.totalGM|floatformat|intcomma}}
-      </td>
-    </tr>
-    {% endfor %}
-  </table>
-</div>
+    </table>
 
-<div style="font-size: 8pt;line-height: 1rem;color: #232b2b; padding: 25px;">
-  Yo, {{sellReport.legalRepresentative}}, {{sellReport.legalRepresentativeTypeDocument}}. {{sellReport.legalRepresentativeDocumentNumber}} , actuando en calidad de Representante Legal de la empresa {{sellReport.emitterName}} {{sellReport.emitterTypeDocument}}   {{sellReport.emitterDocumentNumber}}, declaro que SMART EVOLUTION S.A.S. me hizo entrega del Resumen de la Negociación. Además declaro que he leído, entiendo y acepto este documento y sus anexos, que he comprendido todo lo aquí establecido, que he valorado el riesgo y condiciones de descuento de la operación de forma autónoma y bajo mi propia y exclusiva responsabilidad, entendiendo que las mismas no serán modificadas en caso de ocurrencia de pagos anticipados u otras condiciones extraordinarias.
-</div>
-
-<div style="display: flex; margin-left: 30px; margin-top: 20px;">
-  <div style="display: flex; flex-direction: column;">
-    <div style="width: 95%; margin-top: 10%;">
-      <h1 style="font-weight: 700; font-size: 15px;white-space:nowrap;">{{sellReport.legalRepresentative}}</h1><br>
-      <h2 style="font-weight: 500; font-size: 10px;">{{sellReport.legalRepresentativeTypeDocument}}. {{sellReport.legalRepresentativeDocumentNumber}}</h2><br>
-      <h2 style="font-weight: 500; font-size: 10px;">telf. {{sellReport.legalRepresentativePhone}}</h2><br>
-      <h2 style="font-weight: 500; font-size: 10px;">Email: {{sellReport.legalRepresentativeEmail}}</h2><br>
-
-      <h1 style="font-weight: 700; margin-top: 20px; font-size: 10px;">{{sellReport.emitterName}}.</h1><br>
-      <h1 style="font-weight: 500; font-size: 12px;">{{sellReport.emitterTypeDocument}}: {{sellReport.emitterDocumentNumber}}</h1>
-    </div>
-  </div>
-
-  <div style="margin-top: 15px; margin-left: 370px;">
-    <img src="https://smartevolution.s3.amazonaws.com/assets/firma2.png" alt="firma">
-  </div>
+    </center>
 
 </div>
+</body>
 
-  </body>
 </html>
