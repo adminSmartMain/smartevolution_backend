@@ -273,7 +273,7 @@
                             </tr>
                             <tr style="height: 20px; font-weight: bold;">
                                 <td>Valor Factura</td>
-                                <td style="text-align: center;">FV-{{negotiationSummary.billValue|floatformat|intcomma}} </td> 
+                                <td style="text-align: center;">FV-{{negotiationSummary.billId|floatformat|intcomma}} </td> 
                                 <td style="text-align: right;">{{negotiationSummary.billValue|floatformat|intcomma}}</td>
                             </tr>
                         </tbody>
@@ -378,14 +378,16 @@
                                     <td style="text-align: center;">Monto</td>
                                 </tr>
                                 {% for x in emitterDeposits|slice:":5" %}
-                                <tr style="height: 20px;">
-                                    <td>{{ x.beneficiary }}</td>
-                                    <td>{{ x.bankAccount }}</td>
-                                    <td style="text-align: center;">{{ x.date|date:'m/d/Y' }}</td>
-                                    <td style="text-align: center;">{{ x.amount|floatformat|intcomma }}</td>
-                                
-                                </tr>
+                                    {% if x.state == 1 %}
+                                    <tr style="height: 20px;">
+                                        <td>{{ x.beneficiary }}</td>
+                                        <td>{{ x.bankAccount }}</td>
+                                        <td style="text-align: center;">{{ x.date|date:'m/d/Y' }}</td>
+                                        <td style="text-align: center;">{{ x.amount|floatformat|intcomma }}</td>
+                                    </tr>
+                                    {% endif %}
                                 {% endfor %}
+
                             </tbody>
                         </table>
                     </td>
@@ -402,7 +404,7 @@
                         <tbody>
                             <tr style="font-weight: bold;">
                                 <td style="height: 20px;">Total Consignaciones</td>
-                                <td style="text-align: right;">{{negotiationSummary.totalDiscounts|floatformat|intcomma}}</td>
+                                <td style="text-align: right;">{{negotiationSummary.totalDeposits|floatformat|intcomma}}</td>
                             </tr>
                             <tr style="font-weight: bold; background-color: #e7e7e7;">
                                 <td style="height: 20px;">PENDIENTE POR DESEMBOLSAR</td>
@@ -539,41 +541,41 @@
                         {% for x in sellReport.billsList %} {% endfor %}
                         <table class="tables-body" width="100%" rules="none" style="table-layout: fixed; word-wrap: break-word;">
                             <tr class="tables-headers">
-                                <th style="width: 7%;">Fecha Op</th>
-                                <th style="width: 7%;">Fecha Final</th>
-                                <th style="width: 3%;">Tipo Doc</th>
-                                <th style="width: 6%;">Nro. Doc</th>
-                                <th style="width: 14%; text-align: left;">Nombre Pagador</th>
-                                <th style="width: 8%; text-align: center;">NIT/CC Inversionista</th>
-                                <th style="width: 14%; text-align: left;">Nombre Inversionista</th>
-                                <th style="width: 5%;">% Desc</th>
-                                <th style="width: 5%;">Tasa Desc</th>
-                                <th style="width: 4%;">Días Op</th>
-                                <th style="width: 9%;">VR Venta Inversionista</th>
-                                <th style="width: 9%;">VR Nominal</th>
-                                <th style="width: 9%;">VR Futuro</th>
+                                <th style="width: 7%;font-size: 8px;">Fecha Op</th>
+                                <th style="width: 7%;font-size: 8px;">Fecha Final</th>
+                                <th style="width: 3%;font-size: 8px;">Tipo Doc</th>
+                                <th style="width: 6%;font-size: 8px;">Nro. Doc</th>
+                                <th style="width: 14%; text-align: left;font-size: 8px;">Nombre Pagador</th>
+                                <th style="width: 8%; text-align: center;font-size: 8px;">NIT/CC Inversionista</th>
+                                <th style="width: 14%; text-align: left;font-size: 8px;">Nombre Inversionista</th>
+                                <th style="width: 5%;font-size: 8px;">% Desc</th>
+                                <th style="width: 5%;font-size: 8px;">Tasa Desc</th>
+                                <th style="width: 4%;font-size: 8px;">Días Op</th>
+                                <th style="width: 9%;font-size: 8px;">VR Venta Inversionista</th>
+                                <th style="width: 9%;font-size: 8px;">VR Nominal</th>
+                                <th style="width: 9%;font-size: 8px;">VR Futuro</th>
                             </tr>
                             {% for x in sellReport.billsList %}
                             <tr>
-                                <td style="text-align: center;">{{x.dateOP}}</td>
-                                <td style="text-align: center;">{{x.dateExp}}</td>
-                                <td style="text-align: center;">FACT</td>
-                                <td style="text-align: center;">{{x.number}}</td>
-                                <td style="text-align: left;">{{x.payer}}</td>
-                                <td style="text-align: center;">{{x.investor.document_number}}</td>
-                                <td style="text-align: left;">
+                                <td style="text-align: center;font-size: 8px;">{{x.dateOP}}</td>
+                                <td style="text-align: center;font-size: 8px;">{{x.dateExp}}</td>
+                                <td style="text-align: center;font-size: 8px;">FACT</td>
+                                <td style="text-align: center;font-size: 8px;">{{x.number}}</td>
+                                <td style="text-align: left;font-size: 8px;">{{x.payer}}</td>
+                                <td style="text-align: center;font-size: 8px;">{{x.investor.document_number}}</td>
+                                <td style="text-align: left;font-size: 8px;">
                                     {% if x.investor.social_reason %}
                                         {{ x.investor.social_reason }}
                                         {% else %}
                                         {{ x.investor.first_name }} {{ x.investor.last_name }}
                                     {% endif %}
                                 </td>
-                                <td style="text-align: center;">{{x.Desc}}</td>
-                                <td style="text-align: center;">{{x.TasaDesc}}</td>
-                                <td style="text-align: center;">{{x.daysOP}}</td>
-                                <td style="text-align: center; width: 10%;">{{x.VRBuy|floatformat|intcomma}}</td>
-                                <td style="text-align: center; width: 10%;">{{x.VRFuture|floatformat|intcomma}}</td>
-                                <td style="text-align: center; width: 10%;">{{x.totalGM|floatformat|intcomma}}</td>
+                                <td style="text-align: center;font-size: 8px;">{{x.Desc}}</td>
+                                <td style="text-align: center;font-size: 8px;">{{x.TasaDesc}}</td>
+                                <td style="text-align: center;font-size: 8px;">{{x.daysOP}}</td>
+                                <td style="text-align: center; width: 10%;font-size: 8px;">{{x.VRBuy|floatformat|intcomma}}</td>
+                                <td style="text-align: center; width: 10%;font-size: 8px;">{{x.VRFuture|floatformat|intcomma}}</td>
+                                <td style="text-align: center; width: 10%;font-size: 8px;">{{x.totalGM|floatformat|intcomma}}</td>
                             </tr>
                             {% endfor %}
                         </table>

@@ -165,18 +165,20 @@ class NegotiationSummaryAV(BaseAV):
                     'retFte': round(negotiationSummary.retFte),
                     'billValue': round(negotiationSummary.billValue),
                     'totalDiscounts': round(negotiationSummary.totalDiscounts),
+                    'totalDeposits':round(negotiationSummary.totalDeposits),
                     'total' : round(negotiationSummary.total),
                     'pendingToDeposit': round(negotiationSummary.pendingToDeposit),
                     'observations': negotiationSummary.observations if negotiationSummary.observations else 'SIN OBSERVACIONES',
+                    'billId': negotiationSummary.billId,
                 },
                 'emitterDeposits': [],
                 'pendingAccounts': [],
                 }
                 for x in serializer.data:
                     data['sellReport']['bills']  += 1
-                    data['sellReport']['sell']  += x['presentValueInvestor']
-                    data['sellReport']['nominal'] += x['payedAmount']
-                    data['sellReport']['future']     += x['amount']
+                    data['sellReport']['sell']  += int(x['presentValueInvestor'])
+                    data['sellReport']['nominal'] += int(x['payedAmount'])
+                    data['sellReport']['future']     += int(x['amount'])
                     data['sellReport']['billsList'].append({
                         'id': x['bill']['id'],
                         'dateOP': x['opDate'],
@@ -202,6 +204,7 @@ class NegotiationSummaryAV(BaseAV):
                         'bankAccount':f'{x.bank.description} - {x.accountNumber}',
                         'date': x.date,
                         'amount': x.amount,
+                        'state':x.state,# este es el que permite tener los depositos que corresponden
                     })
 
                 for x in pendingAccounts:
