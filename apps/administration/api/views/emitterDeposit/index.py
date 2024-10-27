@@ -88,7 +88,7 @@ class EmitterDepositAV(BaseAV):
             except AccountingControl.DoesNotExist:
                 pass
             # set the state to false
-            emitterDeposit.state = False
+            emitterDeposit.state = False # esto no elimina, solo pasa a 0
             emitterDeposit.save()
             return response({'error': False, 'message': 'giro eliminado'}, 200)
         except EmitterDeposit.DoesNotExist:
