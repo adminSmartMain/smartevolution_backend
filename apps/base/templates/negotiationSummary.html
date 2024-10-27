@@ -273,7 +273,7 @@
                             </tr>
                             <tr style="height: 20px; font-weight: bold;">
                                 <td>Valor Factura</td>
-                                <td style="text-align: center;">FV-{{negotiationSummary.billId|floatformat|intcomma}} </td> 
+                                <td style="text-align: center;">{{negotiationSummary.billId}} </td> 
                                 <td style="text-align: right;">{{negotiationSummary.billValue|floatformat|intcomma}}</td>
                             </tr>
                         </tbody>
@@ -312,12 +312,15 @@
                                 <td style="text-align: center;">Fecha</td>
                                 <td style="text-align: center;">Monto</td>
                             </tr>
-                            {% for x in pendingAccounts|slice:":5" %} 
+                            {% for x in pendingAccounts|slice:":5" %}
+                                
                             <tr>
-                                <td style="height: 20px;">{{x.description}}</td>
-                                <td style="text-align: center;">{{x.date|date:'m/d/Y'}}</td>
-                                <td style="text-align: center;">{{x.amount|floatformat|intcomma}}</td>
+
+                                <td style="height: 20px;font-size: 10px">{{x.description}}</td>
+                                <td style="text-align: center;font-size: 10px">{{x.date|date:'m/d/Y'}}</td>
+                                <td style="text-align: center;font-size: 10px">{{x.amount|floatformat|intcomma}}</td>
                             </tr>
+                                
                             {% endfor %}
                         </tbody>
                     </table>
@@ -363,33 +366,42 @@
             
                 <tr>
                     <td>
-                        <table style="width: 100%; margin-top: 1px;border: 0.1px solid #ccc">
+                        <table style="width: 100%; margin-top: 1px; border: 0.1px solid #ccc;">
                             <colgroup>
+                                <col style="width: 5%;">
                                 <col style="width: 40%;">
-                                <col style="width: 20%;">
-                                <col style="width: 25%;">
                                 <col style="width: 15%;">
+                                <col style="width: 25%;">
                             </colgroup>
                             <tbody>
                                 <tr style="height: 20px; font-weight: bold; color: #45546A;">
                                     <td style="text-align: left;">Beneficiario</td>
                                     <td style="text-align: center;">Cuenta Bancaria</td>
-                                    <td style="text-align: center;">Fecha</td>
-                                    <td style="text-align: center;">Monto</td>
+                                    <td style="text-align: center; ">Fecha</td>
+                                    <td style="text-align: center; ">Monto</td>
                                 </tr>
                                 {% for x in emitterDeposits|slice:":5" %}
                                     {% if x.state == 1 %}
                                     <tr style="height: 20px;">
-                                        <td>{{ x.beneficiary }}</td>
-                                        <td>{{ x.bankAccount }}</td>
-                                        <td style="text-align: center;">{{ x.date|date:'m/d/Y' }}</td>
-                                        <td style="text-align: center;">{{ x.amount|floatformat|intcomma }}</td>
+                                        <td style="text-align: left; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                            {{ x.beneficiary }}
+                                        </td>
+                                        <td style="text-align: center; font-size: 10px">
+                                            {{ x.bankAccount }}
+                                        </td>
+                                        <td style="text-align: center; font-size: 10px;">
+                                            {{ x.date|date:'m/d/Y' }}
+                                        </td>
+                                        <td style="text-align: center; font-size: 10px;">
+                                            {{ x.amount|floatformat|intcomma }}
+                                        </td>
                                     </tr>
                                     {% endif %}
                                 {% endfor %}
-
                             </tbody>
                         </table>
+                        
+                        
                     </td>
                 </tr>
               
