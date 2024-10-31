@@ -6,6 +6,7 @@ from apps.client.models    import Client, FinancialCentral, Overview, LegalRepre
 from apps.misc.models      import Activity
 from datetime import datetime
 
+
 def generateSellOfferByInvestor(pk, investorId, prefix = ''):
     # Variables
     payers = []
@@ -35,6 +36,7 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
     }
     # Get preOperations of the investor
     operation = PreOperation.objects.filter(opId=pk, investor=investorId)
+    
     # Get the legal representative of the investor
     legalRepresentative = LegalRepresentative.objects.get(client=investorId)
     # get operation emitter
@@ -62,7 +64,7 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
     indicatorsEmitter = calcReportVariability(emitter.id,"","")
     # parse data of the emitter
     try:
-        dataEmitter = {
+         dataEmitter = {
                 'id': emitter.id,
                 'name': f'{emitter.first_name} {emitter.last_name}' if emitter.first_name and emitter.last_name else emitter.social_reason,
                 'documentNumber': emitter.document_number,
@@ -72,47 +74,50 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
                 'qualitativeOverview': overviewEmitter[0].qualitativeOverview,
                 'financialAnalisis'  : overviewEmitter[0].financialAnalisis,
                 'period_1': {
-                    'period'         : indicatorsEmitter['emitter']['period_1']['period'],
-                    'grossSale'      : indicatorsEmitter['emitter']['period_1']['stateOfResult']['gross_sale'],
-                    'netSales'       : indicatorsEmitter['emitter']['period_1']['stateOfResult']['net_sales'],
-                    'operatingProfit': indicatorsEmitter['emitter']['period_1']['stateOfResult']['operating_profit'],
-                    'netIncome'      : indicatorsEmitter['emitter']['period_1']['stateOfResult']['net_income'],
-                    'totalAssets'    : indicatorsEmitter['emitter']['period_1']['assets']['total_assets'],
-                    'totalPassives'  : indicatorsEmitter['emitter']['period_1']['passives']['total_passives'],
-                    'totalPatrimony' : indicatorsEmitter['emitter']['period_1']['patrimony']['total_patrimony'],
-                    'debt'           : indicatorsEmitter['emitter']['period_1']['financialRisk']['debt'],
-                    'walletRotation' : indicatorsEmitter['emitter']['period_1']['activityEfficiency']['walletRotation'],
-                    'providersRotation' : indicatorsEmitter['emitter']['period_1']['activityEfficiency']['providersRotation'],
-                    'profitOverSales': round(indicatorsEmitter['emitter']['period_1']['stateOfResult']['operating_profit'] / indicatorsEmitter['emitter']['period_1']['stateOfResult']['net_sales'])
-                },
+                    'period'         : indicatorsEmitter['emitter']['period_1']['period'],#checked
+                    'grossSale'      : indicatorsEmitter['emitter']['period_1']['stateOfResult']['gross_sale'],#checked
+                    'netSales'       : indicatorsEmitter['emitter']['period_1']['stateOfResult']['net_sales'],#checked
+                    'operatingProfit': indicatorsEmitter['emitter']['period_1']['stateOfResult']['operating_profit'],#checked
+                    'netIncome'      : indicatorsEmitter['emitter']['period_1']['stateOfResult']['net_income'],#checked
+                    'totalAssets'    : indicatorsEmitter['emitter']['period_1']['assets']['total_assets'],#checked
+                    'totalPassives'  : indicatorsEmitter['emitter']['period_1']['passives']['total_passives'],#checked
+                    'totalPatrimony' : indicatorsEmitter['emitter']['period_1']['patrimony']['total_patrimony'],#checked
+                    'debt'           : indicatorsEmitter['emitter']['period_1']['financialRisk']['debt'],#checked
+                    'walletRotation' : indicatorsEmitter['emitter']['period_1']['activityEfficiency']['walletRotation'],#checked
+                    'providersRotation' : indicatorsEmitter['emitter']['period_1']['activityEfficiency']['providersRotation'],#checked
+                    'profitOverSales': round(indicatorsEmitter['emitter']['period_1']['stateOfResult']['operating_profit'] /indicatorsEmitter['emitter']['period_1']['stateOfResult']['net_sales']) if indicatorsEmitter['emitter']['period_1']['stateOfResult']['operating_profit'] is not None and indicatorsEmitter['emitter']['period_1']['stateOfResult']['net_sales'] not in (None, 0) else 0
+
+                } if 'period_1' in indicatorsEmitter['emitter'] else {},
                 'period_2': {
-                    'period'         : indicatorsEmitter['emitter']['period_2']['period'],
-                    'grossSale'      : indicatorsEmitter['emitter']['period_2']['stateOfResult']['gross_sale'],
-                    'netSales'       : indicatorsEmitter['emitter']['period_2']['stateOfResult']['net_sales'],
-                    'operatingProfit': indicatorsEmitter['emitter']['period_2']['stateOfResult']['operating_profit'],
-                    'netIncome'      : indicatorsEmitter['emitter']['period_2']['stateOfResult']['net_income'],
-                    'totalAssets'    : indicatorsEmitter['emitter']['period_2']['assets']['total_assets'],
-                    'totalPassives'  : indicatorsEmitter['emitter']['period_2']['passives']['total_passives'],
-                    'totalPatrimony' : indicatorsEmitter['emitter']['period_2']['patrimony']['total_patrimony'],
-                    'debt'           : indicatorsEmitter['emitter']['period_2']['financialRisk']['debt'],
-                    'walletRotation' : indicatorsEmitter['emitter']['period_2']['activityEfficiency']['walletRotation'],
-                    'providersRotation': indicatorsEmitter['emitter']['period_2']['activityEfficiency']['providersRotation'],
-                    'profitOverSales': round(indicatorsEmitter['emitter']['period_2']['stateOfResult']['operating_profit'] / indicatorsEmitter['emitter']['period_2']['stateOfResult']['net_sales'])
-                    },
-                'period_3': {
-                    'period'         : indicatorsEmitter['emitter']['period_3']['period'],
-                    'grossSale'      : indicatorsEmitter['emitter']['period_3']['stateOfResult']['gross_sale'],
-                    'netSales'       : indicatorsEmitter['emitter']['period_3']['stateOfResult']['net_sales'],
-                    'operatingProfit': indicatorsEmitter['emitter']['period_3']['stateOfResult']['operating_profit'],
-                    'netIncome'      : indicatorsEmitter['emitter']['period_3']['stateOfResult']['net_income'],
-                    'totalAssets'    : indicatorsEmitter['emitter']['period_3']['assets']['total_assets'],
-                    'totalPassives'  : indicatorsEmitter['emitter']['period_3']['passives']['total_passives'],
-                    'totalPatrimony' : indicatorsEmitter['emitter']['period_3']['patrimony']['total_patrimony'],
-                    'debt'           : indicatorsEmitter['emitter']['period_3']['financialRisk']['debt'],
-                    'walletRotation' : indicatorsEmitter['emitter']['period_3']['activityEfficiency']['walletRotation'],
-                    'providersRotation': indicatorsEmitter['emitter']['period_3']['activityEfficiency']['providersRotation'],
-                    'profitOverSales': round(indicatorsEmitter['emitter']['period_3']['stateOfResult']['operating_profit'] / indicatorsEmitter['emitter']['period_3']['stateOfResult']['net_sales'])
-                },
+                    'period'         : indicatorsEmitter['emitter']['period_2']['period'],#checked
+                    'grossSale'      : indicatorsEmitter['emitter']['period_2']['stateOfResult']['gross_sale'],#checked
+                    'netSales'       : indicatorsEmitter['emitter']['period_2']['stateOfResult']['net_sales'],#checked
+                    'operatingProfit': indicatorsEmitter['emitter']['period_2']['stateOfResult']['operating_profit'],#checked
+                    'netIncome'      : indicatorsEmitter['emitter']['period_2']['stateOfResult']['net_income'],#checked
+                    'totalAssets'    : indicatorsEmitter['emitter']['period_2']['assets']['total_assets'],#checked
+                    'totalPassives'  : indicatorsEmitter['emitter']['period_2']['passives']['total_passives'],#checked
+                    'totalPatrimony' : indicatorsEmitter['emitter']['period_2']['patrimony']['total_patrimony'],#checked
+                    'debt'           : indicatorsEmitter['emitter']['period_2']['financialRisk']['debt'],#checked
+                    'walletRotation' : indicatorsEmitter['emitter']['period_2']['activityEfficiency']['walletRotation'],#checked
+                    'providersRotation' : indicatorsEmitter['emitter']['period_2']['activityEfficiency']['providersRotation'],#checked
+                    'profitOverSales': round(indicatorsEmitter['emitter']['period_2']['stateOfResult']['operating_profit'] /indicatorsEmitter['emitter']['period_1']['stateOfResult']['net_sales']) if indicatorsEmitter['emitter']['period_1']['stateOfResult']['operating_profit'] is not None and indicatorsEmitter['emitter']['period_1']['stateOfResult']['net_sales'] not in (None, 0) else 0
+
+                } if 'period_2' in indicatorsEmitter['emitter'] else {},
+                'period_3':  {
+                    'period'         : indicatorsEmitter['emitter']['period_3']['period'],#checked
+                    'grossSale'      : indicatorsEmitter['emitter']['period_3']['stateOfResult']['gross_sale'],#checked
+                    'netSales'       : indicatorsEmitter['emitter']['period_3']['stateOfResult']['net_sales'],#checked
+                    'operatingProfit': indicatorsEmitter['emitter']['period_3']['stateOfResult']['operating_profit'],#checked
+                    'netIncome'      : indicatorsEmitter['emitter']['period_3']['stateOfResult']['net_income'],#checked
+                    'totalAssets'    : indicatorsEmitter['emitter']['period_3']['assets']['total_assets'],#checked
+                    'totalPassives'  : indicatorsEmitter['emitter']['period_3']['passives']['total_passives'],#checked
+                    'totalPatrimony' : indicatorsEmitter['emitter']['period_3']['patrimony']['total_patrimony'],#checked
+                    'debt'           : indicatorsEmitter['emitter']['period_3']['financialRisk']['debt'],#checked
+                    'walletRotation' : indicatorsEmitter['emitter']['period_3']['activityEfficiency']['walletRotation'],#checked
+                    'providersRotation' : indicatorsEmitter['emitter']['period_3']['activityEfficiency']['providersRotation'],#checked
+                    'profitOverSales': round(indicatorsEmitter['emitter']['period_3']['stateOfResult']['operating_profit'] /indicatorsEmitter['emitter']['period_1']['stateOfResult']['net_sales']) if indicatorsEmitter['emitter']['period_1']['stateOfResult']['operating_profit'] is not None and indicatorsEmitter['emitter']['period_1']['stateOfResult']['net_sales'] not in (None, 0) else 0
+
+                } if 'period_3' in indicatorsEmitter['emitter'] else {},
                 'variability': indicatorsEmitter['emitter']['variability']
             }
     except :
@@ -127,9 +132,11 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
                 'financialAnalisis'  : overviewEmitter[0].financialAnalisis if overviewEmitter else '',
                 }
     # payers data
+    
     for x in setPayers:
         # get the payer
         payer = Client.objects.get(id=x)
+        
         # get the payer financial central
         financialCentralPayer = FinancialCentral.objects.filter(client=payer.id)
         # parse the emitter financial central
@@ -143,7 +150,9 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
         overviewPayer = Overview.objects.filter(client=payer.id)
         # calc the payer indicators
         indicatorsPayer = calcReportVariability("",x,None)
+        
         try:
+            
             dataPayer = {
             'name': f'{payer.first_name} {payer.last_name}' if payer.first_name else payer.social_reason,
             'documentNumber': payer.document_number,
@@ -165,7 +174,7 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
                 'walletRotation'    : indicatorsPayer['payer']['period_1']['activityEfficiency']['walletRotation'],
                 'providersRotation' : indicatorsPayer['payer']['period_1']['activityEfficiency']['providersRotation'],
                 'profitOverSales'   : round(indicatorsPayer['payer']['period_1']['stateOfResult']['operating_profit'] / indicatorsPayer['payer']['period_1']['stateOfResult']['net_sales'])
-            },
+            } if 'period_1' in indicatorsPayer['payer'] else {},
             'period_2': {
                 'period'            : indicatorsPayer['payer']['period_2']['period'],
                 'grossSale'         : indicatorsPayer['payer']['period_2']['stateOfResult']['gross_sale'],
@@ -179,7 +188,7 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
                 'walletRotation'    : indicatorsPayer['payer']['period_2']['activityEfficiency']['walletRotation'],
                 'providersRotation' : indicatorsPayer['payer']['period_2']['activityEfficiency']['providersRotation'],
                 'profitOverSales'   : round(indicatorsPayer['payer']['period_2']['stateOfResult']['operating_profit'] / indicatorsPayer['payer']['period_2']['stateOfResult']['net_sales'])
-            },
+            } if 'period_2' in indicatorsPayer['payer'] else {},
             'period_3': {
                 'period'            : indicatorsPayer['payer']['period_3']['period'],
                 'grossSale'         : indicatorsPayer['payer']['period_3']['stateOfResult']['gross_sale'],
@@ -193,18 +202,23 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
                 'walletRotation'    : indicatorsPayer['payer']['period_3']['activityEfficiency']['walletRotation'],
                 'providersRotation' : indicatorsPayer['payer']['period_3']['activityEfficiency']['providersRotation'],
                 'profitOverSales'   : round(indicatorsPayer['payer']['period_3']['stateOfResult']['operating_profit'] / indicatorsPayer['payer']['period_3']['stateOfResult']['net_sales'])
-            },
+            } if 'period_3' in indicatorsPayer['payer'] else {},
             'variability': indicatorsPayer['payer']['variability']
                 }
         except:
+                
                 # check if indicators payer has the 3 periods(period_1 period_2 period_3) different to {} empty
                 periods = 0
                 if 'period_1' in indicatorsPayer['payer'] and 'period_2' in indicatorsPayer['payer']:
+                    
                     if indicatorsPayer['payer']['period_1']['activityEfficiency'] != {} and indicatorsPayer['payer']['period_1']['activityEfficiency'] == {}:
+                        
                         periods = 1
                     elif indicatorsPayer['payer']['period_2']['activityEfficiency'] != {}:
+                        
                         periods = 2                 
                 # check each period if is empty
+               
                 if periods == 1:
                     dataPayer = {
             'name': f'{payer.first_name} {payer.last_name}' if payer.first_name else payer.social_reason,
@@ -227,10 +241,11 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
                 'walletRotation'    : indicatorsPayer['payer']['period_1']['activityEfficiency']['walletRotation'],
                 'providersRotation' : indicatorsPayer['payer']['period_1']['activityEfficiency']['providersRotation'],
                 'profitOverSales'   : round(indicatorsPayer['payer']['period_1']['stateOfResult']['operating_profit'] / indicatorsPayer['payer']['period_1']['stateOfResult']['net_sales'])
-            },
+            }if 'period_1' in indicatorsPayer['payer'] else {},
             'variability': indicatorsPayer['payer']['variability']
                 }
                 elif periods == 2:
+                    
                      dataPayer = {
             'name': f'{payer.first_name} {payer.last_name}' if payer.first_name else payer.social_reason,
             'documentNumber': payer.document_number,
@@ -252,7 +267,7 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
                 'walletRotation'    : indicatorsPayer['payer']['period_1']['activityEfficiency']['walletRotation'],
                 'providersRotation' : indicatorsPayer['payer']['period_1']['activityEfficiency']['providersRotation'],
                 'profitOverSales'   : round(indicatorsPayer['payer']['period_1']['stateOfResult']['operating_profit'] / indicatorsPayer['payer']['period_1']['stateOfResult']['net_sales'])
-            },
+            } if 'period_1' in indicatorsPayer['payer'] else {},
             'period_2': {
                 'period'            : indicatorsPayer['payer']['period_2']['period'],
                 'grossSale'         : indicatorsPayer['payer']['period_2']['stateOfResult']['gross_sale'],
@@ -266,10 +281,11 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
                 'walletRotation'    : indicatorsPayer['payer']['period_2']['activityEfficiency']['walletRotation'],
                 'providersRotation' : indicatorsPayer['payer']['period_2']['activityEfficiency']['providersRotation'],
                 'profitOverSales'   : round(indicatorsPayer['payer']['period_2']['stateOfResult']['operating_profit'] / indicatorsPayer['payer']['period_2']['stateOfResult']['net_sales'])
-            },
+            }if 'period_2' in indicatorsPayer['payer'] else {},
             'variability': indicatorsPayer['payer']['variability']
                 }
                 else:
+                     
                      dataPayer = {
                         'name': f'{payer.first_name} {payer.last_name}' if payer.first_name else payer.social_reason,
                         'documentNumber': payer.document_number,
@@ -281,7 +297,7 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
                      }
         # append the payer data
         dataPayers.append(dataPayer)
-        # Append the payer name to the payersName variable
+      # Append the payer name to the payersName variable
         payersName = payersName + dataPayer['name'] + ', '
         dataOperation = {
                 'total': 0.0,
@@ -354,19 +370,20 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
         totalBills['total'] = round(totalBills['total'])
         totalBills['gm'] = round(totalBills['gm'])
         totalBills['future'] = round(totalBills['future'])
+    
+    data = {
+        'emitter': dataEmitter,
+        'payers': dataPayers,
+        'payersName': payersName[:-2],
+        'investor': investor,
+        'operation': dataOperation,
+        'bills': bills,
+        'totalBills': totalBills,
+        'centralsLength':len(dataFinancialCentralEmitter),
+        'legalRepresentative': legalRepresentative.first_name + ' ' + legalRepresentative.last_name if legalRepresentative.first_name else legalRepresentative.social_reason,
+        'legalRepresentativeEmail': legalRepresentative.email,
+        'legalRepresentativePhone': legalRepresentative.phone_number,
+    } 
 
-        data = {
-            'emitter': dataEmitter,
-            'payers': dataPayers,
-            'payersName': payersName[:-2],
-            'investor': investor,
-            'operation': dataOperation,
-            'bills': bills,
-            'totalBills': totalBills,
-            'centralsLength':len(dataFinancialCentralEmitter),
-            'legalRepresentative': legalRepresentative.first_name + ' ' + legalRepresentative.last_name if legalRepresentative.first_name else legalRepresentative.social_reason,
-            'legalRepresentativeEmail': legalRepresentative.email,
-            'legalRepresentativePhone': legalRepresentative.phone_number,
-        } 
-
-        return data
+    return data
+    
