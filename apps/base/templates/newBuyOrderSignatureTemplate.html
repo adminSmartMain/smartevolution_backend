@@ -88,7 +88,7 @@
                       Cantidad de Facturas: {{totalBills.bills}}<br />
                       Plazo Promedio:
                       <strong>{{operation.averageTerm}}</strong> días<br />
-                      Monto: <strong>${{operation.total|floatformat}} COP</strong><br />
+                      Monto: <strong>${{investor.investorValue|floatformat}} COP</strong><br />
                     </div>
                   </td>
                 </tr>
@@ -372,6 +372,9 @@
                     </td>
                     <td class="datos-tablas">
                       {{emitter.period_1.operatingProfit|floatformat:"g"|intcomma}}
+                    </td>
+                    <td class="datos-tablas">
+                      {{emitter.variability.period_1.operating_profit|floatformat:"g"|intcomma}}%
                     </td>
                     <td class="datos-tablas">
                       {{emitter.variability.period_2.operating_profit|floatformat:"g"|intcomma}}%

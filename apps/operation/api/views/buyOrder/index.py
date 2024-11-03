@@ -440,7 +440,7 @@ class BuyOrderWebhookAV(BaseAV):
                 Headers = {
                     "Authorization":"LaKhDHjvVsmHuS/BNXfOdk1b8Y2w4fmNcDBUGtAnFnSlMieWJWvgcVHOJbgTORTJHeIXy3RgHCXEUVHGJf4cVA="
                 }
-                url = f"https://factoringdigital.azurewebsites.net/api/v1/Negotiation/{integrationCode}/IntegrateNegotiation"
+                url = f"https://fd-appservice-prod.azurewebsites.net/api/v1/Negotiation/{integrationCode}/IntegrateNegotiation"
                 res = requests.post(url, data={"NumeroOperacion":opId}, files=filesBody, headers=Headers)
                 
                 if res.status_code != 200:

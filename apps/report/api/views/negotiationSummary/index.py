@@ -122,7 +122,7 @@ class NegotiationSummaryAV(BaseAV):
                 data = {
                 'sellReport':{
                     'opId': request.query_params['pdf'],
-                    'operations': serializer.data,
+                    'operations': len(serializer.data),
                     'emitterName' : operation[0].emitter.first_name + ' ' + operation[0].emitter.last_name if operation[0].emitter.first_name else operation[0].emitter.social_reason,
                     'emitterDocumentNumber': operation[0].emitter.document_number,
                     'emitterTypeDocument': operation[0].emitter.type_identity.description,

@@ -175,8 +175,8 @@ class OperationIntegrationAV(GenericAPIView):
             dataBody = {
                 'numeroOperacion':request.data['integrationCode']
             }
-
-            requestUrl = f"https://factoringdigital-test.azurewebsites.net/api/v1/Negotiation/{request.data['integrationCode']}/IntegrateNegotiation"
+ 
+            requestUrl = f"https://fd-appservice-test.azurewebsites.net/api/v1/Negotiation/{request.data['integrationCode']}/IntegrateNegotiation"
             request = requests.post(requestUrl, files=filesBody, data=dataBody, headers=headers)
             
             # Delete the files
