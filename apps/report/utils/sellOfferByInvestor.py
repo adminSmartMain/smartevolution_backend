@@ -4,6 +4,7 @@ from apps.operation.api.serializers.index import PreOperationReadOnlySerializer
 from apps.operation.models import PreOperation
 from apps.client.models    import Client, FinancialCentral, Overview, LegalRepresentative
 from apps.misc.models      import Activity
+from apps.report.models import NegotiationSummary
 from datetime import datetime
 
 
@@ -36,6 +37,7 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
     }
     # Get preOperations of the investor
     operation = PreOperation.objects.filter(opId=pk, investor=investorId)
+    negotiationsummary = NegotiationSummary.objects.filter(opId=pk)
     
     # Get the legal representative of the investor
     legalRepresentative = LegalRepresentative.objects.get(client=investorId)
@@ -312,6 +314,7 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
         # investor data
         investor = {
             'opId': f'{prefix}{operation[0].opId}',
+            'investorValue': negotiationsummary[0].investorValue,
             'investor': operation[0].investor.first_name + ' ' + operation[0].investor.last_name if operation[0].investor.first_name else operation[0].investor.social_reason,
             'investorId': operation[0].investor.id,
             'investorType':operation[0].investor.type_client.description,
