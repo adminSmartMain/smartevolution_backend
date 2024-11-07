@@ -1,11 +1,28 @@
+import logging
+
+# Configurar el logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Crear un handler de consola y definir el nivel
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Crear un formato para los mensajes de log
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# Añadir el handler al logger
+logger.addHandler(console_handler)
+
 def calcActivityEfficiency(indicators, index, period):
 
     periodDays = 0
     
     if period['typePeriod'] == '0835dcb5-d6f2-43d7-b7ca-8864119ea05f':
-        periodDays = 365
+        periodDays = 360
     elif period['typePeriod'] == 'e635f0f1-b29c-45e5-b351-04725a489be3':
-        periodDays = 181
+        periodDays = 180
     elif period['typePeriod'] == 'e7b663d7-5cc3-4a9f-b288-95ce38c1ccfd':
         periodDays = 90
     else:
@@ -43,5 +60,7 @@ def calcActivityEfficiency(indicators, index, period):
     else:
         indicators['activityEfficiency'][f'period_{index + 1}']['assetsRotation'] = 0
 
+    
+    logger.debug(f"dataReport: {indicators}")
 
     return indicators
