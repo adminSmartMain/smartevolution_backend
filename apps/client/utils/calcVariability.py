@@ -47,8 +47,13 @@ def calcVariability(indicators, period1, period2=None, period3=None):
         
         #total_patrimony
         
-        indicators['variability']['period_2']['total_patrimony'] = float('{:.1f}'.format(((period2['patrimony']['total_patrimony'] -
-            period1['patrimony']['total_patrimony']) / (period1['patrimony']['total_patrimony'])) * 100))
+        try:
+        
+            indicators['variability']['period_2']['total_patrimony'] = float('{:.1f}'.format(((period2['patrimony']['total_patrimony'] -
+                period1['patrimony']['total_patrimony']) / (period1['patrimony']['total_patrimony'])) * 100))
+            logger.debug(f"'total_patrimony': {indicators['variability']['period_2']['total_patrimony'] }")
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
     if period3 != None:    
         #period 3 variability
         indicators['variability']['period_3']['period']    = period3['period']
@@ -70,9 +75,12 @@ def calcVariability(indicators, period1, period2=None, period3=None):
 
         indicators['variability']['period_3']['total_passives'] = float('{:.1f}'.format(((period3['passives']['total_passives'] -
             period2['passives']['total_passives']) / period2['passives']['total_passives']) * 100))
-
-        indicators['variability']['period_3']['total_patrimony'] = round(float('{:.1f}'.format(((period3['patrimony']['total_patrimony'] -
-            period2['patrimony']['total_patrimony']) / period2['patrimony']['total_patrimony']) * 100)),2)
+        try:
+            logger.debug(f"entrando al try tercer periodo")
+            indicators['variability']['period_3']['total_patrimony'] = round(float('{:.1f}'.format(((period3['patrimony']['total_patrimony'] -
+                period2['patrimony']['total_patrimony']) / period2['patrimony']['total_patrimony']) * 100)),2)
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
     logger.debug(f"'indicators calcVariability': {indicators}")
     
     return indicators

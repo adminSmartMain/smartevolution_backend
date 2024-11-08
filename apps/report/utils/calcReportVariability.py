@@ -487,7 +487,7 @@ def calcReportVariability(emitter, payer, client=None):
                             
 
                     elif length == 2:
-                        logger.debug(f"caso lenght ==3 en pagador")
+                        logger.debug(f"caso lenght ==2 en pagador")
                         match(serializer.data[1]['typePeriod']):
                             case 'a12eec8b-06e1-4fbc-a888-d33364032151':
                                 periodDays = serializer.data[1]['periodDays']
@@ -497,6 +497,7 @@ def calcReportVariability(emitter, payer, client=None):
                                 periodDays = 180
                             case 'e7b663d7-5cc3-4a9f-b288-95ce38c1ccfd':
                                 periodDays = 90
+                            
                         period_1 = {
                             'period'       : serializer.data[1]['period'],
                             'typePeriod'   : serializer.data[1]['typePeriod'],
@@ -553,6 +554,7 @@ def calcReportVariability(emitter, payer, client=None):
                                 periodDays = 180
                             case 'e7b663d7-5cc3-4a9f-b288-95ce38c1ccfd':
                                 periodDays = 90
+                        logger.debug(f"creacion periodo1 caso 3 pagador")
                         period_1 = {
                             'period'       : serializer.data[2]['period'],
                             'typePeriod'   : serializer.data[2]['typePeriod'],
@@ -571,6 +573,7 @@ def calcReportVariability(emitter, payer, client=None):
                                 periodDays2 = 180
                             case 'e7b663d7-5cc3-4a9f-b288-95ce38c1ccfd':
                                 periodDays2 = 90
+                        logger.debug(f"creacion periodo2 caso 3 pagador")
                         period_2 = {
                             'period'       : serializer.data[1]['period'],
                             'typePeriod'   : serializer.data[1]['typePeriod'],
@@ -589,6 +592,7 @@ def calcReportVariability(emitter, payer, client=None):
                                 periodDays3 = 180
                             case 'e7b663d7-5cc3-4a9f-b288-95ce38c1ccfd':
                                 periodDays3 = 90
+                        logger.debug(f"creacion periodo3 caso 3 pagador")
                         period_3 = {
                             'period'       : serializer.data[0]['period'],
                             'typePeriod'   : serializer.data[0]['typePeriod'],
@@ -599,14 +603,21 @@ def calcReportVariability(emitter, payer, client=None):
                             'stateOfResult': serializer.data[0]['stateOfResult']
                         }
                         for index, period in enumerate([period_1, period_2, period_3]):
+                            logger.debug(f"for ,{period}")
                             # Calc activity efficiency
+                            logger.debug(f"for  Calc activity efficiency,{period}")
                             indicators.update(calcActivityEfficiency(indicators, index, period))
                             # Calc rentability
+                            logger.debug(f"for Calc rentability,{period}")
                             indicators.update(calcRentability(indicators, index, period))
                             # calc financial risk
+                            logger.debug(f"for calc financial risk,")
                             indicators.update(calcFinancialRisk(indicators, index, period))
                             # calc results
+                            
+                            logger.debug(f"for calc results,{period}")
                             indicators.update(calcResults(indicators, index, period))
+                            logger.debug(f"for dataReport,{period}")
                             dataReport['payer'][f'period_{index + 1}'] = period
                             dataReport['payer'][f'period_{index + 1}']['activityEfficiency'] = indicators['activityEfficiency'][f'period_{index + 1}']
                             dataReport['payer'][f'period_{index + 1}']['rentability'] = indicators['rentability'][f'period_{index + 1}']
