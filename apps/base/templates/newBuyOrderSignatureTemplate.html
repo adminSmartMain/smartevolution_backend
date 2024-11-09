@@ -37,7 +37,7 @@
                 <tr>
                   <td style="vertical-align: super">
                     <div>
-                      Bogotá, {% now "Y-m-d" %} <br /><br />
+                      Bogotá, {% now "d-m-Y" %} <br /><br />
                       Estimado (a) <strong>{{investor.investor}}</strong><br />
                     </div>
                   </td>
@@ -85,10 +85,10 @@
                     <div>
                       Emisor: <strong>{{emitter.name}}</strong><br />
                       Pagador(es): <strong>{{payersName}}</strong><br />
-                      Cantidad de Facturas: {{totalBills.bills}}<br />
+                      Cantidad de Facturas: <strong>{{totalBills.bills}}</strong><br />
                       Plazo Promedio:
                       <strong>{{operation.averageTerm}}</strong> días<br />
-                      Monto: <strong>${{investor.investorValue|floatformat}} COP</strong><br />
+                      Monto: <strong>${{operation.total|floatformat}} COP</strong><br />
                     </div>
                   </td>
                 </tr>
@@ -218,8 +218,8 @@
                   </caption>
                   <tr class="tables-headers">
                     <th style="width: 50%">Entidad Financiera</th>
-                    <th style="width: 25%">Posición</th>
                     <th style="width: 25%">Calificación</th>
+                    <th style="width: 25%">Posición</th>
                   </tr>
 
                   <tr>
@@ -327,32 +327,32 @@
                   <tr class="tables-headers">
                     <th style="width: 45%">Indicador</th>
                     <th style="width: 15%">
-                      {{emitter.period_3.period|stringformat:"i"}}
+                      {{emitter.period_1.period|stringformat:"i"}}
                     </th>
                     <th style="width: 15%">
                       {{emitter.period_2.period|stringformat:"i"}}
                     </th>
                     <th style="width: 15%">
-                      {{emitter.period_1.period|stringformat:"i"}}
+                      {{emitter.period_3.period|stringformat:"i"}}
                     </th>
                     <th style="width: 15%">
                       VAR {{emitter.period_2.period|stringformat:"i"}}
                     </th>
                     <th style="width: 15%">
-                      VAR {{emitter.period_1.period|stringformat:"i"}}
+                      VAR {{emitter.period_3.period|stringformat:"i"}}
                     </th>
                   </tr>
 
                   <tr>
                     <td class="etiquetas-tablas">Ventas Netas</td>
                     <td class="datos-tablas">
-                      {{emitter.period_3.grossSale|floatformat:"g"|intcomma}}
+                      {{emitter.period_1.netSales|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{emitter.period_2.grossSale|floatformat:"g"|intcomma}}
+                      {{emitter.period_2.netSales|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{emitter.period_1.grossSale|floatformat:"g"|intcomma}}
+                      {{emitter.period_3.netSales|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{emitter.variability.period_2.net_sales|floatformat:"g"|intcomma}}%
@@ -365,17 +365,15 @@
                   <tr>
                     <td class="etiquetas-tablas">Utilidad Operacional</td>
                     <td class="datos-tablas">
-                      {{emitter.period_3.operatingProfit|floatformat:"g"|intcomma}}
+                      {{emitter.period_1.operatingProfit|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{emitter.period_2.operatingProfit|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{emitter.period_1.operatingProfit|floatformat:"g"|intcomma}}
+                      {{emitter.period_3.operatingProfit|floatformat:"g"|intcomma}}
                     </td>
-                    <td class="datos-tablas">
-                      {{emitter.variability.period_1.operating_profit|floatformat:"g"|intcomma}}%
-                    </td>
+                    
                     <td class="datos-tablas">
                       {{emitter.variability.period_2.operating_profit|floatformat:"g"|intcomma}}%
                     </td>
@@ -386,13 +384,13 @@
                   <tr>
                     <td class="etiquetas-tablas">Utilidad Neta</td>
                     <td class="datos-tablas">
-                      {{emitter.period_3.netIncome|floatformat:"g"|intcomma}}
+                      {{emitter.period_1.netIncome|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{emitter.period_2.netIncome|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{emitter.period_1.netIncome|floatformat:"g"|intcomma}}
+                      {{emitter.period_3.netIncome|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{emitter.variability.period_2.net_income|floatformat:"g"|intcomma}}%
@@ -405,13 +403,13 @@
                   <tr>
                     <td class="etiquetas-tablas">Total Activo</td>
                     <td class="datos-tablas">
-                      {{emitter.period_3.totalAssets|floatformat:"g"|intcomma}}
+                      {{emitter.period_1.totalAssets|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{emitter.period_2.totalAssets|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{emitter.period_1.totalAssets|floatformat:"g"|intcomma}}
+                      {{emitter.period_3.totalAssets|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{emitter.variability.period_2.total_assets|floatformat:"g"|intcomma}}%
@@ -424,13 +422,13 @@
                   <tr>
                     <td class="etiquetas-tablas">Total Pasivo</td>
                     <td class="datos-tablas">
-                      {{emitter.period_3.totalPassives|floatformat:"g"|intcomma}}
+                      {{emitter.period_1.totalPassives|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{emitter.period_2.totalPassives|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{emitter.period_1.totalPassives|floatformat:"g"|intcomma}}
+                      {{emitter.period_3.totalPassives|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{emitter.variability.period_2.total_passives|floatformat:"g"|intcomma}}%
@@ -443,13 +441,13 @@
                   <tr>
                     <td class="etiquetas-tablas">Total Patrimonio</td>
                     <td class="datos-tablas">
-                      {{emitter.period_3.totalPatrimony|floatformat:"g"|intcomma}}
+                      {{emitter.period_1.totalPatrimony|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{emitter.period_2.totalPatrimony|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{emitter.period_1.totalPatrimony|floatformat:"g"|intcomma}}
+                      {{emitter.period_3.totalPatrimony|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{emitter.variability.period_2.total_patrimony|floatformat:"g"|intcomma}}%
@@ -462,13 +460,13 @@
                   <tr>
                     <td class="etiquetas-tablas">Endeudamiento</td>
                     <td class="datos-tablas">
-                      {{emitter.period_3.debt|floatformat:"g"|intcomma}}
+                      {{emitter.period_1.debt|floatformat:"g"|intcomma}}%
                     </td>
                     <td class="datos-tablas">
-                      {{emitter.period_2.debt|floatformat:"g"|intcomma}}
+                      {{emitter.period_2.debt|floatformat:"g"|intcomma}}%
                     </td>
                     <td class="datos-tablas">
-                      {{emitter.period_1.debt|floatformat:"g"|intcomma}}
+                      {{emitter.period_3.debt|floatformat:"g"|intcomma}}%
                     </td>
                     <td class="datos-tablas">-</td>
                     <td class="datos-tablas">-</td>
@@ -477,13 +475,13 @@
                   <tr>
                     <td class="etiquetas-tablas">Rotación Cartera</td>
                     <td class="datos-tablas">
-                      {{emitter.period_3.walletRotation|floatformat:"g"|intcomma}}
+                      {{emitter.period_1.walletRotation|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{emitter.period_2.walletRotation|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{emitter.period_1.walletRotation|floatformat:"g"|intcomma}}
+                      {{emitter.period_3.walletRotation|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">-</td>
                     <td class="datos-tablas">-</td>
@@ -492,13 +490,13 @@
                   <tr>
                     <td class="etiquetas-tablas">Rotación Proveedores</td>
                     <td class="datos-tablas">
-                      {{emitter.period_3.providersRotation|floatformat:"g"|intcomma}}
+                      {{emitter.period_1.providersRotation|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{emitter.period_2.providersRotation|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{emitter.period_1.providersRotation|floatformat:"g"|intcomma}}
+                      {{emitter.period_3.providersRotation|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">-</td>
                     <td class="datos-tablas">-</td>
@@ -506,13 +504,13 @@
                                       <tr>
                     <td class="etiquetas-tablas">Rentabilidad sobre ventas</td>
                     <td class="datos-tablas">
-                      {{emitter.period_3.profitOverSales|floatformat:"g"|intcomma}}%
+                      {{emitter.period_1.profitOverSales|floatformat:"g"|intcomma}}%
                     </td>
                     <td class="datos-tablas">
                       {{emitter.period_2.profitOverSales|floatformat:"g"|intcomma}}%
                     </td>
                     <td class="datos-tablas">
-                      {{emitter.period_1.profitOverSales|floatformat:"g"|intcomma}}%
+                      {{emitter.period_3.profitOverSales|floatformat:"g"|intcomma}}%
                     </td>
                     <td class="datos-tablas">-</td>
                     <td class="datos-tablas">-</td>
@@ -621,32 +619,32 @@
                   <tr class="tables-headers">
                     <th style="width: 45%">Indicador</th>
                     <th style="width: 15%">
-                      {{x.period_3.period|stringformat:"i"}}
+                      {{x.period_1.period|stringformat:"i"}}
                     </th>
                     <th style="width: 15%">
                       {{x.period_2.period|stringformat:"i"}}
                     </th>
                     <th style="width: 15%">
-                      {{x.period_1.period|stringformat:"i"}}
+                      {{x.period_3.period|stringformat:"i"}}
                     </th>
                     <th style="width: 15%">
                       VAR {{x.period_2.period|stringformat:"i"}}
                     </th>
                     <th style="width: 15%">
-                      VAR {{x.period_1.period|stringformat:"i"}}
+                      VAR {{x.period_3.period|stringformat:"i"}}
                     </th>
                   </tr>
 
                   <tr>
                     <td class="etiquetas-tablas">Ventas Netas</td>
                     <td class="datos-tablas">
-                      {{x.period_3.grossSale|floatformat:"g"|intcomma}}
+                      {{x.period_1.netSales|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{x.period_2.grossSale|floatformat:"g"|intcomma}}
+                      {{x.period_2.netSales|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{x.period_1.grossSale|floatformat:"g"|intcomma}}
+                      {{x.period_3.netSales|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{x.variability.period_2.net_sales|floatformat:"g"|intcomma}}%
@@ -659,13 +657,13 @@
                   <tr>
                     <td class="etiquetas-tablas">Utilidad Operacional</td>
                     <td class="datos-tablas">
-                      {{x.period_3.operatingProfit|floatformat:"g"|intcomma}}
+                      {{x.period_1.operatingProfit|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{x.period_2.operatingProfit|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{x.period_1.operatingProfit|floatformat:"g"|intcomma}}
+                      {{x.period_3.operatingProfit|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{x.variability.period_2.operating_profit|floatformat:"g"|intcomma}}%
@@ -678,13 +676,13 @@
                   <tr>
                     <td class="etiquetas-tablas">Utilidad Neta</td>
                     <td class="datos-tablas">
-                      {{x.period_3.netIncome|floatformat:"g"|intcomma}}
+                      {{x.period_1.netIncome|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{x.period_2.netIncome|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{x.period_1.netIncome|floatformat:"g"|intcomma}}
+                      {{x.period_3.netIncome|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{x.variability.period_2.net_income|floatformat:"g"|intcomma}}%
@@ -697,13 +695,13 @@
                   <tr>
                     <td class="etiquetas-tablas">Total Activo</td>
                     <td class="datos-tablas">
-                      {{x.period_3.totalAssets|floatformat:"g"|intcomma}}
+                      {{x.period_1.totalAssets|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{x.period_2.totalAssets|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{x.period_1.totalAssets|floatformat:"g"|intcomma}}
+                      {{x.period_3.totalAssets|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{x.variability.period_2.total_assets|floatformat:"g"|intcomma}}%
@@ -716,13 +714,13 @@
                   <tr>
                     <td class="etiquetas-tablas">Total Pasivo</td>
                     <td class="datos-tablas">
-                      {{x.period_3.totalPassives|floatformat:"g"|intcomma}}
+                      {{x.period_1.totalPassives|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{x.period_2.totalPassives|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{x.period_1.totalPassives|floatformat:"g"|intcomma}}
+                      {{x.period_3.totalPassives|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{x.variability.period_2.total_passives|floatformat:"g"|intcomma}}%
@@ -735,13 +733,13 @@
                   <tr>
                     <td class="etiquetas-tablas">Total Patrimonio</td>
                     <td class="datos-tablas">
-                      {{x.period_3.totalPatrimony|floatformat:"g"|intcomma}}
+                      {{x.period_1.totalPatrimony|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{x.period_2.totalPatrimony|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{x.period_1.totalPatrimony|floatformat:"g"|intcomma}}
+                      {{x.period_3.totalPatrimony|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{x.variability.period_2.total_patrimony|floatformat:"g"|intcomma}}%
@@ -754,13 +752,13 @@
                   <tr>
                     <td class="etiquetas-tablas">Endeudamiento</td>
                     <td class="datos-tablas">
-                      {{x.period_3.debt|floatformat:"g"|intcomma}}
+                      {{x.period_1.debt|floatformat:"g"|intcomma}}%
                     </td>
                     <td class="datos-tablas">
-                      {{x.period_2.debt|floatformat:"g"|intcomma}}
+                      {{x.period_2.debt|floatformat:"g"|intcomma}}%
                     </td>
                     <td class="datos-tablas">
-                      {{x.period_1.debt|floatformat:"g"|intcomma}}
+                      {{x.period_3.debt|floatformat:"g"|intcomma}}%
                     </td>
                     <td class="datos-tablas">-</td>
                     <td class="datos-tablas">-</td>
@@ -769,13 +767,13 @@
                   <tr>
                     <td class="etiquetas-tablas">Rotación Cartera</td>
                     <td class="datos-tablas">
-                      {{x.period_3.walletRotation|floatformat:"g"|intcomma}}
+                      {{x.period_1.walletRotation|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{x.period_2.walletRotation|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{x.period_1.walletRotation|floatformat:"g"|intcomma}}
+                      {{x.period_3.walletRotation|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">-</td>
                     <td class="datos-tablas">-</td>
@@ -784,13 +782,13 @@
                   <tr>
                     <td class="etiquetas-tablas">Rotación Proveedores</td>
                     <td class="datos-tablas">
-                      {{x.period_3.providersRotation|floatformat:"g"|intcomma}}
+                      {{x.period_1.providersRotation|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{x.period_2.providersRotation|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{x.period_1.providersRotation|floatformat:"g"|intcomma}}
+                      {{x.period_3.providersRotation|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">-</td>
                     <td class="datos-tablas">-</td>
@@ -799,13 +797,13 @@
                                       <tr>
                     <td class="etiquetas-tablas">Rentabilidad sobre ventas</td>
                     <td class="datos-tablas">
-                      {{x.period_3.profitOverSales|floatformat:"g"|intcomma}}%
+                      {{x.period_1.profitOverSales|floatformat:"g"|intcomma}}%
                     </td>
                     <td class="datos-tablas">
                       {{x.period_2.profitOverSales|floatformat:"g"|intcomma}}%
                     </td>
                     <td class="datos-tablas">
-                      {{x.period_1.profitOverSales|floatformat:"g"|intcomma}}%
+                      {{x.period_3.profitOverSales|floatformat:"g"|intcomma}}%
                     </td>
                     <td class="datos-tablas">-</td>
                     <td class="datos-tablas">-</td>
