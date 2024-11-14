@@ -218,8 +218,8 @@
                   </caption>
                   <tr class="tables-headers">
                     <th style="width: 50%">Entidad Financiera</th>
-                    <th style="width: 25%">Posición</th>
                     <th style="width: 25%">Calificación</th>
+                    <th style="width: 25%">Posición</th>
                   </tr>
 
                   <tr>
@@ -346,13 +346,13 @@
                   <tr>
                     <td class="etiquetas-tablas">Ventas Netas</td>
                     <td class="datos-tablas">
-                      {{emitter.period_1.grossSale|floatformat:"g"|intcomma}}
+                      {{emitter.period_1.netSales|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{emitter.period_2.grossSale|floatformat:"g"|intcomma}}
+                      {{emitter.period_2.netSales|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{emitter.period_3.grossSale|floatformat:"g"|intcomma}}
+                      {{emitter.period_3.netSales|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{emitter.variability.period_2.net_sales|floatformat:"g"|intcomma}}%
@@ -638,13 +638,13 @@
                   <tr>
                     <td class="etiquetas-tablas">Ventas Netas</td>
                     <td class="datos-tablas">
-                      {{x.period_1.grossSale|floatformat:"g"|intcomma}}
+                      {{x.period_1.netSales|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{x.period_2.grossSale|floatformat:"g"|intcomma}}
+                      {{x.period_2.netSales|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
-                      {{x.period_3.grossSale|floatformat:"g"|intcomma}}
+                      {{x.period_3.netSales|floatformat:"g"|intcomma}}
                     </td>
                     <td class="datos-tablas">
                       {{x.variability.period_2.net_sales|floatformat:"g"|intcomma}}%

@@ -29,7 +29,7 @@ def calcVariability(indicators, period1, period2=None, period3=None):
         #operating_profit
         indicators['variability']['period_2']['operating_profit'] = float('{:.1f}'.format(((period2['stateOfResult']['operating_profit'] -
             period1['stateOfResult']['operating_profit']) / (period1['stateOfResult']['operating_profit'])) * 100))
-        logger.debug(f"'operating_profit': {indicators['variability']['period_2']['operating_profit'] }")
+        logger.debug(f"'operating_profit period 2': {indicators['variability']['period_2']['operating_profit'] }")
         
         #net_income
         indicators['variability']['period_2']['net_income'] = float('{:.1f}'.format(((period2['stateOfResult']['net_income'] -
@@ -51,7 +51,7 @@ def calcVariability(indicators, period1, period2=None, period3=None):
         
             indicators['variability']['period_2']['total_patrimony'] = float('{:.1f}'.format(((period2['patrimony']['total_patrimony'] -
                 period1['patrimony']['total_patrimony']) / (period1['patrimony']['total_patrimony'])) * 100))
-            logger.debug(f"'total_patrimony': {indicators['variability']['period_2']['total_patrimony'] }")
+            logger.debug(f"'total_patrimony period 2': {indicators['variability']['period_2']['total_patrimony'] }")
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
     if period3 != None:    
