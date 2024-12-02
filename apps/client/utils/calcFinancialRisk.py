@@ -70,9 +70,13 @@ def calcFinancialRisk(indicators, index, period):
         indicators['financialRisk'][f'period_{index + 1}']['EBITDA_debtServices']=0
     logger.debug(f"if 7")
     if period['patrimony']['total_patrimony'] > 0:
+        logger.debug(f"entro a if 7")
         indicators['financialRisk'][f'period_{index + 1}']['payedCapital_prim_totalPatrimony'] = float('{:.1f}'.format(
             (period['patrimony']['payed_capital'] + period['patrimony']['sup_capital_prima']) / 
             period['patrimony']['total_patrimony'] * 100))
+        logger.debug(f"termino a if 7")
     else:
+        
+        logger.debug(f"entro a else de if 7")
         indicators['financialRisk'][f'period_{index + 1}']['payedCapital_prim_totalPatrimony'] = 0
     return indicators

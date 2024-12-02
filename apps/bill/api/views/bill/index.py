@@ -291,7 +291,8 @@ class readBillAV(BaseAV):
                 logger.debug(f" fileName : {fileName}")
                 logger.debug(f" file : {file}")
                 
-                encoding_options = ['utf-8', 'utf-16', 'utf-32']
+                encoding_options = ['utf-8', 'utf-16', 'utf-32'] #como existen xml encodifcados en distintos formatos, debemos estar pendientes que todos los casos se cumplan asi que iteramos sobre cada formato e intentamos hacer el decoding, el que funciona sigue con el flujo del codigo
+                
                 for f in encoding_options:
                     try:
                         b64decode(file, validate=True).decode(f'{f}')

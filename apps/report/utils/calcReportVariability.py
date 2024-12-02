@@ -139,6 +139,7 @@ def calcReportVariability(emitter, payer, client=None):
                         # Calc activity efficiency
                         indicators.update(calcActivityEfficiency(indicators, index, period))
                         # Calc rentability
+                        
                         indicators.update(calcRentability(indicators, index, period))
                         # calc financial risk
                         indicators.update(calcFinancialRisk(indicators, index, period))
@@ -213,10 +214,13 @@ def calcReportVariability(emitter, payer, client=None):
                         # calc financial risk
                         indicators.update(calcFinancialRisk(indicators, index, period))
                         # calc results
+                        logger.debug(f"entro a calcResults")
                         indicators.update(calcResults(indicators, index, period))
-
+                        logger.debug(f"salgo entro a calcResults")        
                         # Calc variability
+                        logger.debug(f"entro a calc variability")       
                         indicators.update(calcVariability(indicators, period_1, period_2, period_3))
+                        logger.debug(f"salgo a calc variability")      
                         logger.debug(f"calcVariability: {calcVariability(indicators, period_1, period_2, period_3)}")
             else:
                 dataReport = {
@@ -426,10 +430,11 @@ def calcReportVariability(emitter, payer, client=None):
                             dataReport['emitter'][f'period_{index + 1}']['activityEfficiency'] = indicators['activityEfficiency'][f'period_{index + 1}']
                             dataReport['emitter'][f'period_{index + 1}']['rentability'] = indicators['rentability'][f'period_{index + 1}']
                             dataReport['emitter'][f'period_{index + 1}']['financialRisk'] = indicators['financialRisk'][f'period_{index + 1}']
-                            dataReport['emitter'][f'period_{index + 1}']['results'] = indicators['results'][f'period_{index + 1}']    
+                            dataReport['emitter'][f'period_{index + 1}']['results'] = indicators['results'][f'period_{index + 1}'] 
+                            logger.debug(f"aqui termina el bucle")  
                         # Calc variability
                         indicators.update(calcVariability(indicators, period_1, period_2, period_3))
-                        logger.debug(f"calcActivityEfficiency: {calcVariability(indicators, period_1, period_2, period_3)}")
+                        logger.debug(f"calcVariability: {calcVariability(indicators, period_1, period_2, period_3)}")
                         dataReport['emitter']['variability'] = indicators['variability']
                         
                         logger.debug(f"variability: {dataReport['emitter']['variability']}")
