@@ -14,9 +14,22 @@ from base64 import b64decode
 import os
 import logging
 
+import logging
+
+# Configurar el logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+# Crear un handler de consola y definir el nivel
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Crear un formato para los mensajes de log
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# Añadir el handler al logger
+logger.addHandler(console_handler)
 ##comentario2
 class BillAV(BaseAV):
 
@@ -271,12 +284,46 @@ class readBillAV(BaseAV):
                 # decode base 64 file
                 # if file has data:text/xml;base64, remove it
                 if file.startswith('data:text/xml;base64,'):
+                    logger.debug(f"if 1 read bill")
                     file = file.replace('data:text/xml;base64,', '')
                 fileName = f'{gen_uuid()}.xml'
-                xmlData = b64decode(file, validate=True).decode('utf-8')
+                logger.debug(f" b64decode a realizar")
+                logger.debug(f" fileName : {fileName}")
+                logger.debug(f" file : {file}")
+                
+                encoding_options = ['utf-8', 'utf-16', 'utf-32'] #como existen xml encodifcados en distintos formatos, debemos estar pendientes que todos los casos se cumplan asi que iteramos sobre cada formato e intentamos hacer el decoding, el que funciona sigue con el flujo del codigo
+                
+                for f in encoding_options:
+                    try:
+                        b64decode(file, validate=True).decode(f'{f}')
+                        xmlData = b64decode(file, validate=True).decode(f'{f}')
+                    except Exception as e:
+                        print(f"no es formato {f}")
+                        print({'error': True, 'message': str(e)})
+
+                             
+               # try:
+                 #   xmlData = b64decode(file, validate=True).decode('utf-8')#aqui está el error
+                   # logger.debug(f" b64decode UTF-8 realizado")
+               # except:
+                   # try:
+                       # xml_bytes = b64decode(file, validate=True)
+                       # # Detectar codificación
+                       
+
+                        # Decodificar usando la codificación detectada
+                        
+                       # xmlData = xml_bytes.decode('utf-16')
+                       # logger.debug(f" b64decode UTF-16 realizado")
+                    #except UnicodeDecodeError:
+                      #  xmlData = xml_bytes.decode('utf-32')
+                       # logger.debug(f" b64decode UTF-32 realizado")    
+                    
+                    logger.debug(f" b64decode POR FIN realizado")
                 with open(fileName, 'w') as f:
                     f.write(xmlData)
                 parseXml = parseBill(fileName)
+                logger.debug(f" parseBille realizado")
                 parseXml['file'] = file
                 # add the data:text/xml;base64, to the file
                 parseXml['file'] = f'data:text/xml;base64,{file}'

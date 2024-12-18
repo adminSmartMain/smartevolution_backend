@@ -17,7 +17,22 @@ from django.template.loader import get_template
 import requests
 # Decorators
 from apps.base.decorators.index import checkRole
+import logging
 
+# Configurar el logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Crear un handler de consola y definir el nivel
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Crear un formato para los mensajes de log
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# Añadir el handler al logger
+logger.addHandler(console_handler)
 
 class FinancialProfileAV(APIView):
     
@@ -77,6 +92,7 @@ class FinancialProfileAV(APIView):
                 })
             # save financial profile
             serializer = FinancialProfileSerializer(data=financialProfiles, many=True, context={'request': request})
+            
             if serializer.is_valid():
                 serializer.save()
                 # create the overviews of the client
@@ -100,21 +116,42 @@ class FinancialProfileAV(APIView):
     def get(self, request, pk=None, periods=3):
         try:
             if pk:
+                logger.debug(f"'pk 1': {pk }")
+        
                 financialProfile = FinancialProfile.objects.filter(client=pk).order_by('-period')[:periods]
+                logger.debug(f"financialProfile': {financialProfile }")
+                logger.debug(f"'pk 2': {pk }")
                 serializer       = FinancialProfileReadOnlySerializer(financialProfile,many=True)
+                logger.debug(f"serializer : {serializer}")
+                logger.debug(f"'pk 3': {pk }")
                 # Get the analysis of the client
                 overview = Overview.objects.filter(client=pk)
+                logger.debug(f"'pk 4': {pk }")
                 serializerOverview = OverviewSerializer(overview, many=True)
+                logger.debug(f"'pk 5': {pk }")
                 # Get the financial centrals of the client
                 financialCentrals = FinancialCentral.objects.filter(client=pk)
+                logger.debug(f"'pk 6': {pk }")
                 serializerFinancialCentrals = FinancialCentralReadOnlySerializer(financialCentrals, many=True)
+                logger.debug(serializer.data)
+                logger.debug(f"serializerOverview.data {serializerOverview.data}")
+                logger.debug(serializerFinancialCentrals.data )
+                logger.debug({
+                    'financialProfiles': serializer.data if len(serializer.data) > 0 else [],
+                    'overview': serializerOverview.data[0] if len(serializerOverview.data) > 0 else [],
+                    'financialCentrals': serializerFinancialCentrals.data if len(serializerFinancialCentrals.data) > 0 else []
+                })
                 return response({'error': False, 'data': {
                     'financialProfiles': serializer.data if len(serializer.data) > 0 else [],
                     'overview': serializerOverview.data[0] if len(serializerOverview.data) > 0 else [],
                     'financialCentrals': serializerFinancialCentrals.data if len(serializerFinancialCentrals.data) > 0 else []
                 }}, 200)
+            
+            logger.debug(f"'pk 7': {pk }")
             financialProfiles = FinancialProfile.objects.all()
+            logger.debug(f"'pk 8': {pk }")
             serializer = FinancialProfileSerializer(financialProfiles, many=True)
+            logger.debug(f"'pk 9: {pk }")
             return response({'error': False, 'data': serializer.data}, 200)
         except FinancialProfile.DoesNotExist:
             return response({'error': True, 'message': 'Perfil financiero no encontrado'}, 404)
@@ -173,6 +210,7 @@ class FinancialProfileIndicatorsAV(APIView):
     def get(self, request, pk):
         try:
             indicators = calcReportVariability("","", pk)
+            logger.debug(f"'indicators': {indicators}")
             # get client data
             if len(request.query_params) > 0:
                 client = Client.objects.get(pk=pk)
@@ -183,7 +221,9 @@ class FinancialProfileIndicatorsAV(APIView):
                     'indicators': indicators
                 }
                 template      = get_template('financialStatement.html')
+                logger.debug(f"'parseTemplate':{ data}")
                 parseTemplate = template.render(data)
+                logger.debug(f"'parseTemplate':{ parseTemplate}")
                 parsePdf      = pdfToBase64(parseTemplate)
                 return response({'error': False, 'data': parsePdf['pdf']}, 200)
             return response({'error': False, 'data': indicators}, 200)

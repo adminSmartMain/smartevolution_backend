@@ -20,6 +20,22 @@ from functools import reduce
 from apps.base.decorators.index import checkRole
 #utils
 from apps.base.utils.logBalanceAccount import log_balance_change
+import logging
+
+# Configurar el logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Crear un handler de consola y definir el nivel
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Crear un formato para los mensajes de log
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# Añadir el handler al logger
+logger.addHandler(console_handler)
 
 
 class PreOperationAV(BaseAV):
@@ -59,6 +75,7 @@ class PreOperationAV(BaseAV):
     
     @checkRole(['admin'])
     def get(self, request, pk=None):
+        logger.debug(f"PreOperationAV")
         try:
 
             if pk:
@@ -82,19 +99,82 @@ class PreOperationAV(BaseAV):
                     return response({'error': False, 'data': serializer.data, 'receipts':calcs}, 200)
 
             if len(request.query_params) > 0:
-                if request.query_params.get('opId') != 'undefined':
-                    data = generateSellOffer(request.query_params.get('opId'))
+                if (request.query_params.get('opId') != 'undefined') and (request.query_params.get('notifications') == 'electronicSignature'):
+                    
                     # get the operation data
+                    
                     preOperation = PreOperation.objects.filter(opId=request.query_params.get('opId'))
                     serializer   = PreOperationReadOnlySerializer(preOperation, many=True)
+                    logger.debug(f"  data de buscar por opID{ serializer.data}")
+                    for obj in preOperation:
+                       logger.debug(f"  preOperation filtro  de buscar por opID{vars(obj)}")
+                    logger.debug(f"  preOperation filtro  de buscar por opID{ preOperation}")
+                    
+                    pendingOperations  = []
+                    filteredOperations = []
+                    # get the operations who doesn't have a buy order
+                    for x in preOperation:
+                        if len(BuyOrder.objects.filter(operation_id=x.id)) == 0:
+                            pendingOperations.append(x)
+                    logger.debug(f"  pendingOperations  de buscar por investor {pendingOperations}")
+                    # group the operations by investor and if a operation is already in the filteredOperations sum the payedAmount to the existing operation
+                    n=1
+                    for x in pendingOperations:
+                        if x.investor not in [y.investor for y in filteredOperations]:
+                            logger.debug(f" if uno")
+                            filteredOperations.append(x)
+                        else:
+                            logger.debug(f" else uno")
+                            for y in filteredOperations:
+                                logger.debug(f" entro al for")
+                                if x.investor == y.investor and x.opId == y.opId:
+                                    y.payedAmount += x.payedAmount
+                                    y.presentValueInvestor += x.presentValueInvestor
+                                    logger.debug(f" y.investorTax {y.investorTax}")
+                                    if x.investorTax !=0:
+                                        y.investorTax =(x.investorTax+y.investorTax)
+                                        logger.debug(f" voy en el if de diferente de 0 este es el n {n}")
+                                        n=n+1
+                                    else:
+                                        logger.debug(f" voy en el if de igual a de 0 este es el n {n}") 
+                                        y.investorTax =(x.investorTax+y.investorTax)
+                                   
+                                    logger.debug(f" y.investorTax  de buscar por investor { y.investorTax}")
+                                    break
+                                elif x.investor == y.investor and x.opId != y.opId:
+                                    filteredOperations.append(x)
+                                    break
+                                
+                                
+                            logger.debug(f" y.investorTax {y.investorTax}")         
+                    logger.debug(f" fuera del for {n}")
+                   
+                    if x.investorTax:
+                        y.investorTax=round(y.investorTax/n,2)
+                    logger.debug(f"  filteredOperations  de buscar por investor {filteredOperations}")
+                    page = self.paginate_queryset(filteredOperations)
+                    if page is not None:
+                        serializer   = PreOperationSignatureSerializer(page, many=True)
+                        return self.get_paginated_response(serializer.data)
+                   
+                
+                elif (request.query_params.get('opId') != 'undefined'):
+                    data = generateSellOffer(request.query_params.get('opId'))
+                    # get the operation data
+                    
+                    preOperation = PreOperation.objects.filter(opId=request.query_params.get('opId'))
+                    serializer   = PreOperationReadOnlySerializer(preOperation, many=True)
+                    
                     data['investor']['investorAccount'] = serializer.data[0]['clientAccount']
                     return response({'error': False, 'data': data}, 200)
                 elif request.query_params.get('opIdV') != 'undefined':
-                    data = calcOperationDetail(request.query_params.get('opIdV'), request.query_params.get('investor'))
+                    #ACA SE TOMAN LOS DATOS AL MOMENTO DE PRESIONAR AL WHATSAPP
+                    data = calcOperationDetail(request.query_params.get('opIdV'), request.query_params.get('investor')) 
                     return response({'error': False, 'data': data}, 200)
                 elif request.query_params.get('notifications') == 'electronicSignature' and request.query_params.get('nOpId') == 'undefined':
 
                     if 'investor' in request.query_params:
+                        logger.debug(f"  investir  de buscar por investor")
                         preOperation = PreOperation.objects.filter(status=0).filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__first_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__social_reason__icontains=request.query_params.get('investor')) )
@@ -107,20 +187,24 @@ class PreOperationAV(BaseAV):
                     for x in preOperation:
                         if len(BuyOrder.objects.filter(operation_id=x.id)) == 0:
                             pendingOperations.append(x)
+                    logger.debug(f"  pendingOperations  de buscar por investor {pendingOperations}")
                     # group the operations by investor and if a operation is already in the filteredOperations sum the payedAmount to the existing operation
                     for x in pendingOperations:
                         if x.investor not in [y.investor for y in filteredOperations]:
                             filteredOperations.append(x)
                         else:
+                            
                             for y in filteredOperations:
                                 if x.investor == y.investor and x.opId == y.opId:
                                     y.payedAmount += x.payedAmount
                                     y.presentValueInvestor += x.presentValueInvestor
+                                    
+                                   
                                     break
                                 elif x.investor == y.investor and x.opId != y.opId:
                                     filteredOperations.append(x)
                                     break
-                    
+                    logger.debug(f"  filteredOperations  de buscar por investor {filteredOperations}")
                     page = self.paginate_queryset(filteredOperations)
                     if page is not None:
                         serializer   = PreOperationSignatureSerializer(page, many=True)
@@ -289,6 +373,7 @@ class PreOperationAV(BaseAV):
 
 class GetLastOperationAV(APIView):
     def get(self, request):
+        logger.debug(f" GetLastOperationAV")
         try:
             preOperations = PreOperation.objects.all().order_by('-opId').first()
             serializer    = PreOperationSerializer(preOperations)
@@ -306,6 +391,7 @@ class GetLastOperationAV(APIView):
 
 class GetBillFractionAV(APIView):
     def get(self, request, pk):
+        logger.debug(f"GetBillFractionAV")
         try:
             # detect if a bill in operation has previously been fractioned and get the last fraction using bill id
             preOperations = PreOperation.objects.filter(bill=pk).order_by('-opId').first()
@@ -346,6 +432,7 @@ class GetBillFractionAV(APIView):
 
 class GetOperationByEmitter(APIView):
     def get(self, request, pk):
+        logger.debug(f"GetOperationByEmitter")
         try:
             preOperations = PreOperation.objects.filter(emitter=pk)
             serializer    = PreOperationSerializer(preOperations, many=True)
@@ -358,6 +445,7 @@ class GetOperationByEmitter(APIView):
 
 class GetOperationByParams(BaseAV):
     def get(self, request):
+        logger.debug(f"GetOperationByParams")
         try:
             if (request.query_params.get('opId') != '' and request.query_params.get('billId') != '' 
                 and request.query_params.get('investor') != ''):
@@ -493,6 +581,7 @@ class GetOperationByParams(BaseAV):
 
 class OperationDetailAV(APIView):
     def get(self, request, pk):
+        logger.debug(f"OperationDetailAV")
         try:
             operation  = PreOperation.objects.filter(opId=pk)
             serializer = PreOperationReadOnlySerializer(operation, many=True)

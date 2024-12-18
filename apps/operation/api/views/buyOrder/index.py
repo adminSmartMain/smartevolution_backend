@@ -27,7 +27,22 @@ from collections import defaultdict
 from apps.base.decorators.index import checkRole
 #utils
 from apps.base.utils.logBalanceAccount import log_balance_change
+import logging
 
+# Configurar el logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Crear un handler de consola y definir el nivel
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Crear un formato para los mensajes de log
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# Añadir el handler al logger
+logger.addHandler(console_handler)
 
 class BuyOrderAV(BaseAV):
     
@@ -39,6 +54,7 @@ class BuyOrderAV(BaseAV):
             if not negotiationSummary:
                 return response({'error': True, 'message': 'No existe un resumen de negociación para esta operación'}, 400)
             #Get the operation
+            logger.debug(f" Check if an negotiation summary exists for this operation DONE")
             operation = PreOperation.objects.filter(opId=request.data['opId'], investor=request.data['investorId']).first()
             requestId = f'ORDEN DE COMPRA OP {operation.opId} {operation.investor.first_name if operation.investor.first_name else operation.investor.social_reason}'
             sellOffer = generateSellOfferByInvestor(operation.opId,operation.investor.id)
@@ -58,6 +74,7 @@ class BuyOrderAV(BaseAV):
 
             if electronicSignature['error'] == True:
                 return response({'error': True, 'message': electronicSignature['message']['message']}, 400)
+            logger.debug(f" CREATING  buyOrderData")
             buyOrderData = {
                 'operation' : operation.id,
                 'code'      : electronicSignature['message']['document'],
@@ -67,7 +84,7 @@ class BuyOrderAV(BaseAV):
                 'status'    : 1,
                 'signStatus': 0,
             }
-
+            logger.debug(f" CREATING  buyOrderData done")
             # serializer the buy order
             serializer = BuyOrderSerializer(data=buyOrderData, context={'request': request})
             if serializer.is_valid():

@@ -346,13 +346,13 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
                     'financialAnalisis': overviewPayer[0].financialAnalisis if overviewPayer else '',
                     }
                     
-        
+        logger.debug(f"dataPayers.append(dataPayer)")
         # append the payer data
         dataPayers.append(dataPayer)
-        
+        logger.debug(f"payersName")
       # Append the payer name to the payersName variable
         payersName = payersName + dataPayer['name'] + ', '
-        
+        logger.debug(f"dataOperation")
         dataOperation = {
                 'total': 0.0,
                 'averageTerm': 0.0,
@@ -368,7 +368,7 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
        
         
         
-        
+        logger.debug(f"investor")
         investor = {
             'opId': f'{prefix}{operation[0].opId}',
             #'investorValue': sum(operation[op].presentValueInvestor for op in range(0,len(operation))),
@@ -389,27 +389,34 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
             'legalRepresentativeEmail': legalRepresentative.email,
         }
         
-        # calc the operation details
-        averageTerm = 0
-        
+    # calc the operation details
+    logger.debug(f"averageTerm")
+    averageTerm = 0
+    logger.debug(f" for y in operation:")
     for y in operation:
         
-        
+        logger.debug(f" y {y }")
         
         
                 
         
         findDuplicates = [x for x in bills if x['number'] == y.bill.billId]
         
-        
+        logger.debug(f"findDuplicates ")
         
         
         if len(findDuplicates) == 0:
             dataOperation['total'] = y.presentValueInvestor + dataOperation['total']
             
-            
+            logger.debug(f" if len(findDuplicates) == 0:")
             averageTerm += y.operationDays
+            logger.debug(f"  averageTerm +=")
             # get the operation bills
+            
+            logger.debug(f"  a {y.opDate.isoformat()}")
+            logger.debug(f"b  {y.probableDate.isoformat()}")
+            logger.debug(f"  c {y.bill.expirationDate}")
+            
             bills.append({
                 'id': y.bill.id,
                 'dateOP': datetime.strptime(y.opDate.isoformat(), "%Y-%m-%d").strftime("%d/%m/%Y"),
@@ -426,13 +433,14 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
                 'VRFuture': round(y.payedAmount),
                 'totalGM': round(y.GM)
                 })
+            logger.debug(f" bills.append")
     # calc the average term
     dataOperation['averageTerm'] = round(averageTerm / len(operation))
     dataOperation['total'] = round(dataOperation['total'])
-
+    logger.debug(f" dataOperation['total'] dataOperation['averageTerm'] ")
     for x in bills:
             
-            
+            logger.debug(f" for x in bills:")
             totalBills['total'] += x['VRBuy']
             totalBills['gm'] += x['totalGM']
             # verify if the bill id is in the list
