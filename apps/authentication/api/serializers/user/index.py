@@ -7,12 +7,13 @@ from rest_framework import serializers
 # Models
 from apps.authentication.api.models.user.index import User
 from apps.authentication.api.models.userRole.index import UserRole
+from rest_framework.authtoken.models import Token
 # Utils
 from django.utils import timezone
 from apps.base.utils.index import gen_uuid, generatePassword, sendWhatsApp, sendEmail
 # Exceptions
 from apps.base.exceptions import HttpException
-
+from rest_framework.exceptions import ValidationError
 
 class UserSerializer(serializers.ModelSerializer):
     role = serializers.CharField(style={'input_type': 'text'}, write_only=True)
@@ -115,8 +116,9 @@ class UpdatePasswordSerializer(serializers.Serializer):
             id   = force_str(urlsafe_base64_decode(data['uidb64']))
             user = User.objects.get(pk=id)
 
-            if not PasswordResetTokenGenerator().check_token(user, data['token']):
-                raise HttpException(400, 'el link no es valido o ha expirado')
+           # Validar el token usando la tabla authtoken_token
+            if not Token.objects.filter(user=user, key=data['token']).exists():
+                raise ValidationError("El link no es válido o ha expirado.")
 
             user.set_password(data['new_password'])
             user.save()
