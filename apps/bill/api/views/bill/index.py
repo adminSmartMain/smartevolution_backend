@@ -291,15 +291,25 @@ class readBillAV(BaseAV):
                 logger.debug(f" fileName : {fileName}")
                 logger.debug(f" file : {file}")
                 
-                encoding_options = ['utf-8', 'utf-16', 'utf-32'] #como existen xml encodifcados en distintos formatos, debemos estar pendientes que todos los casos se cumplan asi que iteramos sobre cada formato e intentamos hacer el decoding, el que funciona sigue con el flujo del codigo
-                
+                encoding_options = ['utf-8', 'utf-16', 'utf-32', 'utf-32-le']
+
+                # Intentar decodificar en cada formato hasta que uno funcione
+                xmlData = None  # Inicializar la variable donde almacenaremos el resultado
                 for f in encoding_options:
                     try:
-                        b64decode(file, validate=True).decode(f'{f}')
-                        xmlData = b64decode(file, validate=True).decode(f'{f}')
+                        # Intentamos decodificar con la opción actual
+                        xmlData = b64decode(file, validate=True).decode(f)
+                        logger.debug(f"Formato válido encontrado: {f}")
+                        break  # Salir del bucle si decodificación tiene éxito
                     except Exception as e:
-                        print(f"no es formato {f}")
-                        print({'error': True, 'message': str(e)})
+                        logger.debug(f"No es formato {f}")
+                        logger.debug({'error': True, 'message': str(e)})
+
+                if xmlData is None:
+                    logger.error("No se pudo decodificar el archivo con ningún formato.")
+                    raise ValueError("El archivo no se pudo decodificar correctamente.")
+
+                # Procesar el XML decodificado
 
                              
                # try:
@@ -319,9 +329,10 @@ class readBillAV(BaseAV):
                       #  xmlData = xml_bytes.decode('utf-32')
                        # logger.debug(f" b64decode UTF-32 realizado")    
                     
-                    logger.debug(f" b64decode POR FIN realizado")
+                logger.debug(f" b64decode POR FIN realizado")
                 with open(fileName, 'w') as f:
                     f.write(xmlData)
+                logger.debug(f" parseXml lo va  realizar")
                 parseXml = parseBill(fileName)
                 logger.debug(f" parseBille realizado")
                 parseXml['file'] = file
