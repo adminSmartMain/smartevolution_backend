@@ -210,9 +210,29 @@ class ResetPasswordAV(APIView):
             serializer.is_valid(raise_exception=True)
               # Buscar el usuario por correo
             logger.debug(f"request.data: {request.data}")
-
+            token=Token.objects.filter(key=request.data['token']).first() 
+            logger.debug(token.user_id)
+            user_token=User.objects.filter(id=token.user_id).first() 
+            logger.debug(f"Atributos completos del usuario: {vars(user_token)}")
+            
+            html_message = render_to_string('succesful_reset_password.html', {
+                'user': user_token,
+               
+            })
+            
+            # Enviar el correo
+            sendEmail(
+                subject='Recuperación de contraseña exitosa',
+                message='Esto es un correo de confirmación de recuperacion de contraseña',
+                email= user_token.email,
+                html_message=html_message
+            )
              # Eliminar cualquier token anterior asociado al usuario
             Token.objects.filter(key=request.data['token']).delete()
+             # Renderizar el mensaje HTML
+               # Buscar el usuario por correo
+          
+            
             return response({ 'error': False, 'message': 'actualización de contraseña exitosa'}, 200)
         except Exception as e:
             return response({ 'error': True, 'message': str(e)}, 500)

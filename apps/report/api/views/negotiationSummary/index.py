@@ -11,10 +11,28 @@ import requests
 from apps.base.decorators.index import checkRole
 # Models
 from apps.operation.models import PreOperation
+from apps.report.models import NegotiationSummary
 from apps.client.models import RiskProfile
 from apps.administration.models import EmitterDeposit, AccountingControl
 from apps.client.models import LegalRepresentative
 from apps.report.models import NegotiationSummary, PendingAccount
+
+import logging
+
+# Configurar el logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Crear un handler de consola y definir el nivel
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Crear un formato para los mensajes de log
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# Añadir el handler al logger
+logger.addHandler(console_handler)
 
 
 
@@ -22,9 +40,10 @@ class NegotiationSummaryAV(BaseAV):
     @checkRole(['admin'])
     def get(self, request):
         try:
-            if request.query_params['id'] != 'undefined':
+            if( request.query_params['id'] != 'undefined') and (len(request.query_params)== 1):
                 data = {}
                 operationId = []
+                logger.debug(f'a {request.query_params}')
                 # get the operation
                 operation = PreOperation.objects.filter(opId=request.query_params['id'])
                 # get the serializer
@@ -106,8 +125,64 @@ class NegotiationSummaryAV(BaseAV):
                 emitterDeposits = EmitterDeposit.objects.filter(operation__opId=data['operation']['opId']).filter(state=1)
                 serializer = EmitterDepositNSSerializer(emitterDeposits, many=True)
                 data['emitterDeposits'] = serializer.data
-               
+            
+            elif 'mode' in request.query_params and request.query_params['mode'] == 'query' and (request.query_params['id'] != 'undefined') and (len(request.query_params)==2):
+                try:
+                    logger.debug(f'b {request.query_params}')
+                    data = NegotiationSummary.objects.get(opId=int(request.query_params['id']))
+                    serializer = NegotiationSummaryReadOnlySerializer(data)
+                    logger.debug(data)
+                    return response({'error': False, 'data': serializer.data}, 200)
+                except NegotiationSummary.DoesNotExist:
+                    # Handle case when NegotiationSummary is not found
+                    return response({'error': True, 'message': 'NegotiationSummary matching query does not exist.'}, 404)
+
+            elif 'mode' in request.query_params and 'id' in request.query_params and request.query_params['mode'] == 'filter' and (request.query_params['id'] != 'undefined') and (request.query_params['emitter'] == '') and (len(request.query_params)==3):
+                try:
+                    logger.debug(f'c {request.query_params}')
+                    data = NegotiationSummary.objects.get(opId=int(request.query_params['id']))
+                    serializer = NegotiationSummaryReadOnlySerializer(data)
+                    logger.debug(data)
+                    return response({'error': False, 'data': serializer.data}, 200)
+                except NegotiationSummary.DoesNotExist:
+                    # Handle case when NegotiationSummary is not found
+                    return response({'error': True, 'message': 'NegotiationSummary matching query does not exist.'}, 404)
+            elif 'mode' in request.query_params and 'emitter' in request.query_params and request.query_params['mode'] == 'filter' and (request.query_params['id'] == '') and (request.query_params['emitter'] != ''):
+                    try:
+                        # Filtrar por el emisor de la solicitud
+                        data = NegotiationSummary.objects.filter(
+                            emitter__icontains=request.query_params['emitter'].upper(),
+                            state=1
+                        )
+                        logger.debug(f'd {request.query_params}')
+                        # Contar resultados filtrados
+                        total_count = data.count()
+
+                        # Instanciar el paginador
+                        paginator = self.pagination_class()
+                        page = paginator.paginate_queryset(data, request)
+                     
+                        # Si hay paginación, devolver datos paginados
+                        if page is not None:
+                            serializer = NegotiationSummaryReadOnlySerializer(page, many=True)
+                            return paginator.get_paginated_response(serializer.data)
+
+                        # Si no hay paginación, devolver todos los datos
+                        serializer = NegotiationSummaryReadOnlySerializer(data, many=True)
+                        return response({
+                            'error': False, 
+                            'data': serializer.data, 
+                            'count': total_count
+                        }, status=200)
+
+                    except Exception as e:
+                        # Manejo de errores
+                        return response({'error': True, 'message': str(e)}, status=500)
+
+                
             elif request.query_params['pdf'] != 'undefined':
+                
+                logger.debug(f'e {request.query_params}')
                 # get the operation 
                 operation = PreOperation.objects.filter(opId=request.query_params['pdf'])
                 serializer   = PreOperationReadOnlySerializer(operation, many=True)
@@ -219,11 +294,13 @@ class NegotiationSummaryAV(BaseAV):
                 pdf = requests.post('https://j2ncm3xeo7.execute-api.us-east-1.amazonaws.com/dev/api/html-to-pdf', json={'html': test})
                 return response({'error': False, 'pdf': pdf.json()['pdf'], 'data': data}, 200)
             elif request.query_params['opId'] != 'undefined':
+                logger.debug(f'f {request.query_params}')
                 data = NegotiationSummary.objects.get(id = request.query_params['opId'])
                 serializer = NegotiationSummaryReadOnlySerializer(data)
                 return response({'error': False, 'data': serializer.data}, 200)
             else:
                 data = NegotiationSummary.objects.filter(state = 1)
+                logger.debug(f'g {request.query_params}')
                 page = self.paginate_queryset(data)
                 if page is not None:
                     serializer = NegotiationSummaryReadOnlySerializer(page, many=True)
