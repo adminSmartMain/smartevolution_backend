@@ -137,7 +137,7 @@ class NegotiationSummaryAV(BaseAV):
                     # Handle case when NegotiationSummary is not found
                     return response({'error': True, 'message': 'NegotiationSummary matching query does not exist.'}, 404)
 
-            elif 'mode' in request.query_params and 'id' in request.query_params and request.query_params['mode'] == 'filter' and (request.query_params['id'] != 'undefined') and (request.query_params['emitter'] == '') and (len(request.query_params)==3):
+            elif 'mode' in request.query_params and 'id' in request.query_params and  ('startDate' not in request.query_params) and ('endDate' not in request.query_params) and request.query_params['mode'] == 'filter' and (request.query_params['id'] != 'undefined') and (request.query_params['emitter'] == '') and (len(request.query_params)==3):
                 try:
                     logger.debug(f'c {request.query_params}')
                     data = NegotiationSummary.objects.get(opId=int(request.query_params['id']))
@@ -147,7 +147,8 @@ class NegotiationSummaryAV(BaseAV):
                 except NegotiationSummary.DoesNotExist:
                     # Handle case when NegotiationSummary is not found
                     return response({'error': True, 'message': 'NegotiationSummary matching query does not exist.'}, 404)
-            elif 'mode' in request.query_params and 'emitter' in request.query_params and request.query_params['mode'] == 'filter' and (request.query_params['id'] == '') and (request.query_params['emitter'] != ''):
+            elif 'mode' in request.query_params and 'emitter' in request.query_params and request.query_params['mode'] == 'filter'and ('startDate' not in request.query_params) and ('endDate' not in request.query_params) and (request.query_params['id'] == '') and (request.query_params['emitter'] != ''):
+                    logger.debug('solo emisor')
                     try:
                         # Filtrar por el emisor de la solicitud
                         data = NegotiationSummary.objects.filter(
@@ -178,8 +179,143 @@ class NegotiationSummaryAV(BaseAV):
                     except Exception as e:
                         # Manejo de errores
                         return response({'error': True, 'message': str(e)}, status=500)
+                    
+            elif 'mode' in request.query_params and 'startDate' in request.query_params and request.query_params['mode'] == 'filter' and (request.query_params['id'] == '') and (request.query_params['emitter'] == '' ) and (request.query_params['startDate']!= '') and (request.query_params['endDate'] != ''):
+                    logger.debug('solo fecha')
+                    try:
+                        # Inicializar el filtro básico por estado
+                        filters = {'state': 1}
 
-                
+                        # Verificar si 'startDate' está presente y filtrar por fecha de inicio
+                        if 'startDate' in request.query_params and request.query_params['startDate']:
+                            start_date = request.query_params['startDate']
+                            filters['date__gte'] = start_date  # Filtrar desde la fecha de inicio
+
+                        # Verificar si 'endDate' está presente y filtrar por fecha de fin
+                        if 'endDate' in request.query_params and request.query_params['endDate']:
+                            end_date = request.query_params['endDate']
+                            filters['date__lte'] = end_date  # Filtrar hasta la fecha de fin
+
+                        # Filtrar por los parámetros establecidos
+                        data = NegotiationSummary.objects.filter(**filters)
+
+                        # Contar los resultados filtrados
+                        total_count = data.count()
+
+                        # Instanciar el paginador
+                        paginator = self.pagination_class()
+                        page = paginator.paginate_queryset(data, request)
+
+                        # Si hay paginación, devolver datos paginados
+                        if page is not None:
+                            serializer = NegotiationSummaryReadOnlySerializer(page, many=True)
+                            return paginator.get_paginated_response(serializer.data)
+
+                        # Si no hay paginación, devolver todos los datos
+                        serializer = NegotiationSummaryReadOnlySerializer(data, many=True)
+                        return response({
+                            'error': False,
+                            'data': serializer.data,
+                            'count': total_count
+                        }, status=200)
+
+                    except Exception as e:
+                        # Manejo de errores
+                        return response({'error': True, 'message': str(e)}, status=500)
+
+            elif ('mode' in request.query_params) and ('startDate' in request.query_params) and ('id' in request.query_params )and 'endDate' in request.query_params and (request.query_params['mode'] == 'filter') and (request.query_params['id'] != '') and (request.query_params['emitter'] == ''):
+                logger.debug('filtro de id y fecha')
+                try:
+                    # Filtro básico por estado
+                    filters = {'state': 1}
+
+                    # Verificar si 'id' está presente y filtramos por ID
+                    if 'id' in request.query_params and request.query_params['id']:
+                        filters['id'] = request.query_params['id']  # Filtrar por ID
+
+                    # Verificar si 'startDate' está presente y filtrar por fecha de inicio
+                    if 'startDate' in request.query_params and request.query_params['startDate']:
+                        start_date = request.query_params['startDate']
+                        filters['date__gte'] = start_date  # Filtrar desde la fecha de inicio
+
+                    # Verificar si 'endDate' está presente y filtrar por fecha de fin
+                    if 'endDate' in request.query_params and request.query_params['endDate']:
+                        end_date = request.query_params['endDate']
+                        filters['date__lte'] = end_date  # Filtrar hasta la fecha de fin
+
+                    # Filtrar por los parámetros establecidos
+                    data = NegotiationSummary.objects.filter(**filters)
+
+                    # Contar los resultados filtrados
+                    total_count = data.count()
+
+                    # Instanciar el paginador
+                    paginator = self.pagination_class()
+                    page = paginator.paginate_queryset(data, request)
+
+                    # Si hay paginación, devolver datos paginados
+                    if page is not None:
+                        serializer = NegotiationSummaryReadOnlySerializer(page, many=True)
+                        return paginator.get_paginated_response(serializer.data)
+
+                    # Si no hay paginación, devolver todos los datos
+                    serializer = NegotiationSummaryReadOnlySerializer(data, many=True)
+                    return response({
+                        'error': False,
+                        'data': serializer.data,
+                        'count': total_count
+                    }, status=200)
+
+                except Exception as e:
+                    # Manejo de errores
+                    return response({'error': True, 'message': str(e)}, status=500)
+            elif 'mode' in request.query_params and 'emitter' in request.query_params and 'startDate' in request.query_params and 'endDate' in request.query_params and request.query_params['mode'] == 'filter' and (request.query_params['id'] == '') and request.query_params['emitter'] != '':
+                logger.debug('filtro de emisor y fecha')
+                try:
+                    # Filtro básico por estado
+                    filters = {'state': 1}
+
+                    # Verificar si 'emitter' está presente y filtramos por emisor
+                    if 'emitter' in request.query_params and request.query_params['emitter']:
+                        filters['emitter__icontains'] = request.query_params['emitter']  # Filtrar por emisor
+
+                    # Verificar si 'startDate' está presente y filtrar por fecha de inicio
+                    if 'startDate' in request.query_params and request.query_params['startDate']:
+                        start_date = request.query_params['startDate']
+                        filters['date__gte'] = start_date  # Filtrar desde la fecha de inicio
+
+                    # Verificar si 'endDate' está presente y filtrar por fecha de fin
+                    if 'endDate' in request.query_params and request.query_params['endDate']:
+                        end_date = request.query_params['endDate']
+                        filters['date__lte'] = end_date  # Filtrar hasta la fecha de fin
+
+                    # Filtrar por los parámetros establecidos
+                    data = NegotiationSummary.objects.filter(**filters)
+
+                    # Contar los resultados filtrados
+                    total_count = data.count()
+
+                    # Instanciar el paginador
+                    paginator = self.pagination_class()
+                    page = paginator.paginate_queryset(data, request)
+
+                    # Si hay paginación, devolver datos paginados
+                    if page is not None:
+                        serializer = NegotiationSummaryReadOnlySerializer(page, many=True)
+                        return paginator.get_paginated_response(serializer.data)
+
+                    # Si no hay paginación, devolver todos los datos
+                    serializer = NegotiationSummaryReadOnlySerializer(data, many=True)
+                    return response({
+                        'error': False,
+                        'data': serializer.data,
+                        'count': total_count
+                    }, status=200)
+
+                except Exception as e:
+                    # Manejo de errores
+                    return response({'error': True, 'message': str(e)}, status=500)
+
             elif request.query_params['pdf'] != 'undefined':
                 
                 logger.debug(f'e {request.query_params}')
@@ -218,7 +354,7 @@ class NegotiationSummaryAV(BaseAV):
                 },
                 "negotiationSummary":{
                     'opId': negotiationSummary.opId,
-                    'date': negotiationSummary.date,
+                    'date':  operation[0].opDate,
                     'emitter': negotiationSummary.emitter,
                     'emitterId': negotiationSummary.emitterId,
                     'payer': negotiationSummary.payer,
