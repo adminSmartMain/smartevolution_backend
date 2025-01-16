@@ -16,7 +16,7 @@ from apps.client.models import RiskProfile
 from apps.administration.models import EmitterDeposit, AccountingControl
 from apps.client.models import LegalRepresentative
 from apps.report.models import NegotiationSummary, PendingAccount
-
+from datetime import datetime
 import logging
 
 # Configurar el logger
@@ -385,6 +385,7 @@ class NegotiationSummaryAV(BaseAV):
                 'emitterDeposits': [],
                 'pendingAccounts': [],
                 }
+                
                 for x in serializer.data:
                     data['sellReport']['bills']  += 1
                     data['sellReport']['sell']  += int(x['presentValueInvestor'])
@@ -392,9 +393,9 @@ class NegotiationSummaryAV(BaseAV):
                     data['sellReport']['future']     += int(x['amount'])
                     data['sellReport']['billsList'].append({
                         'id': x['bill']['id'],
-                        'dateOP': x['opDate'],
+                        'dateOP': datetime.strptime(x['opDate'],'%Y-%m-%d').strftime('%d/%m/%Y'),
                         'probDate': x['probableDate'],
-                        'dateExp': x['bill']['expirationDate'],
+                        'dateExp': datetime.strptime(x['bill']['expirationDate'],'%Y-%m-%d').strftime('%d/%m/%Y'),
                         'doc': 'FACT',
                         'number': x['bill']['billId'],
                         'emitter': x['bill']['emitterName'],
