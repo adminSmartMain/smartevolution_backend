@@ -574,7 +574,16 @@
                                 <td style="text-align: center;font-size: 8px;">{{x.dateOP }}</td>
                                 <td style="text-align: center;font-size: 8px;">{{x.dateExp }}</td>
                                 <td style="text-align: center;font-size: 8px;">FACT</td>
-                                <td style="text-align: center;font-size: 8px;">{{x.number}}</td>
+                                <td style="text-align: center;font-size: 8px;">
+                                    
+                                    {% if x.billFraction == 0 %}
+                                    {{ x.number }}
+                                  {% else %}
+                                    {{ x.number }} - {{ x.billFraction }}
+                                  {% endif %}
+                                   
+                                   
+                                  </td>
                                 <td style="text-align: left;font-size: 8px;">{{x.payer}}</td>
                                 <td style="text-align: center;font-size: 8px;">{{x.investor.document_number}}</td>
                                 <td style="text-align: left;font-size: 8px;">

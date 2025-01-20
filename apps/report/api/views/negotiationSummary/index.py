@@ -386,7 +386,9 @@ class NegotiationSummaryAV(BaseAV):
                 'pendingAccounts': [],
                 }
                 
+                
                 for x in serializer.data:
+                  
                     data['sellReport']['bills']  += 1
                     data['sellReport']['sell']  += int(x['presentValueInvestor'])
                     data['sellReport']['nominal'] += int(x['payedAmount'])
@@ -395,7 +397,11 @@ class NegotiationSummaryAV(BaseAV):
                         'id': x['bill']['id'],
                         'dateOP': datetime.strptime(x['opDate'],'%Y-%m-%d').strftime('%d/%m/%Y'),
                         'probDate': x['probableDate'],
-                        'dateExp': datetime.strptime(x['bill']['expirationDate'],'%Y-%m-%d').strftime('%d/%m/%Y'),
+                        'dateExp':(
+                        datetime.strptime(x['bill']['expirationDate'], '%Y-%m-%d').strftime('%d/%m/%Y')
+                        if ' ' not in x['bill']['expirationDate']
+                        else datetime.strptime(x['bill']['expirationDate'], '%Y-%m-%d %H:%M:%S').strftime('%d/%m/%Y')
+                    ),
                         'doc': 'FACT',
                         'number': x['bill']['billId'],
                         'emitter': x['bill']['emitterName'],
@@ -408,6 +414,7 @@ class NegotiationSummaryAV(BaseAV):
                         'investor':x['investor'],
                         'Desc':x['payedPercent'],
                         'TasaDesc':x['discountTax'],
+                        'billFraction':x['billFraction'],
                     })
                 
                 for x in emitterDeposits:
