@@ -75,15 +75,17 @@ class PreOperationAV(BaseAV):
     
     @checkRole(['admin'])
     def get(self, request, pk=None):
-        logger.debug(f"PreOperationAV")
+        
         try:
 
             if pk:
+                logger.debug(f"PreOperationAV pk")
                 if len(request.query_params) > 0:
                     preOperation  = PreOperation.objects.get(pk=request.query_params.get('id'))
                     serializer    = PreOperationReadOnlySerializer(preOperation)
                     return response({'error': False, 'data': serializer.data}, 200)
                 else:
+                    logger.debug(f"PreOperationAV pk else")
                     preOperation  = PreOperation.objects.get(pk=pk)
                     serializer    = PreOperationReadOnlySerializer(preOperation)
                     receipts      = Receipt.objects.filter(operation=pk).order_by('-date')
@@ -99,6 +101,7 @@ class PreOperationAV(BaseAV):
                     return response({'error': False, 'data': serializer.data, 'receipts':calcs}, 200)
 
             if len(request.query_params) > 0:
+                logger.debug(f"PreOperationAV if 2")
                 if (request.query_params.get('opId') != 'undefined') and (request.query_params.get('notifications') == 'electronicSignature'):
                     
                     # get the operation data
@@ -159,6 +162,7 @@ class PreOperationAV(BaseAV):
                    
                 
                 elif (request.query_params.get('opId') != 'undefined'):
+                    logger.debug(f"request.query_params.get('opId') != 'undefined'")
                     data = generateSellOffer(request.query_params.get('opId'))
                     # get the operation data
                     
@@ -168,11 +172,12 @@ class PreOperationAV(BaseAV):
                     data['investor']['investorAccount'] = serializer.data[0]['clientAccount']
                     return response({'error': False, 'data': data}, 200)
                 elif request.query_params.get('opIdV') != 'undefined':
+                    logger.debug(f"request.query_params.get('opIdV') != 'undefined'")
                     #ACA SE TOMAN LOS DATOS AL MOMENTO DE PRESIONAR AL WHATSAPP
                     data = calcOperationDetail(request.query_params.get('opIdV'), request.query_params.get('investor')) 
                     return response({'error': False, 'data': data}, 200)
                 elif request.query_params.get('notifications') == 'electronicSignature' and request.query_params.get('nOpId') == 'undefined':
-
+                    logger.debug(f"request.query_params.get('notifications') == 'electronicSignature' and request.query_params.get('nOpId') == 'undefined'")
                     if 'investor' in request.query_params:
                         logger.debug(f"  investir  de buscar por investor")
                         preOperation = PreOperation.objects.filter(status=0).filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
@@ -232,6 +237,7 @@ class PreOperationAV(BaseAV):
 
 
             else:
+                logger.debug(f"else final")
                 preOperations = PreOperation.objects.filter(state=1)
                 serializer    = PreOperationReadOnlySerializer(preOperations, many=True)
                 return response({'error': False, 'data': serializer.data}, 200)
@@ -481,13 +487,16 @@ class GetOperationByParams(BaseAV):
 )
 
             elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == ''):
-                preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'))
+                logger.debug(f"a")
+                preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'), status__lte=3)
 
 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == ''):                
+                logger.debug(f"b")
                 preOperations = PreOperation.objects.filter(bill_id__billId__icontains=request.query_params.get('billId'))
 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != ''):
+                logger.debug(f"c")
                 preOperations = PreOperation.objects.filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__first_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__social_reason__icontains=request.query_params.get('investor')) |
@@ -495,13 +504,15 @@ class GetOperationByParams(BaseAV):
                                                             Q(emitter__first_name__icontains=request.query_params.get('investor')) |
                                                             Q(emitter__social_reason__icontains=request.query_params.get('investor')))
             else:
+                logger.debug(f"d")
                 preOperations = PreOperation.objects.all()
 
             if (request.query_params.get('mode') != '' and request.query_params.get('mode') != None):
+                logger.debug(f"f")
                 possibleStatus = [1, 3, 4, 5]
                 preOperations = list(filter(lambda x: x.status in possibleStatus, preOperations))
                 
-
+            logger.debug(f"g")
             # calc data for table
             data = {
                 'commission': 0,
@@ -516,16 +527,20 @@ class GetOperationByParams(BaseAV):
                 'depositValue': 0,
             }
             if len(preOperations) == 0:
+                logger.debug(f"h")
                 page = self.paginate_queryset(preOperations)
                 if page is not None:
+                    logger.debug(f"i")
                     serializer   = PreOperationByParamsSerializer(page, many=True)
                     return self.get_paginated_response(serializer.data)
             typeClient = preOperations[0].emitter.type_client.id
             try:
+                logger.debug(f"j")
                 riskProfile = RiskProfile.objects.get(client = preOperations[0].emitter.id)
             except RiskProfile.DoesNotExist:
                 riskProfile = None
             # calc commission
+            logger.debug(f"k")
             sum = 0
             presentValueInvestor = 0
             futureValue = 0
@@ -569,8 +584,12 @@ class GetOperationByParams(BaseAV):
 
             page = self.paginate_queryset(preOperations)
             if page is not None:
+                
+                logger.debug(f"l")
                 serializer   = PreOperationByParamsSerializer(page, many=True)
+                logger.debug(f"m")
                 serializer.data[0]['calcs'] = data
+                logger.debug(f"{data}")
                 return self.get_paginated_response(serializer.data)
             
         except PreOperation.DoesNotExist:

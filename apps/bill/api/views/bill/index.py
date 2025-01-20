@@ -332,7 +332,7 @@ class readBillAV(BaseAV):
                 logger.debug(f" b64decode POR FIN realizado")
                 with open(fileName, 'w') as f:
                     f.write(xmlData)
-                logger.debug(f" parseXml lo va  realizar")
+                logger.debug(f" parseXml lo va  realizar,{fileName}")
                 parseXml = parseBill(fileName)
                 logger.debug(f" parseBille realizado")
                 parseXml['file'] = file

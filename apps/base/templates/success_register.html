@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bienvenido a Smart Evolution</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background-color: #f2f2f2;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header img {
+            max-width: 150px;
+            height: auto;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .content h1 {
+            font-size: 22px;
+            color: #222;
+            text-align: center;
+        }
+
+        .content p {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .content ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .content ul li {
+            margin: 5px 0;
+        }
+
+        .cta-button {
+    display: inline-block;
+    margin: 20px auto;
+    padding: 10px 20px;
+    background-color: #0056b3;
+    color: #ffffff !important; /* Asegura que el texto sea blanco y sobrescribe cualquier otro estilo */
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    text-align: center;
+}
+    .cta-button:link,
+.cta-button:visited,
+.cta-button:focus,
+.cta-button:active {
+    color: #ffffff !important; /* Asegura que el texto sea blanco en todos los estados del enlace */
+}
+.cta-button:hover {
+    background-color: #0056b3; /* Mantiene el fondo igual en hover */
+    color: #ffffff !important; /* Asegura que el texto siga siendo blanco en hover */
+}
+   
+
+.footer {
+            background-color: #f2f2f2;
+            text-align: center;
+            padding: 10px;
+            font-size: 12px;
+            color: #555;
+        }
+
+        .footer a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            .email-container {
+                margin: 10px;
+            }
+
+            .content h1 {
+                font-size: 18px;
+            }
+
+            .content p, .content ul li {
+                font-size: 14px;
+            }
+
+            
+        }
+
+        @media (min-width: 1200px) {
+            .email-container {
+                max-width: 800px;
+            }
+
+            .content h1 {
+                font-size: 26px;
+            }
+
+            .content p, .content ul li {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <img src="https://devsmartevolution.s3.us-east-1.amazonaws.com/imagenes/logoSmartEvolution.png" alt="Smart Evolution Logo">
+        </div>
+        <div class="content">
+            <h1>¡Bienvenido a Smart Evolution, {{ user.first_name }} {{ user.last_name }}!</h1>
+            <p>Tu registro ha sido exitoso. Ahora formas parte de Smart Evolution, donde podrás gestionar diversas operaciones de forma eficiente y segura.</p>
+            <p><strong>Estas son tus credenciales para ingresar:</strong></p>
+            <p><strong>Email:</strong> {{ user.email }}</p>
+            <p><strong>Contraseña:</strong> {{ password }}</p>
+            <p>Al iniciar sesión, tendrás acceso a herramientas como:</p>
+            <ul>
+                <li>Administración de prospectos.</li>
+                <li>Gestión de clientes.</li>
+                <li>Consulta y emisión de facturas.</li>
+                <li>Supervisión de operaciones y pre-operaciones.</li>
+                <li>Gestión de corredores.</li>
+            </ul>
+            <p><strong>Importante:</strong> No compartas tus credenciales con nadie para garantizar la seguridad de tu cuenta.</p>
+            <a href="https://www.smartevolution.com.co/login" class="cta-button">Iniciar Sesión</a>
+        </div>
+        <div class="footer">
+            <p>La información contenida en este correo electrónico es confidencial y propiedad de Smart Evolution SAS.</p>
+            <p>Si has recibido este mensaje por error, por favor, notifícanos a <a href="mailto:info@smartevolution.com.co">info@smartevolution.com.co</a> y elimina el mensaje.</p>
+        </div>
+    </div>
+</body>
+</html>
