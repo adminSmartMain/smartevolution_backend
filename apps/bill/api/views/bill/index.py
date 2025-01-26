@@ -334,29 +334,48 @@ class readBillAV(BaseAV):
                     f.write(xmlData)
                 logger.debug(f" parseXml lo va  realizar,{fileName}")
                 parseXml = parseBill(fileName)
-                logger.debug(f" parseBille realizado")
+                logger.debug(f" parseBill realizado")
                 parseXml['file'] = file
+                logger.debug(f" parsedXml")
                 # add the data:text/xml;base64, to the file
                 parseXml['file'] = f'data:text/xml;base64,{file}'
+                logger.debug(f" remove")
                 os.remove(fileName)
+                logger.debug(f"removed")
 
-                logging.log(logging.INFO, parseXml)
+                
+                logger.debug(f"logging.log")
                 # check if the bill has cufe
-                #se lavida si el archivo que se lee posee errores
-                if  parseXml['cufe'] == "" or parseXml == None:
-                    failedBills.append(parseXml)
-                else:
-                    # validate if the bill is duplicated
-                    bill = Bill.objects.filter(cufe=parseXml['cufe'])
-                    if len(bill) > 0:
-                        duplicatedBills.append(parseXml)
+                try:
+                    logger.debug('entro al try')
+                    #se lavida si el archivo que se lee posee errores
+                    
+                    logger.debug(f"{parseXml['cufe']}")
+                    if  parseXml['cufe'] == "" or parseXml == None:
+                        logger.debug(f" if cufe")
+                        failedBills.append(parseXml)
                     else:
-                        parsedBills.append(parseXml)
-
-                if len(failedBills):
-                    return response({'error': True, 'message': "hay problemas con una factura por favor intentelo nuevamente"}, 500)
+                        logger.debug(f"else cufe")
+                        # validate if the bill is duplicated
+                        bill = Bill.objects.filter(cufe=parseXml['cufe'])
+                        logger.debug(f" filter cufe")
+                        if len(bill) > 0:
+                            logger.debug(f" if len bill")
+                            
+                            duplicatedBills.append(parseXml)
+                            logger.debug(f" if len bill")
+                        else:
+                            logger.debug(f" else len")
+                            parsedBills.append(parseXml)
+                            
+                        if len(failedBills):
+                            return response({'error': True, 'message': "hay problemas con una factura por favor intentelo nuevamente"}, 500)
+                except Exception as e:
+                    return response({'error': True, 'message': str(e)}, 500)
+                
             return response({'error': False, 'bills': parsedBills, 'duplicatedBills': duplicatedBills, 'failedBills':failedBills}, 200)    
         except Exception as e:
+            logger.debug(f"error")
             return response({'error': True, 'message': str(e)}, 500)
 
 

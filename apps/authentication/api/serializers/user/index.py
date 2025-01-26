@@ -17,6 +17,24 @@ from apps.base.utils.index import gen_uuid, generatePassword, sendWhatsApp, send
 from apps.base.exceptions import HttpException
 from rest_framework.exceptions import ValidationError
 
+import logging
+
+# Configurar el logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Crear un handler de consola y definir el nivel
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Crear un formato para los mensajes de log
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# Añadir el handler al logger
+logger.addHandler(console_handler)
+
+
 class UserSerializer(serializers.ModelSerializer):
     role = serializers.CharField(style={'input_type': 'text'}, write_only=True)
 
@@ -33,6 +51,7 @@ class UserSerializer(serializers.ModelSerializer):
     def save(self):
         password = generatePassword(12)
         code     = generatePassword(12) 
+        logger.debug(self.validated_data['password'])
         if User.objects.filter(email=self.validated_data['email']).exists():
             raise HttpException(400, 'El correo ya se encuentra registrado')
         
@@ -61,7 +80,7 @@ class UserSerializer(serializers.ModelSerializer):
                  # Renderizar el mensaje HTML
                 html_message = render_to_string('success_register.html', {
                     'user': user,
-                    'password':password,
+                    'password':code,
                 })
             
                 sendEmail(
