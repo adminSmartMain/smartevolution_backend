@@ -51,7 +51,7 @@ class UserSerializer(serializers.ModelSerializer):
     def save(self):
         password = generatePassword(12)
         code     = generatePassword(12) 
-        logger.debug(self.validated_data['password'])
+        
         if User.objects.filter(email=self.validated_data['email']).exists():
             raise HttpException(400, 'El correo ya se encuentra registrado')
         
