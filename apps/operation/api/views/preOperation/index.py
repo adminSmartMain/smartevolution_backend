@@ -477,14 +477,16 @@ class GetOperationByParams(BaseAV):
                                                             Q(emitter__social_reason__icontains=request.query_params.get('investor'))
             )
             elif (request.query_params.get('opId') != '' and request.query_params.get('investor') != '' and request.query_params.get('billId') == ''):
-                logger.debug(f"caso opID e investor")
-                preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId')).filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
-                                                            Q(investor__first_name__icontains=request.query_params.get('investor')) |
-                                                            Q(investor__social_reason__icontains=request.query_params.get('investor')) |
-                                                            Q(emitter__last_name__icontains=request.query_params.get('investor')) |
-                                                            Q(emitter__first_name__icontains=request.query_params.get('investor')) |
-                                                            Q(emitter__social_reason__icontains=request.query_params.get('investor'))|
-                                                            Q(status__lte=3)
+                logger.debug(f"caso opID e investor preoperations")
+                preOperations = PreOperation.objects.filter(
+                opId=request.query_params.get('opId'),
+                status__lte=3).filter(
+                Q(investor__last_name__icontains=request.query_params.get('investor')) |
+                Q(investor__first_name__icontains=request.query_params.get('investor')) |
+                Q(investor__social_reason__icontains=request.query_params.get('investor')) |
+                Q(emitter__last_name__icontains=request.query_params.get('investor')) |
+                Q(emitter__first_name__icontains=request.query_params.get('investor')) |
+                Q(emitter__social_reason__icontains=request.query_params.get('investor'))
             )
 
             elif (request.query_params.get('billId') != '' and request.query_params.get('investor') != '' and request.query_params.get('opId') == ''):
