@@ -115,7 +115,7 @@ class ForgotPasswordAV(APIView):
            
             # Generar URL de restablecimiento
             uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
-            reset_url = f'https://devapp.smartevolution.com.co/auth/resetPassword?uidb64={uidb64}&token={token_obj.key}'
+            reset_url = f'https://app.smartevolution.com.co/auth/resetPassword?uidb64={uidb64}&token={token_obj.key}'
 
             
             # Renderizar el mensaje HTML

@@ -2,8 +2,26 @@ from apps.operation.api.serializers.index import PreOperationReadOnlySerializer
 from django.db.models import Q
 # Models
 from apps.operation.models import PreOperation
-from apps.client.models    import Client, FinancialCentral, Overview
+from apps.client.models    import Client, FinancialCentral, Overview,Account
 from apps.misc.models      import Activity
+
+
+import logging
+
+# Configurar el logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Crear un handler de consola y definir el nivel
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Crear un formato para los mensajes de log
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# Añadir el handler al logger
+logger.addHandler(console_handler)
 
 
 def calcOperationDetail(pk, investorId):
@@ -35,6 +53,12 @@ def calcOperationDetail(pk, investorId):
 
      # get operation
     operation  = PreOperation.objects.filter(opId=pk, investor=investorId).filter(Q(status=0) | Q(status=1))
+    operation_sum  = PreOperation.objects.filter(opId=pk, investor=investorId).filter(Q(status=1))
+    investorAccountBalancesperOperation= Account.objects.filter(client_id=investorId).filter(Q(state=1))
+    logger.debug(operation)
+    logger.debug(operation_sum)
+    logger.debug(investorAccountBalancesperOperation)
+    logger.debug([op.clientAccount.balance for op in  operation])
     # get operation emitter
     emitter = Client.objects.get(id=operation[0].emitter.id)
     # set the emitter data
@@ -49,7 +73,8 @@ def calcOperationDetail(pk, investorId):
     data['investor']['investorPhoneNumber'] = investor.phone_number
     data['investor']['investorAccount'] = operation[0].clientAccount.id
     data['investor']['investorAccountNumber'] = operation[0].clientAccount.account_number
-    data['investor']['investorAccountBalance'] = operation[0].clientAccount.balance
+    data['investor']['investorAccountBalance'] = sum(op.balance for op in  investorAccountBalancesperOperation)
+
     # get the operation bills
     operationDays = 0
     for y in operation:

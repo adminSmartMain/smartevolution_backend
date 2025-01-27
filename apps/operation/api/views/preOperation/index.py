@@ -111,7 +111,7 @@ class PreOperationAV(BaseAV):
                     logger.debug(f"  data de buscar por opID{ serializer.data}")
                     for obj in preOperation:
                        logger.debug(f"  preOperation filtro  de buscar por opID{vars(obj)}")
-                    logger.debug(f"  preOperation filtro  de buscar por opID{ preOperation}")
+                   
                     
                     pendingOperations  = []
                     filteredOperations = []
@@ -119,7 +119,7 @@ class PreOperationAV(BaseAV):
                     for x in preOperation:
                         if len(BuyOrder.objects.filter(operation_id=x.id)) == 0:
                             pendingOperations.append(x)
-                    logger.debug(f"  pendingOperations  de buscar por investor {pendingOperations}")
+                   
                     # group the operations by investor and if a operation is already in the filteredOperations sum the payedAmount to the existing operation
                     n=1
                     for x in pendingOperations:
@@ -150,11 +150,11 @@ class PreOperationAV(BaseAV):
                                 
                                 
                             logger.debug(f" y.investorTax {y.investorTax}")         
-                    logger.debug(f" fuera del for {n}")
+                    
                    
                     if x.investorTax:
                         y.investorTax=round(y.investorTax/n,2)
-                    logger.debug(f"  filteredOperations  de buscar por investor {filteredOperations}")
+                    
                     page = self.paginate_queryset(filteredOperations)
                     if page is not None:
                         serializer   = PreOperationSignatureSerializer(page, many=True)
@@ -192,7 +192,7 @@ class PreOperationAV(BaseAV):
                     for x in preOperation:
                         if len(BuyOrder.objects.filter(operation_id=x.id)) == 0:
                             pendingOperations.append(x)
-                    logger.debug(f"  pendingOperations  de buscar por investor {pendingOperations}")
+                    
                     # group the operations by investor and if a operation is already in the filteredOperations sum the payedAmount to the existing operation
                     for x in pendingOperations:
                         if x.investor not in [y.investor for y in filteredOperations]:
@@ -209,7 +209,7 @@ class PreOperationAV(BaseAV):
                                 elif x.investor == y.investor and x.opId != y.opId:
                                     filteredOperations.append(x)
                                     break
-                    logger.debug(f"  filteredOperations  de buscar por investor {filteredOperations}")
+                    
                     page = self.paginate_queryset(filteredOperations)
                     if page is not None:
                         serializer   = PreOperationSignatureSerializer(page, many=True)
@@ -467,8 +467,8 @@ class GetOperationByParams(BaseAV):
             elif (request.query_params.get('opId') != '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == ''):
                 preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'),
                                                             bill_id__billId__icontains=request.query_params.get('billId'))
-
-            elif (request.query_params.get('opId') != '' and request.query_params.get('investor') != '' and request.query_params.get('billId') == ''):
+            elif (request.query_params.get('opId') != '' and request.query_params.get('investor') != '' and request.query_params.get('billId') == '' and request.query_params.get('mode') =='operations'):
+                logger.debug(f"caso opID e investor operations")
                 preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId')).filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__first_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__social_reason__icontains=request.query_params.get('investor')) |
@@ -476,16 +476,32 @@ class GetOperationByParams(BaseAV):
                                                             Q(emitter__first_name__icontains=request.query_params.get('investor')) |
                                                             Q(emitter__social_reason__icontains=request.query_params.get('investor'))
             )
+            elif (request.query_params.get('opId') != '' and request.query_params.get('investor') != '' and request.query_params.get('billId') == ''):
+                logger.debug(f"caso opID e investor preoperations")
+                preOperations = PreOperation.objects.filter(
+                opId=request.query_params.get('opId'),
+                status__lte=3).filter(
+                Q(investor__last_name__icontains=request.query_params.get('investor')) |
+                Q(investor__first_name__icontains=request.query_params.get('investor')) |
+                Q(investor__social_reason__icontains=request.query_params.get('investor')) |
+                Q(emitter__last_name__icontains=request.query_params.get('investor')) |
+                Q(emitter__first_name__icontains=request.query_params.get('investor')) |
+                Q(emitter__social_reason__icontains=request.query_params.get('investor'))
+            )
 
             elif (request.query_params.get('billId') != '' and request.query_params.get('investor') != '' and request.query_params.get('opId') == ''):
+               
                 preOperations = PreOperation.objects.filter(bill_id__billId__icontains=request.query_params.get('billId')).filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__first_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__social_reason__icontains=request.query_params.get('investor')) |
                                                             Q(emitter__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(emitter__first_name__icontains=request.query_params.get('investor')) |
                                                             Q(emitter__social_reason__icontains=request.query_params.get('investor'))
-)
-
+                                                             
+)                           
+            elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('mode') =='operations'):
+                logger.debug(f"a c0n mode operations")
+                preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'), status__lte=4)
             elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == ''):
                 logger.debug(f"a")
                 preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'), status__lte=3)
