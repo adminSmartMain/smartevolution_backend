@@ -162,13 +162,7 @@ def parseBill(file):
             try:
                 logger.debug('caso invoice')
                 # Si existe, parseamos el XML dentro del 'AttachedDocument' para obtener más información
-                logger.debug('aaaa')
-                logger.debug(f'{xml}')
-                logger.debug(xml)
-                logger.debug(xml.Invoice)
-                logger.debug(xml.Invoice.cac_InvoiceLine)
-                logger.debug(xml.Invoice.cac_InvoiceLine.cac_Item)
-                logger.debug(xml.Invoice.cac_InvoiceLine.cac_Item.cbc_Description.cdata)
+              
                 xml2 = xml
                 logger.debug('a')
                 # Inicializamos una variable para acumular los valores de 'cbc:TaxAmount'
