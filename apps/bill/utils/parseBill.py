@@ -201,7 +201,35 @@ def parseBill(file):
                     logger.debug('i')
                 # Resto de los datos del XML que necesitamos extraer
                 logger.debug('j')
-                parsedXml['billId'] = xml2.Invoice.cac_PaymentMeans.cbc_ID.cdata
+                logger.debug(f'{xml2.Invoice.ext_UBLExtensions.ext_UBLExtension}')
+               # Iterar sobre todas las extensiones UBLExtension
+                for extension in xml2.Invoice.ext_UBLExtensions.ext_UBLExtension:
+                    try:
+                        # Verificar si tiene contenido dentro de ext:ExtensionContent
+                        if hasattr(extension, "ext_ExtensionContent"):
+                            content = extension.ext_ExtensionContent
+
+                            # Buscar sts:DianExtensions dentro de ExtensionContent
+                            if hasattr(content, "sts_DianExtensions"):
+                                dian_extensions = content.sts_DianExtensions
+
+                                # Buscar sts:InvoiceControl dentro de DianExtensions
+                                if hasattr(dian_extensions, "sts_InvoiceControl"):
+                                    invoice_control = dian_extensions.sts_InvoiceControl
+
+                                    # Buscar sts:AuthorizedInvoices dentro de InvoiceControl
+                                    if hasattr(invoice_control, "sts_AuthorizedInvoices"):
+                                        authorized_invoices = invoice_control.sts_AuthorizedInvoices
+
+                                        # Extraer valores de Prefix y From si existen
+                                        prefix = authorized_invoices.sts_Prefix.cdata if hasattr(authorized_invoices, "sts_Prefix") else None
+                                        from_value = authorized_invoices.sts_From.cdata if hasattr(authorized_invoices, "sts_From") else None
+
+                                        # Registrar los resultados
+                                        logger.debug(f"Prefix: {prefix}, From: {from_value}")
+                    except Exception as e:
+                        logger.debug(f"Error procesando una extensión: {e}")
+                parsedXml['billId'] =prefix + from_value
                 logger.debug('k')
                 parsedXml['emitterName'] = xml2.Invoice.cac_AccountingSupplierParty.cac_Party.cac_PartyTaxScheme.cbc_RegistrationName.cdata
                 logger.debug('l')
