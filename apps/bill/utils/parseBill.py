@@ -195,7 +195,7 @@ def parseBill(file):
                     logger.debug('i')
                 # Resto de los datos del XML que necesitamos extraer
                 logger.debug('j')
-                logger.debug(f'{xml2.Invoice.ext_UBLExtensions.ext_UBLExtension}')
+                logger.debug(xml2.Invoice.cbc_ID)
                # Iterar sobre todas las extensiones UBLExtension
                 for extension in xml2.Invoice.ext_UBLExtensions.ext_UBLExtension:
                     try:
@@ -223,7 +223,9 @@ def parseBill(file):
                                         logger.debug(f"Prefix: {prefix}, From: {from_value}")
                     except Exception as e:
                         logger.debug(f"Error procesando una extensión: {e}")
-                parsedXml['billId'] =prefix + from_value
+                
+               
+                parsedXml['billId'] = xml2.Invoice.cbc_ID.cdata
                 logger.debug('k')
                 parsedXml['emitterName'] = xml2.Invoice.cac_AccountingSupplierParty.cac_Party.cac_PartyTaxScheme.cbc_RegistrationName.cdata
                 logger.debug('l')
