@@ -38,8 +38,8 @@ class ReceiptSerializer(serializers.ModelSerializer):
                 operation.opPendingAmount = 0
                 operation.save()
 
-                log_balance_change(account, account.balance, (account.balance + round(validated_data['investorInterests'],2)), round(validated_data['investorInterests'],2), 'receipt', validated_data['id'], 'Receipt - create')
-                account.balance += round(validated_data['investorInterests'],2)
+                log_balance_change(account, account.balance, (account.balance  + round(validated_data['presentValueInvestor']+ validated_data['investorInterests'],2)), round(validated_data['presentValueInvestor']+validated_data['investorInterests'],2), 'receipt', validated_data['id'], 'Receipt - create')
+                account.balance += round(validated_data['presentValueInvestor'] + validated_data['investorInterests'],2)
                 account.save()
             else:
                 # check if the receiptStatus is canceled
