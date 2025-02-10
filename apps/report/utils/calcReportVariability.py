@@ -152,7 +152,7 @@ def calcReportVariability(emitter, payer, client=None):
                     logger.debug(f"serializer.data[0]['stateOfResult']: {serializer.data[0]['stateOfResult']}")
                     match(serializer.data[2]['typePeriod']):
                         case 'a12eec8b-06e1-4fbc-a888-d33364032151':
-                            periodDays = serializer.data[0]['periodDays']
+                            periodDays = serializer.data[2]['periodDays']
                         case '0835dcb5-d6f2-43d7-b7ca-8864119ea05f':
                             periodDays = 360
                         case 'e635f0f1-b29c-45e5-b351-04725a489be3':

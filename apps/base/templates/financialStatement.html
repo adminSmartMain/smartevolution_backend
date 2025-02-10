@@ -402,15 +402,18 @@ body {
         const inventoryRotationRow = document.getElementById("inventoryRotation");
         const providersRotationRow = document.getElementById("providersRotation");
 
-        const walletData = Array.from(walletRow.querySelectorAll("td"))
+        function getDataFromRow(row) {
+        return Array.from(row?.querySelectorAll("td") || [])
             .slice(1)
-            .map(cell => parseNumber(cell.textContent));
-        const inventoryData = Array.from(inventoryRotationRow.querySelectorAll("td"))
-            .slice(1)
-            .map(cell => parseNumber(cell.textContent));
-        const providersData = Array.from(providersRotationRow.querySelectorAll("td"))
-            .slice(1)
-            .map(cell => parseNumber(cell.textContent));
+            .map(cell => {
+                const value = parseNumber(cell.textContent.trim());
+                return isNaN(value) ? 0 : value; // Si no es un número, poner 0
+            });
+    }
+
+    const walletData = getDataFromRow(walletRow);
+    const inventoryData = getDataFromRow(inventoryRotationRow);
+    const providersData = getDataFromRow(providersRotationRow);
 
         const walletCtx = document.getElementById("walletRotationChart").getContext("2d");
         const inventoryCtx = document.getElementById("inventoryRotationChart").getContext("2d");
@@ -607,16 +610,18 @@ body {
         const margenbrutoRow = document.getElementById("margenbruto");
         const margenebitdaRow = document.getElementById("ebitda");
         const margennetoRow = document.getElementById("margenneto");
+        function getDataFromRow(row) {
+        return Array.from(row?.querySelectorAll("td") || [])
+            .slice(1)
+            .map(cell => {
+                const value = parseNumber(cell.textContent.trim());
+                return isNaN(value) ? 0 : value; // Si no es un número, poner 0
+            });
+    }
 
-        const margenbrutoData = Array.from(margenbrutoRow .querySelectorAll("td"))
-            .slice(1)
-            .map(cell => parseNumber(cell.textContent));
-        const margenebitdaData = Array.from(margenebitdaRow.querySelectorAll("td"))
-            .slice(1)
-            .map(cell => parseNumber(cell.textContent));
-        const margennetoData = Array.from(margennetoRow.querySelectorAll("td"))
-            .slice(1)
-            .map(cell => parseNumber(cell.textContent));
+        const margenbrutoData = getDataFromRow(margenbrutoRow);
+        const margenebitdaData = getDataFromRow(margenebitdaRow);
+        const margennetoData = getDataFromRow(margennetoRow);
 
         const margenbrutoCtx = document.getElementById("margenbrutoChart").getContext("2d");
         const margenebitdaCtx = document.getElementById("ebitdaChart").getContext("2d");
@@ -817,16 +822,18 @@ body {
                 const walletRow = document.getElementById("endeudamiento");
                 const inventoryRotationRow = document.getElementById("ebitdagastosfinancieros");
                 const capitaltrabajoRow = document.getElementById("capitaltrabajo");
-        
-                const walletData = Array.from(walletRow.querySelectorAll("td"))
-                    .slice(1)
-                    .map(cell => parseNumber(cell.textContent));
-                const inventoryData = Array.from(inventoryRotationRow.querySelectorAll("td"))
-                    .slice(1)
-                    .map(cell => parseNumber(cell.textContent));
-                const capitaltrabajoData = Array.from(capitaltrabajoRow.querySelectorAll("td"))
-                    .slice(1)
-                    .map(cell => parseNumber(cell.textContent));
+                function getDataFromRow(row) {
+                    return Array.from(row?.querySelectorAll("td") || [])
+                        .slice(1)
+                        .map(cell => {
+                            const value = parseNumber(cell.textContent.trim());
+                            return isNaN(value) ? 0 : value; // Si no es un número, poner 0
+                        });
+                }
+                
+                const walletData = getDataFromRow(walletRow)
+                const inventoryData = getDataFromRow(inventoryRotationRow)
+                const capitaltrabajoData = getDataFromRow(capitaltrabajoRow)
         
                 const walletCtx = document.getElementById("endeudamientoChart").getContext("2d");
                 const inventoryCtx = document.getElementById("ebitdagastosfinancierosChart").getContext("2d");
@@ -992,10 +999,15 @@ body {
     // Procesar filas de datos y generar gráficos
     function setupCharts() {
         const ventasRow = document.getElementById("ventas");
-        
-        const ventasData = Array.from(ventasRow.querySelectorAll("td"))
-            .slice(1)
-            .map(cell => parseNumber(cell.textContent));
+        function getDataFromRow(row) {
+                    return Array.from(row?.querySelectorAll("td") || [])
+                        .slice(1)
+                        .map(cell => {
+                            const value = parseNumber(cell.textContent.trim());
+                            return isNaN(value) ? 0 : value; // Si no es un número, poner 0
+                        });
+                }    
+        const ventasData = getDataFromRow(ventasRow);
         
 
         const ventasCtx = document.getElementById("ventasChart").getContext("2d");
