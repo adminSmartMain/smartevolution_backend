@@ -381,6 +381,7 @@ class NegotiationSummaryAV(BaseAV):
                     'pendingToDeposit': round(negotiationSummary.pendingToDeposit),
                     'observations': negotiationSummary.observations if negotiationSummary.observations else 'SIN OBSERVACIONES',
                     'billId': negotiationSummary.billId,
+                    
                 },
                 'emitterDeposits': [],
                 'pendingAccounts': [],
@@ -388,7 +389,17 @@ class NegotiationSummaryAV(BaseAV):
                 
                 
                 for x in serializer.data:
+                    logger.debug(f'fecha buscada:{x["bill"]}')
+                    # Buscar la PreOperation basada en bill_id
+                    logger.debug(f'bill_id: {x["bill"]["id"]}')
+                    bill_id = x["bill"]["id"]
                   
+                    operation_billid= PreOperation.objects.filter(bill_id= bill_id)
+        
+                    # Obtener el campo opExpiration
+                    
+                    logger.debug(f'operation con el bill_id { operation_billid}')
+                    logger.debug(f"fechas {x['opExpiration']}")
                     data['sellReport']['bills']  += 1
                     data['sellReport']['sell']  += int(x['presentValueInvestor'])
                     data['sellReport']['nominal'] += int(x['payedAmount'])
@@ -398,9 +409,9 @@ class NegotiationSummaryAV(BaseAV):
                         'dateOP': datetime.strptime(x['opDate'],'%Y-%m-%d').strftime('%d/%m/%Y'),
                         'probDate': x['probableDate'],
                         'dateExp':(
-                        datetime.strptime(x['bill']['expirationDate'], '%Y-%m-%d').strftime('%d/%m/%Y')
-                        if ' ' not in x['bill']['expirationDate']
-                        else datetime.strptime(x['bill']['expirationDate'], '%Y-%m-%d %H:%M:%S').strftime('%d/%m/%Y')
+                        datetime.strptime(x['opExpiration'], '%Y-%m-%d').strftime('%d/%m/%Y')
+                        if ' ' not in x['opExpiration']
+                        else datetime.strptime(x['opExpiration'], '%Y-%m-%d %H:%M:%S').strftime('%d/%m/%Y')
                     ),
                         'doc': 'FACT',
                         'number': x['bill']['billId'],
