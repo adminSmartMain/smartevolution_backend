@@ -416,12 +416,12 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
             logger.debug(f"  a {y.opDate.isoformat()}")
             logger.debug(f"b  {y.probableDate.isoformat()}")
             logger.debug(f"  c {y.bill.expirationDate}")
-            
+            logger.debug(f"  c {y.opExpiration}")
             bills.append({
                 'id': y.bill.id,
                 'dateOP': datetime.strptime(y.opDate.isoformat(), "%Y-%m-%d").strftime("%d/%m/%Y"),
                 'probDate': datetime.strptime(y.probableDate.isoformat(), "%Y-%m-%d").strftime("%d/%m/%Y"),
-                'dateExp': datetime.strptime(y.bill.expirationDate, "%Y-%m-%d").strftime("%d/%m/%Y"),
+                'dateExp': datetime.strptime(y.opExpiration.isoformat(), "%Y-%m-%d").strftime("%d/%m/%Y"),
                 'doc': 'FACT',
                 'nroDoc': y.bill.billId,
                 'number': y.bill.billId,

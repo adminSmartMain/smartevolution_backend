@@ -605,7 +605,7 @@ class GetOperationByParams(BaseAV):
                 serializer   = PreOperationByParamsSerializer(page, many=True)
                 logger.debug(f"m")
                 serializer.data[0]['calcs'] = data
-                logger.debug(f"{data}")
+              
                 return self.get_paginated_response(serializer.data)
             
         except PreOperation.DoesNotExist:
