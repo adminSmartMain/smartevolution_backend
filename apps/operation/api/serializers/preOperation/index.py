@@ -29,7 +29,7 @@ class PreOperationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data['id'] = gen_uuid()
         validated_data['created_at'] = timezone.now()
-        validated_data['user_created_at'] = None
+        validated_data['user_created_at'] = self.context['request'].user
         # validate if the bill amount is greater than the total amount of the operation
         if validated_data['bill'] != None:
             #if validated_data['bill'].currentBalance < validated_data['payedAmount']:
@@ -40,7 +40,7 @@ class PreOperationSerializer(serializers.ModelSerializer):
             else:
                 validated_data['insufficientAccountBalance'] = False
 
-            validated_data['bill'].currentBalance -= validated_data['payedAmount']
+            validated_data['bill'].currentBalance -= validated_data['amount']
             validated_data['opPendingAmount'] = validated_data['amount']
             validated_data['bill'].save()
         return  super().create(validated_data)

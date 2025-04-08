@@ -160,6 +160,17 @@ class PreOperationAV(BaseAV):
                         serializer   = PreOperationSignatureSerializer(page, many=True)
                         return self.get_paginated_response(serializer.data)
                    
+                elif  request.query_params.get('investor') and request.query_params.get('status'):
+                    logger.debug(f"investor y status están definidos")
+                    
+                    # Obtener los datos de la operación
+                    preOperation = PreOperation.objects.filter(
+                        investor_id=request.query_params.get('investor'),
+                        status=request.query_params.get('status')
+                    )
+                    serializer = PreOperationReadOnlySerializer(preOperation, many=True)
+                    
+                    return response({'error': False, 'data': serializer.data}, 200)
                 
                 elif (request.query_params.get('opId') != 'undefined'):
                     logger.debug(f"request.query_params.get('opId') != 'undefined'")
@@ -235,7 +246,7 @@ class PreOperationAV(BaseAV):
                     serializer   = PreOperationSignatureSerializer(preOperation, many=True)
                     return self.get_paginated_response(serializer.data)                  
 
-
+                
             else:
                 logger.debug(f"else final")
                 preOperations = PreOperation.objects.filter(state=1)
