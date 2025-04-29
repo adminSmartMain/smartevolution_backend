@@ -230,17 +230,33 @@ class BillAV(BaseAV):
 
 
             if pk:
-                client = Client.objects.get(pk=pk)
-                bill = Bill.objects.filter(
-                    Q(emitterId=pk) | Q(emitterId=client.document_number))
-                serializer = BillReadOnlySerializer(bill, many=True)
-                return response({'error': False, 'data': serializer.data}, 200)
-            else:
-                bills = Bill.objects.filter(state=1)
-                page       = self.paginate_queryset(bills)
-                if page is not None:
-                    serializer = BillReadOnlySerializer(page, many=True)
-                    return self.get_paginated_response(serializer.data)
+                try:
+                    # Intenta obtener un cliente con este pk
+                    client = Client.objects.get(pk=pk)
+                    # Si existe el cliente, busca sus facturas
+                    bill = Bill.objects.filter(
+                        Q(emitterId=pk) | Q(emitterId=client.document_number)
+                    )
+                    serializer = BillReadOnlySerializer(bill, many=True)
+                    return response({'error': False, 'data': serializer.data}, 200)
+                except Client.DoesNotExist:
+                    # Si no es un cliente, tratar como búsqueda general
+                    pass
+                except Exception as e:
+                    return response({'error': True, 'message': str(e)}, 400)
+            
+            # Caso else (búsqueda general o pk no es cliente)
+            bills = Bill.objects.filter(state=1)
+            
+            # Si se proporcionó un pk que no es cliente, filtrar por ID de factura
+            if pk:
+                bills = bills.filter(Q(billId=pk))
+            
+            page = self.paginate_queryset(bills)
+            if page is not None:
+                serializer = BillReadOnlySerializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+        
         except Exception as e:
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
 
