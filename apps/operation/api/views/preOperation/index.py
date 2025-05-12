@@ -43,6 +43,7 @@ class PreOperationAV(BaseAV):
     @checkRole(['admin'])
     def post(self, request):
         try:
+            logger.debug('estoy en el caso creacion facturas')
             if request.data['billCode'] != '':
                 emitter  = Client.objects.get(pk=request.data['emitter'])
                 payer    = Client.objects.get(pk=request.data['payer'])
@@ -55,10 +56,10 @@ class PreOperationAV(BaseAV):
                     emitterName=emitter.social_reason if emitter.social_reason else emitter.first_name + ' ' + emitter.last_name,
                     payerId=payer.document_number,
                     payerName=payer.social_reason if payer.social_reason else payer.first_name + ' ' + payer.last_name,
-                    billValue = request.data['amount'],
-                    subTotal = request.data['amount'],
-                    total = request.data['amount'],
-                    currentBalance = request.data['amount'],
+                    billValue = request.data['currentBalance'],
+                    subTotal = request.data['currentBalance'],
+                    total = request.data['currentBalance'],
+                    currentBalance = request.data['currentBalance'],
                     dateBill = request.data['DateBill'],
                     datePayment = request.data['DateExpiration'],
                     expirationDate = request.data['DateExpiration'],
