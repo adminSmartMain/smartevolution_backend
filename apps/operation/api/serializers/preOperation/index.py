@@ -40,7 +40,8 @@ class PreOperationSerializer(serializers.ModelSerializer):
             else:
                 validated_data['insufficientAccountBalance'] = False
 
-            validated_data['bill'].currentBalance -= validated_data['amount']
+            if validated_data['bill'].currentBalance != 0:
+                validated_data['bill'].currentBalance -= validated_data['payedAmount']
             validated_data['opPendingAmount'] = validated_data['amount']
             validated_data['bill'].save()
         return  super().create(validated_data)
@@ -69,7 +70,8 @@ class PreOperationSerializer(serializers.ModelSerializer):
         # reverse the payed amount to the operation bill
         if 'payedAmount' in validated_data:
             validated_data['bill'].currentBalance += instance.payedAmount
-            validated_data['bill'].currentBalance -= validated_data['payedAmount']
+            if validated_data['bill'].currentBalance != 0:
+                validated_data['bill'].currentBalance -= validated_data['payedAmount']
             validated_data['bill'].save()
             validated_data['opPendingAmount'] = validated_data['payedAmount']
         # if the operation has a buyorder set it to 0
