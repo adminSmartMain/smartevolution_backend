@@ -22,6 +22,9 @@ from apps.base.decorators.index import checkRole
 from apps.base.utils.logBalanceAccount import log_balance_change
 import logging
 
+from django.db import transaction
+from rest_framework.response import Response
+from rest_framework import status
 # Configurar el logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -39,38 +42,163 @@ logger.addHandler(console_handler)
 
 
 class PreOperationAV(BaseAV):
-
+    @transaction.atomic
     @checkRole(['admin'])
     def post(self, request):
         try:
-            logger.debug('estoy en el caso creacion facturas')
-            if request.data['billCode'] != '':
-                emitter  = Client.objects.get(pk=request.data['emitter'])
-                payer    = Client.objects.get(pk=request.data['payer'])
-                typeBill = TypeBill.objects.get(pk='fdb5feb4-24e9-41fc-9689-31aff60b76c9')
-                bill     = Bill.objects.create(
-                    id=gen_uuid(),
-                    typeBill=typeBill,
-                    billId=request.data['billCode'],
-                    emitterId=emitter.document_number,
-                    emitterName=emitter.social_reason if emitter.social_reason else emitter.first_name + ' ' + emitter.last_name,
-                    payerId=payer.document_number,
-                    payerName=payer.social_reason if payer.social_reason else payer.first_name + ' ' + payer.last_name,
-                    billValue = request.data['saldoInicialFactura'],
-                    subTotal = request.data['saldoInicialFactura'],
-                    total = request.data['saldoInicialFactura'],
-                    currentBalance = request.data['currentBalance'],
-                    dateBill = request.data['DateBill'],
-                    datePayment = request.data['DateExpiration'],
-                    expirationDate = request.data['DateExpiration'],
-                    )
-                bill.save()
-                request.data['bill'] = bill.id
-            serializer = PreOperationSerializer(data=request.data, context={'request': request})
-            if serializer.is_valid():
-                serializer.save()
-                return response({'error': False, 'message': 'operación creada','data': serializer.data}, 200)
-            return response({'error': True, 'message': serializer.errors}, 400)
+            logger.debug(f"PreOperationAV post values {request.body}")
+               # Decodificar el cuerpo de la solicitud (bytes → str → dict)
+            raw_data = request.body.decode('utf-8')  # Convierte bytes a string
+            json_data = json.loads(raw_data)         # Convierte string a dict
+
+            logger.debug(f"Datos recibidos (JSON): {json_data}")
+
+            # Extraer el array 'values'
+            values_list = json_data.get('values', [])  # Si no existe 'values', devuelve lista vacía
+            if len(values_list)==1:
+                logger.debug('estoy en el caso creacion una factura')
+                
+                if values_list[0]['billCode'] != '':
+                    emitter  = Client.objects.get(pk=values_list[0]['emitter'])
+                    payer    = Client.objects.get(pk=values_list[0]['payer'])
+                    typeBill = TypeBill.objects.get(pk='fdb5feb4-24e9-41fc-9689-31aff60b76c9')
+                    with transaction.atomic():
+                        bill= Bill.objects.create(
+                        id=gen_uuid(),
+                        typeBill=typeBill,
+                        billId=values_list[0]['billCode'],
+                        emitterId=emitter.document_number,
+                        emitterName=emitter.social_reason if emitter.social_reason else emitter.first_name + ' ' + emitter.last_name,
+                        payerId=payer.document_number,
+                        payerName=payer.social_reason if payer.social_reason else payer.first_name + ' ' + payer.last_name,
+                        billValue = values_list[0]['saldoInicialFactura'],
+                        subTotal = values_list[0]['saldoInicialFactura'],
+                        total = values_list[0]['saldoInicialFactura'],
+                        currentBalance = values_list[0]['currentBalance'],
+                        dateBill = values_list[0]['DateBill'],
+                        datePayment = values_list[0]['DateExpiration'],
+                        expirationDate = values_list[0]['DateExpiration'],
+                        )
+                        bill.save()
+                        values_list[0]['bill'] = bill.id
+                        serializer = PreOperationSerializer(data=values_list[0], context={'request': request})
+                        if serializer.is_valid():
+                            serializer.save()
+                    return response({'error': False, 'message': 'operación creada','data': serializer.data}, 200)
+                return response({'error': True, 'message': serializer.errors}, 400)
+            
+            elif len(values_list) > 1:
+                logger.debug("Caso masivo: Procesando múltiples operaciones")
+                operations_created = []
+                errors = []
+                bill_mapping = {}  # {bill_code: bill_id}
+                processed_bills = set()  # Para rastrear facturas ya procesadas
+
+                with transaction.atomic():
+                    # Fase 1: Creación/Obtención de facturas
+                    for index, operation_data in enumerate(values_list):
+                        bill_code = operation_data.get('billCode', '')
+                        
+                        if bill_code and bill_code not in bill_mapping:
+                            try:
+                                # Verificar si ya fue procesada en esta transacción
+                                if bill_code in processed_bills:
+                                    logger.debug(f"Factura {bill_code} ya fue procesada, saltando creación")
+                                    continue
+                                    
+                                processed_bills.add(bill_code)
+                                
+                                # Buscar factura existente o crear nueva
+                                bill = Bill.objects.filter(billId=bill_code).first()
+                                if not bill:
+                                    emitter = Client.objects.get(pk=operation_data['emitter'])
+                                    payer = Client.objects.get(pk=operation_data['payer'])
+                                    typeBill = TypeBill.objects.get(pk='fdb5feb4-24e9-41fc-9689-31aff60b76c9')
+                                    
+                                    bill = Bill.objects.create(
+                                        id=gen_uuid(),
+                                        typeBill=typeBill,
+                                        billId=bill_code,
+                                        emitterId=emitter.document_number,
+                                        emitterName=emitter.social_reason or f"{emitter.first_name} {emitter.last_name}",
+                                        payerId=payer.document_number,
+                                        payerName=payer.social_reason or f"{payer.first_name} {payer.last_name}",
+                                        billValue=operation_data['saldoInicialFactura'],
+                                        subTotal=operation_data['saldoInicialFactura'],
+                                        total=operation_data['saldoInicialFactura'],
+                                        currentBalance=operation_data['saldoInicialFactura'],  # Inicializar con el valor completo
+                                        dateBill=operation_data['DateBill'],
+                                        datePayment=operation_data['DateExpiration'],
+                                        expirationDate=operation_data['DateExpiration'],
+                                    )
+                                
+                                bill_mapping[bill_code] = str(bill.id)
+                                
+                            except Exception as e:
+                                errors.append({
+                                    'index': index,
+                                    'error': f"Error al procesar factura {bill_code}: {str(e)}",
+                                    'data': operation_data
+                                })
+
+                    # Fase 2: Procesamiento de operaciones
+                    
+                    for index, operation_data in enumerate(values_list):
+                        if any(err['index'] == index for err in errors):
+                            continue
+
+                        try:
+                            # Crear copia segura de los datos
+                            op_data = {}
+                            for k, v in operation_data.items():
+                                # Excluir campos temporales y manejar bill correctamente
+                                if k not in ['billCode', '_isFirstOccurrence']:
+                                    if k == 'bill' and v in bill_mapping:
+                                        # Convertir código de factura a UUID si existe en el mapeo
+                                        op_data[k] = bill_mapping[v]
+                                    else:
+                                        op_data[k] = v
+
+                            logger.debug(f"Procesando operación {index} con datos finales: {op_data}")
+                            
+                            serializer = PreOperationSerializer(data=op_data, context={'request': request})
+                            if serializer.is_valid():
+                                instance = serializer.save()
+                                operations_created.append({
+                                    'index': index,
+                                    'data': serializer.data,
+                                    'operation_id': str(instance.id)
+                                })
+                                logger.debug(f"Operación {index} creada exitosamente")
+                            else:
+                                errors.append({
+                                    'index': index,
+                                    'error': serializer.errors,
+                                    'data': op_data
+                                })
+                                logger.error(f"Errores de validación en operación {index}: {serializer.errors}")
+                                
+                        except Exception as e:
+                            errors.append({
+                                'index': index,
+                                'error': str(e),
+                                'data': operation_data
+                            })
+                            logger.error(f"Error en operación {index}: {str(e)}", exc_info=True)
+
+                # Preparar respuesta
+                response_data = {
+                    'total_operations': len(values_list),
+                    'successful': operations_created,
+                    'failed': errors,
+                    'bill_mapping': bill_mapping
+                }
+
+                return Response(
+                    response_data,
+                    status=status.HTTP_207_MULTI_STATUS if errors else status.HTTP_200_OK
+                )
+
         except Exception as e:
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
     

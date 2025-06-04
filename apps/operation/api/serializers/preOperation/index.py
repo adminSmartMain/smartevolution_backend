@@ -20,6 +20,22 @@ import datetime
 from apps.base.exceptions import HttpException
 #utils
 from apps.base.utils.logBalanceAccount import log_balance_change
+import logging
+# Configurar el logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Crear un handler de consola y definir el nivel
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Crear un formato para los mensajes de log
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# Añadir el handler al logger
+logger.addHandler(console_handler)
+
 
 class PreOperationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -30,6 +46,7 @@ class PreOperationSerializer(serializers.ModelSerializer):
         validated_data['id'] = gen_uuid()
         validated_data['created_at'] = timezone.now()
         validated_data['user_created_at'] = self.context['request'].user
+        logger.debug(f'PreOperationSerializer - create - validated_data: {validated_data}')
         # validate if the bill amount is greater than the total amount of the operation
         if validated_data['bill'] != None:
             #if validated_data['bill'].currentBalance < validated_data['payedAmount']:
@@ -41,7 +58,7 @@ class PreOperationSerializer(serializers.ModelSerializer):
                 validated_data['insufficientAccountBalance'] = False
 
             if validated_data['bill'].currentBalance != 0:
-                validated_data['bill'].currentBalance -= validated_data['payedAmount']
+                validated_data['bill'].currentBalance -= validated_data['amount']
             validated_data['opPendingAmount'] = validated_data['amount']
             validated_data['bill'].save()
         return  super().create(validated_data)
@@ -71,7 +88,7 @@ class PreOperationSerializer(serializers.ModelSerializer):
         if 'payedAmount' in validated_data:
             validated_data['bill'].currentBalance += instance.payedAmount
             if validated_data['bill'].currentBalance != 0:
-                validated_data['bill'].currentBalance -= validated_data['payedAmount']
+                validated_data['bill'].currentBalance -= validated_data['amount']
             validated_data['bill'].save()
             validated_data['opPendingAmount'] = validated_data['payedAmount']
         # if the operation has a buyorder set it to 0
