@@ -524,7 +524,7 @@ class PreOperationAV(BaseAV):
         try:
             preOperation       = PreOperation.objects.get(id=pk)
             # return the balance to the client
-            preOperation.bill.currentBalance   += preOperation.payedAmount
+            preOperation.bill.currentBalance   += preOperation.amount
             #preOperation.clientAccount.balance += preOperation.payedAmount
             preOperation.bill.save()
             #preOperation.clientAccount.save()
