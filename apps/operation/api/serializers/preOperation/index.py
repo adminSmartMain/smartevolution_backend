@@ -21,6 +21,9 @@ from apps.base.exceptions import HttpException
 #utils
 from apps.base.utils.logBalanceAccount import log_balance_change
 import logging
+import uuid
+
+from apps.bill.api.models.bill.index import Bill
 # Configurar el logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -36,32 +39,79 @@ console_handler.setFormatter(formatter)
 # Añadir el handler al logger
 logger.addHandler(console_handler)
 
-
+def is_uuid(val):
+        try:
+            uuid.UUID(str(val))
+            return True
+        except ValueError:
+            return False
 class PreOperationSerializer(serializers.ModelSerializer):
     class Meta:
         model = PreOperation
         fields = '__all__'
 
-    def create(self, validated_data):
-        validated_data['id'] = gen_uuid()
-        validated_data['created_at'] = timezone.now()
-        validated_data['user_created_at'] = self.context['request'].user
-        logger.debug(f'PreOperationSerializer - create - validated_data: {validated_data}')
-        # validate if the bill amount is greater than the total amount of the operation
-        if validated_data['bill'] != None:
-            #if validated_data['bill'].currentBalance < validated_data['payedAmount']:
-            #    raise HttpException(400, 'el monto de la factura es menor al monto total de la operacion')
-            # validate if the client account has enough balance
-            if validated_data['clientAccount'].balance < (validated_data['payedAmount'] + validated_data['GM']):
-                validated_data['insufficientAccountBalance'] = True
-            else:
-                validated_data['insufficientAccountBalance'] = False
+      
 
-            if validated_data['bill'].currentBalance != 0:
-                validated_data['bill'].currentBalance -= validated_data['amount']
-            validated_data['opPendingAmount'] = validated_data['amount']
-            validated_data['bill'].save()
-        return  super().create(validated_data)
+    def validate(self, data):
+        # Si viene billCode, lo convertimos a bill (ID)
+        if 'billCode' in data and data['billCode']:
+            logger.debug(f"Validando billCode: {data['billCode']}")
+            try:
+                bill = Bill.objects.get(billId=data['billCode'])
+                logger.debug(f"Factura encontrada: {bill.id}")
+                data['bill'] = bill.id
+            except Bill.DoesNotExist:
+                raise serializers.ValidationError({
+                    'bill': f"La factura {data['billCode']} no existe"
+                })
+        # Si viene bill como string (billId), lo convertimos a ID
+        elif 'bill' in data and isinstance(data['bill'], str) and not is_uuid(data['bill']):
+            logger.debug(f"Validando billId: {data['bill']}")
+            try:
+                bill = Bill.objects.get(billId=data['bill'])
+                logger.debug(f"Factura encontrada: {bill.id}")
+                data['bill'] = bill.id
+                logger.debug(f"Factura convertida a ID: {data['bill']}")
+            except Bill.DoesNotExist:
+                raise serializers.ValidationError({
+                    'bill': f"La factura {data['bill']} no existe"
+                })
+        
+        return data
+
+    def create(self, validated_data):
+        logger.info("Iniciando creación de PreOperation")
+        logger.debug(f"Datos validados: {validated_data}")
+        
+        try:
+            validated_data['id'] = gen_uuid()
+            validated_data['created_at'] = timezone.now()
+            validated_data['user_created_at'] = self.context['request'].user
+
+            if validated_data.get('bill'):
+                bill = validated_data['bill']
+                logger.debug(f"Procesando factura asociada: {bill.billId}")
+                
+                client_account = validated_data.get('clientAccount')
+                if client_account:
+                    total_operation = validated_data['payedAmount'] + validated_data.get('GM', 0)
+                    validated_data['insufficientAccountBalance'] = client_account.balance < total_operation
+                    logger.debug(f"Validación de saldo: {validated_data['insufficientAccountBalance']}")
+
+                if bill.currentBalance != 0:
+                    logger.debug(f"Ajustando balance de factura: {bill.currentBalance} -> {bill.currentBalance - validated_data['amount']}")
+                    bill.currentBalance -= validated_data['amount']
+                    bill.save()
+
+                validated_data['opPendingAmount'] = validated_data['amount']
+            
+            instance = super().create(validated_data)
+            logger.info(f"PreOperation creada exitosamente: {instance.id}")
+            return instance
+
+        except Exception as e:
+            logger.error(f"Error al crear PreOperation: {str(e)}", exc_info=True)
+            raise
 
     def update(self, instance, validated_data):
 
