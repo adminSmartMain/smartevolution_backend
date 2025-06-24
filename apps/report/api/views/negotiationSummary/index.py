@@ -450,7 +450,7 @@ class NegotiationSummaryAV(BaseAV):
                 return response({'error': False, 'pdf': pdf.json()['pdf'], 'data': data}, 200)
             elif request.query_params['opId'] != 'undefined':
                 logger.debug(f'f {request.query_params}')
-                data = NegotiationSummary.objects.get(id = request.query_params['opId'])
+                data = NegotiationSummary.objects.get(opId = request.query_params['opId'])
                 serializer = NegotiationSummaryReadOnlySerializer(data)
                 return response({'error': False, 'data': serializer.data}, 200)
             else:
