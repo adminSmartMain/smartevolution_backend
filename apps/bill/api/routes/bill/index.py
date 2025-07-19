@@ -1,6 +1,6 @@
 # views
 from django.urls import path
-from apps.bill.api.views.index import BillAV, readBillAV, readCreditNoteAV
+from apps.bill.api.views.index import BillAV, readBillAV, readCreditNoteAV,BillCreationManualAV
 
 urlpatterns = [
     path('read', readBillAV.as_view(), name='bill'),
@@ -8,4 +8,6 @@ urlpatterns = [
     path('<str:pk>', BillAV.as_view(), name='bill_id'),
     path('<uuid:pk>', BillAV.as_view(), name='bill_uuid'),
     path('read/credit-note', readCreditNoteAV.as_view(), name='credit_note'),
+    path('save_bill/', BillCreationManualAV.as_view(), name='bill-create'),
+    
 ]

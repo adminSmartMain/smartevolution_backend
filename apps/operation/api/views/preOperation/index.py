@@ -26,6 +26,59 @@ import logging
 from django.db import transaction
 from rest_framework.response import Response
 from rest_framework import status
+from django.conf import settings
+import uuid
+from apps.base.utils.index import gen_uuid, PDFBase64File, uploadFileBase64
+
+# Configurar el logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Crear un handler de consola y definir el nivel
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Crear un formato para los mensajes de log
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# Añadir el handler al logger
+logger.addHandler(console_handler)
+def is_uuid(val):
+        try:
+            uuid.UUID(str(val))
+            return True
+        except ValueError:
+            return False
+
+# REST Framework imports
+from rest_framework.decorators import APIView
+from django.db.models import Q, Count
+from rest_framework import serializers
+# Models
+from apps.client.models import Client, RiskProfile, Account, Broker
+from apps.operation.models import PreOperation, Receipt, BuyOrder
+from apps.bill.models import Bill
+from apps.misc.models import TypeBill
+# Serializers
+from apps.operation.api.serializers.index import (PreOperationSerializer, PreOperationReadOnlySerializer, 
+                                                  ReceiptSerializer, PreOperationSignatureSerializer, PreOperationByParamsSerializer)
+# Utils
+from apps.base.utils.index import response, gen_uuid, BaseAV
+from apps.report.utils.index import generateSellOffer, calcOperationDetail
+import pandas as pd
+import json
+from time import strftime, localtime
+from functools import reduce
+# Decorators
+from apps.base.decorators.index import checkRole
+#utils
+from apps.base.utils.logBalanceAccount import log_balance_change
+import logging
+
+from django.db import transaction
+from rest_framework.response import Response
+from rest_framework import status
 
 import uuid
 
@@ -258,6 +311,13 @@ class PreOperationAV(BaseAV):
             payer = Client.objects.get(pk=operation_data['payer'])
             type_bill = TypeBill.objects.get(pk='fdb5feb4-24e9-41fc-9689-31aff60b76c9')
             logger.debug("2")
+
+            if 'file' in operation_data:
+                fileUrl = operation_data.get('file', None)
+                if fileUrl:
+                    fileUrl = uploadFileBase64(files_bse64=[fileUrl], file_path=f'bill/{operation_data["id"]}')
+                    operation_data['file'] = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{fileUrl}"
+                    
             bill = Bill.objects.create(
                 id=gen_uuid(),
                 typeBill=type_bill,
@@ -273,6 +333,8 @@ class PreOperationAV(BaseAV):
                 dateBill=operation_data['DateBill'],
                 datePayment=operation_data['DateExpiration'],
                 expirationDate=operation_data['DateExpiration'],
+                file=operation_data['file']
+                
             )
             
             return str(bill.id)
@@ -305,6 +367,7 @@ class PreOperationAV(BaseAV):
                 operation_data[k] = v
 
         return operation_data
+    
     @checkRole(['admin'])
     def get(self, request, pk=None):
         
@@ -493,6 +556,7 @@ class PreOperationAV(BaseAV):
     def patch(self, request, pk):
         try:
             if request.data['billCode'] != '':
+                logger.debug('a')
                 emitter = Client.objects.get(pk=request.data['emitter'])
                 payer = Client.objects.get(pk=request.data['payer'])
                 typeBill = TypeBill.objects.get(pk='a7c70741-8c1a-4485-8ed4-5297e54a978a')
@@ -517,6 +581,7 @@ class PreOperationAV(BaseAV):
             
             # check if massive and massiveByInvestor are in the request data
             if 'massive' not in request.data and 'massiveByInvestor' not in request.data:
+                logger.debug('bbbbbbbbbbbbbb')
                 preOperation = PreOperation.objects.get(pk=pk)
                 serializer   = PreOperationSerializer(preOperation, data=request.data, context={'request': request}, partial=True)
                 if serializer.is_valid():
@@ -525,13 +590,15 @@ class PreOperationAV(BaseAV):
                 else:
                     return response({'error': True, 'message': serializer.errors}, 500)
             elif request.data['massive'] == True:
+
+                logger.debug('c')
                 preOperation = PreOperation.objects.get(pk=pk)
                 if request.data['status'] == 2:
                     # get the operations with the same opId
                     operations = PreOperation.objects.filter(opId=preOperation.opId, investor=preOperation.investor)
                     for operation in operations:
                         operation.status = 2
-                        operation.bill.currentBalance += operation.payedAmount
+                        
 
                         log_balance_change(operation.clientAccount, operation.clientAccount.balance, (operation.clientAccount.balance + operation.presentValueInvestor), operation.presentValueInvestor, 'pre_operation', operation.id, 'PreOperation View - patch')
                         operation.clientAccount.balance += operation.presentValueInvestor
@@ -542,6 +609,7 @@ class PreOperationAV(BaseAV):
                         operation.save()
                     return response({'error': False, 'message': 'Operaciones Actualizada'}, 200)
                 else:
+                    logger.debug('d')
                     # get the operations with the same opId
                     operations = PreOperation.objects.filter(opId=preOperation.opId, investor=preOperation.investor)
                     for operation in operations:
@@ -554,11 +622,12 @@ class PreOperationAV(BaseAV):
                             operation.save()
                     return response({'error': False, 'message': 'Operaciones Actualizada'}, 200)
             elif request.data['massiveByInvestor'] == True:
+                logger.debug('e')
                 preOperation = PreOperation.objects.filter(opId=request.data['opId'], investor=request.data['investor'])
                 for operations in preOperation:
                     if request.data['status'] == 2:
                         operations.status = 2
-                        operations.bill.currentBalance += operations.payedAmount
+                       
                         
                         log_balance_change(operations.clientAccount, operations.clientAccount.balance, (operations.clientAccount.balance + operations.presentValueInvestor), operations.presentValueInvestor, 'pre_operation', operations.id, 'PreOperation View - patch 4')
                         operations.clientAccount.balance += operations.presentValueInvestor
@@ -572,7 +641,7 @@ class PreOperationAV(BaseAV):
                     elif request.data['status'] == 1:
                         if operations.status == 0 and operations.status != 1:
                             operations.status = 1
-
+                        
                             log_balance_change(operations.clientAccount, operations.clientAccount.balance, (operations.clientAccount.balance - (operations.presentValueInvestor + operations.GM)), -(operations.presentValueInvestor + operations.GM), 'pre_operation', operations.id, 'PreOperation View - patch 6')
                             operations.clientAccount.balance -= (operations.presentValueInvestor + operations.GM)
                             operations.clientAccount.save()
@@ -580,6 +649,7 @@ class PreOperationAV(BaseAV):
                         return response({'error': False, 'message': 'Operaciones Actualizada'}, 200)
 
                 if request.data['status'] == 1:
+                    logger.debug('f')
                     # get the operations with the same opId
                     operations = PreOperation.objects.filter(opId=preOperation.opId)
                     for operation in operations:
@@ -590,8 +660,12 @@ class PreOperationAV(BaseAV):
 
                 return response({'error': False, 'message': 'Operaciones Actualizada'}, 200)
 
-            else:     
+            else:
+                logger.debug('ag')
                 preOperation = PreOperation.objects.get(pk=pk)
+
+
+                logger.debug('caso editar',preOperation,request.data)
                 serializer   = PreOperationSerializer(preOperation, data=request.data, context={'request': request}, partial=True)
                 if serializer.is_valid():
                     serializer.save()

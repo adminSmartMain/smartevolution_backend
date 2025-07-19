@@ -197,3 +197,9 @@ AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
 AWS_REGION = 'us-east-1'
 AWS_QUERYSTRING_AUTH = False
 AWS_DEFAULT_ACL = 'public-read'
+
+# Aumentar el límite de tamaño para datos en memoria (2.5MB -> 25MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 26214400  # 25 MB en bytes
+
+# También puedes aumentar el límite para campos individuales
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000

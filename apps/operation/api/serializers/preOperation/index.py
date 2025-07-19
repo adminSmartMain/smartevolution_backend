@@ -6,6 +6,7 @@ from apps.client.api.serializers.client.index import ClientSerializer
 from apps.client.api.serializers.broker.index import BrokerSerializer
 from apps.misc.api.serializers.typeOperation.index import TypeOperationSerializer
 from apps.client.api.serializers.account.index import AccountSerializer
+from apps.base.utils.index import gen_uuid, PDFBase64File, uploadFileBase64
 # Models
 from apps.operation.models import PreOperation, BuyOrder,Receipt
 from apps.report.models import SellOrder
@@ -24,6 +25,10 @@ import logging
 import uuid
 
 from apps.bill.api.models.bill.index import Bill
+
+from django.conf import settings
+
+
 # Configurar el logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -103,6 +108,8 @@ class PreOperationSerializer(serializers.ModelSerializer):
                     bill.currentBalance -= validated_data['amount']
                     bill.save()
 
+
+                
                 validated_data['opPendingAmount'] = validated_data['amount']
             
             instance = super().create(validated_data)
@@ -120,12 +127,12 @@ class PreOperationSerializer(serializers.ModelSerializer):
 
         if 'previousDeleted' in self.context['request'].data:
             validated_data['status'] = 0
-            instance.bill.currentBalance -= instance.payedAmount
+            instance.bill.currentBalance -= instance.amount
             instance.bill.save()
 
         if  validated_data['status'] != 0 and validated_data['status'] != 1:
             if validated_data['status'] == 2 or validated_data['status'] == 5:
-                instance.bill.currentBalance   += instance.payedAmount
+                instance.bill.currentBalance   += instance.amount
                 instance.bill.save()
 
         if validated_data['status'] == 1 and instance.status == 0:
@@ -135,8 +142,8 @@ class PreOperationSerializer(serializers.ModelSerializer):
             instance.clientAccount.save()
 
         # reverse the payed amount to the operation bill
-        if 'payedAmount' in validated_data:
-            validated_data['bill'].currentBalance += instance.payedAmount
+        if 'amount' in validated_data:
+            validated_data['bill'].currentBalance += instance.amount
             if validated_data['bill'].currentBalance != 0:
                 validated_data['bill'].currentBalance -= validated_data['amount']
             validated_data['bill'].save()

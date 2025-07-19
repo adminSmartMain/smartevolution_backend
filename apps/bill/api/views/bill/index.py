@@ -1,6 +1,6 @@
 from django.db.models import Q
 # Serializers
-from apps.bill.api.serializers.index import BillSerializer, BillReadOnlySerializer, BillEventReadOnlySerializer
+from apps.bill.api.serializers.index import BillSerializer, BillReadOnlySerializer, BillEventReadOnlySerializer,BillCreationSerializer
 from apps.operation.api.serializers.index import PreOperationReadOnlySerializer
 # Models
 from apps.bill.models import Bill
@@ -13,6 +13,8 @@ from apps.base.decorators.index import checkRole
 from base64 import b64decode
 import os
 import logging
+
+import uuid
 
 import logging
 
@@ -31,6 +33,43 @@ console_handler.setFormatter(formatter)
 # Añadir el handler al logger
 logger.addHandler(console_handler)
 ##comentario2
+
+class BillCreationManualAV(BaseAV):
+    @checkRole(['admin','third'])
+    def post(self, request):
+        try:
+            logger.debug(f'Datos recibidos: {request.data}')
+            
+            # Pasar el contexto con el request al serializer
+            serializer = BillCreationSerializer(
+                data=request.data,
+                context={'request': request}  # ¡Esto es lo que faltaba!
+            )
+            
+            if not serializer.is_valid():
+                return response({
+                    'error': True,
+                    'message': 'Datos inválidos',
+                    'details': serializer.errors
+                }, 400)
+            
+            # Crear la factura
+            bill = serializer.save()
+            
+            return response({
+                'error': False,
+                'message': 'Factura creada exitosamente',
+                'billId': bill.billId,
+                'uuid': str(bill.id)
+            }, 201)
+            
+        except Exception as e:
+            logger.error(f'Error al crear factura: {str(e)}')
+            return response({
+                'error': True,
+                'message': str(e)
+            }, 500)
+        
 class BillAV(BaseAV):
 
     @checkRole(['admin','third'])

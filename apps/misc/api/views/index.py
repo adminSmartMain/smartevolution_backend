@@ -18,3 +18,4 @@ from .periodRange.index import PeriodRangeAV
 from .receiptStatus.index import ReceiptStatusAV
 from .migrate.index import MigrateAV
 from .test.index import TestAV
+from .typeBill.index import TypeBillAV
