@@ -13,22 +13,77 @@ from datetime import datetime as dt
 from apps.base.utils.index import gen_uuid, PDFBase64File, uploadFileBase64
 from apps.bill.utils.billEvents import billEvents
 from apps.bill.utils.index import billEvents as updateBillEvents
+import uuid
 from django.conf import settings
 # Exceptions
 from apps.base.exceptions import HttpException
 
+import logging
 
+# Configurar el logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Crear un handler de consola y definir el nivel
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Crear un formato para los mensajes de log
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# Añadir el handler al logger
+logger.addHandler(console_handler)
+##comentario2
+
+class BillCreationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bill
+        fields = [
+            'typeBill', 'billId', 'emitterId', 
+            'currentBalance', 'dateBill', 'expirationDate',
+            'payerName', 'payerId', 'emitterName', 'datePayment','billValue','subTotal','total','file','ret_iva','ret_ica'
+            ,'ret_fte','other_ret'
+        ]
+    
+    def create(self, validated_data):
+        try:
+            # Usar el usuario del request
+            validated_data['id'] = gen_uuid()
+            validated_data['user_created_at'] = self.context['request'].user
+            # upload the bill to s3
+            if 'file' in validated_data:
+                fileUrl = validated_data.get('file', None)
+                if fileUrl:
+                    fileUrl = uploadFileBase64(files_bse64=[fileUrl], file_path=f'bill/{validated_data["id"]}')
+                    validated_data['file'] = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{fileUrl}"
+            # Si necesitas igualar currentBalance con total
+            if 'currentBalance' in validated_data:
+                validated_data['currentBalance'] = validated_data['currentBalance']
+            
+            # Crear la factura
+            bill = Bill.objects.create(**validated_data)
+            return bill
+            
+        except Exception as e:
+            logger.error(f"Error al crear factura: {str(e)}")
+            raise serializers.ValidationError(str(e))
 class BillSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Bill
         fields = '__all__'
-    
+        extra_kwargs = {
+            'id': {
+                'required': False,
+                'read_only': False  # Permitir asignación manual
+            }
+        }
+
     def create(self, validated_data):
         try:
             validated_data['id'] = gen_uuid()
             validated_data['user_created_at'] = self.context['request'].user
-            validated_data['currentBalance']  = validated_data['total']
+            
             
             # upload the bill to s3
             if 'file' in validated_data:

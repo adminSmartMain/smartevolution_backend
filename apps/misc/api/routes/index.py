@@ -17,6 +17,7 @@ urlpatterns = [
     path('type_operation/', include('apps.misc.api.routes.typeOperation.index'),name='type_operation'),
     path('type_receipt/', include('apps.misc.api.routes.typeReceipt.index'),name='type_receipt'),
     path('type_period/', include('apps.misc.api.routes.typePeriod.index'),name='type_period'),
+    path('type_bill/', include('apps.misc.api.routes.typeBill.index'),name='type_bill'),
     path('period_range/', include('apps.misc.api.routes.periodRange.index'),name='period_range'),
     path('receipt_status/', include('apps.misc.api.routes.receiptStatus.index'),name='receipt_status'),
     path('test/', include('apps.misc.api.routes.test.index'),name='test'),

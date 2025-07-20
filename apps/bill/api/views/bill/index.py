@@ -1,6 +1,6 @@
 from django.db.models import Q
 # Serializers
-from apps.bill.api.serializers.index import BillSerializer, BillReadOnlySerializer, BillEventReadOnlySerializer
+from apps.bill.api.serializers.index import BillSerializer, BillReadOnlySerializer, BillEventReadOnlySerializer,BillCreationSerializer
 from apps.operation.api.serializers.index import PreOperationReadOnlySerializer
 # Models
 from apps.bill.models import Bill
@@ -13,6 +13,8 @@ from apps.base.decorators.index import checkRole
 from base64 import b64decode
 import os
 import logging
+
+import uuid
 
 import logging
 
@@ -31,6 +33,43 @@ console_handler.setFormatter(formatter)
 # Añadir el handler al logger
 logger.addHandler(console_handler)
 ##comentario2
+
+class BillCreationManualAV(BaseAV):
+    @checkRole(['admin','third'])
+    def post(self, request):
+        try:
+            logger.debug(f'Datos recibidos: {request.data}')
+            
+            # Pasar el contexto con el request al serializer
+            serializer = BillCreationSerializer(
+                data=request.data,
+                context={'request': request}  # ¡Esto es lo que faltaba!
+            )
+            
+            if not serializer.is_valid():
+                return response({
+                    'error': True,
+                    'message': 'Datos inválidos',
+                    'details': serializer.errors
+                }, 400)
+            
+            # Crear la factura
+            bill = serializer.save()
+            
+            return response({
+                'error': False,
+                'message': 'Factura creada exitosamente',
+                'billId': bill.billId,
+                'uuid': str(bill.id)
+            }, 201)
+            
+        except Exception as e:
+            logger.error(f'Error al crear factura: {str(e)}')
+            return response({
+                'error': True,
+                'message': str(e)
+            }, 500)
+        
 class BillAV(BaseAV):
 
     @checkRole(['admin','third'])
@@ -230,17 +269,33 @@ class BillAV(BaseAV):
 
 
             if pk:
-                client = Client.objects.get(pk=pk)
-                bill = Bill.objects.filter(
-                    Q(emitterId=pk) | Q(emitterId=client.document_number))
-                serializer = BillReadOnlySerializer(bill, many=True)
-                return response({'error': False, 'data': serializer.data}, 200)
-            else:
-                bills = Bill.objects.filter(state=1)
-                page       = self.paginate_queryset(bills)
-                if page is not None:
-                    serializer = BillReadOnlySerializer(page, many=True)
-                    return self.get_paginated_response(serializer.data)
+                try:
+                    # Intenta obtener un cliente con este pk
+                    client = Client.objects.get(pk=pk)
+                    # Si existe el cliente, busca sus facturas
+                    bill = Bill.objects.filter(
+                        Q(emitterId=pk) | Q(emitterId=client.document_number)
+                    )
+                    serializer = BillReadOnlySerializer(bill, many=True)
+                    return response({'error': False, 'data': serializer.data}, 200)
+                except Client.DoesNotExist:
+                    # Si no es un cliente, tratar como búsqueda general
+                    pass
+                except Exception as e:
+                    return response({'error': True, 'message': str(e)}, 400)
+            
+            # Caso else (búsqueda general o pk no es cliente)
+            bills = Bill.objects.filter(state=1)
+            
+            # Si se proporcionó un pk que no es cliente, filtrar por ID de factura
+            if pk:
+                bills = bills.filter(Q(billId=pk))
+            
+            page = self.paginate_queryset(bills)
+            if page is not None:
+                serializer = BillReadOnlySerializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+        
         except Exception as e:
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
 

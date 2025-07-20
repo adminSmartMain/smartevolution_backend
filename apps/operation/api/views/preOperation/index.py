@@ -1,6 +1,7 @@
 # REST Framework imports
 from rest_framework.decorators import APIView
 from django.db.models import Q, Count
+from rest_framework import serializers
 # Models
 from apps.client.models import Client, RiskProfile, Account, Broker
 from apps.operation.models import PreOperation, Receipt, BuyOrder
@@ -22,6 +23,13 @@ from apps.base.decorators.index import checkRole
 from apps.base.utils.logBalanceAccount import log_balance_change
 import logging
 
+from django.db import transaction
+from rest_framework.response import Response
+from rest_framework import status
+from django.conf import settings
+import uuid
+from apps.base.utils.index import gen_uuid, PDFBase64File, uploadFileBase64
+
 # Configurar el logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -36,42 +44,329 @@ console_handler.setFormatter(formatter)
 
 # Añadir el handler al logger
 logger.addHandler(console_handler)
+def is_uuid(val):
+        try:
+            uuid.UUID(str(val))
+            return True
+        except ValueError:
+            return False
 
+# REST Framework imports
+from rest_framework.decorators import APIView
+from django.db.models import Q, Count
+from rest_framework import serializers
+# Models
+from apps.client.models import Client, RiskProfile, Account, Broker
+from apps.operation.models import PreOperation, Receipt, BuyOrder
+from apps.bill.models import Bill
+from apps.misc.models import TypeBill
+# Serializers
+from apps.operation.api.serializers.index import (PreOperationSerializer, PreOperationReadOnlySerializer, 
+                                                  ReceiptSerializer, PreOperationSignatureSerializer, PreOperationByParamsSerializer)
+# Utils
+from apps.base.utils.index import response, gen_uuid, BaseAV
+from apps.report.utils.index import generateSellOffer, calcOperationDetail
+import pandas as pd
+import json
+from time import strftime, localtime
+from functools import reduce
+# Decorators
+from apps.base.decorators.index import checkRole
+#utils
+from apps.base.utils.logBalanceAccount import log_balance_change
+import logging
+
+from django.db import transaction
+from rest_framework.response import Response
+from rest_framework import status
+
+import uuid
+
+
+# Configurar el logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Crear un handler de consola y definir el nivel
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Crear un formato para los mensajes de log
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# Añadir el handler al logger
+logger.addHandler(console_handler)
+def is_uuid(val):
+        try:
+            uuid.UUID(str(val))
+            return True
+        except ValueError:
+            return False
 
 class PreOperationAV(BaseAV):
-
+    @transaction.atomic
     @checkRole(['admin'])
     def post(self, request):
         try:
-            if request.data['billCode'] != '':
-                emitter  = Client.objects.get(pk=request.data['emitter'])
-                payer    = Client.objects.get(pk=request.data['payer'])
-                typeBill = TypeBill.objects.get(pk='fdb5feb4-24e9-41fc-9689-31aff60b76c9')
-                bill     = Bill.objects.create(
-                    id=gen_uuid(),
-                    typeBill=typeBill,
-                    billId=request.data['billCode'],
-                    emitterId=emitter.document_number,
-                    emitterName=emitter.social_reason if emitter.social_reason else emitter.first_name + ' ' + emitter.last_name,
-                    payerId=payer.document_number,
-                    payerName=payer.social_reason if payer.social_reason else payer.first_name + ' ' + payer.last_name,
-                    billValue = request.data['amount'],
-                    subTotal = request.data['amount'],
-                    total = request.data['amount'],
-                    currentBalance = request.data['amount'],
-                    dateBill = request.data['DateBill'],
-                    datePayment = request.data['DateExpiration'],
-                    expirationDate = request.data['DateExpiration'],
+            # ==================== INITIAL SETUP ====================
+            logger.info(f"PreOperationAV request received from {request.user}")
+            
+            # Parse and validate request data
+            try:
+                json_data = json.loads(request.body.decode('utf-8'))
+                values_list = json_data.get('values', [])
+                if not values_list:
+                    return response(
+                        {'error': True, 'message': 'Empty values list provided'},
+                        status.HTTP_400_BAD_REQUEST
                     )
-                bill.save()
-                request.data['bill'] = bill.id
-            serializer = PreOperationSerializer(data=request.data, context={'request': request})
-            if serializer.is_valid():
-                serializer.save()
-                return response({'error': False, 'message': 'operación creada','data': serializer.data}, 200)
-            return response({'error': True, 'message': serializer.errors}, 400)
+            except json.JSONDecodeError:
+                return response(
+                    {'error': True, 'message': 'Invalid JSON data'},
+                    status.HTTP_400_BAD_REQUEST
+                )
+
+            logger.debug(f"Processing {len(values_list)} operation(s)")
+
+            # ==================== SINGLE OPERATION ====================
+            if len(values_list) == 1:
+                return self._handle_single_operation(request, values_list[0])
+
+            # ==================== BULK OPERATIONS ====================
+            return self._handle_bulk_operations(request, values_list)
+
         except Exception as e:
-            return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
+            logger.exception("Unexpected error in PreOperationAV")
+            return response(
+                {'error': True, 'message': 'Internal server error'},
+                status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def _handle_single_operation(self, request, operation_data):
+        """Process single operation with atomic creation of bill if needed"""
+        try:
+            with transaction.atomic():
+                # Create bill if billCode exists
+                bill_id = None
+                if operation_data.get('billCode', '') != '':
+                    bill_id = self._create_or_get_bill(operation_data)
+                    operation_data['bill'] = bill_id
+
+                # Validate and save operation
+                serializer = PreOperationSerializer(
+                    data=operation_data,
+                    context={'request': request}
+                )
+                
+                if not serializer.is_valid():
+                    logger.error(f"Validation failed: {serializer.errors}")
+                    raise serializers.ValidationError(serializer.errors)
+
+                instance = serializer.save()
+                
+                logger.info(f"Created operation {instance.id} with bill {bill_id or 'none'}")
+                
+                return response({
+                    'error': False,
+                    'message': 'Operation created successfully',
+                    'data': serializer.data,
+                    'with_bill': bool(bill_id)
+                }, status.HTTP_201_CREATED)
+
+        except Exception as e:
+            logger.error(f"Failed to create operation: {str(e)}")
+            return response(
+                {'error': True, 'message': str(e)},
+                getattr(e, 'status_code', status.HTTP_400_BAD_REQUEST)
+            )
+
+    def _handle_bulk_operations(self, request, values_list):
+        operations_created = []
+        errors = []
+        bill_mapping = {}
+
+        try:
+            with transaction.atomic():
+                # Fase 1: Mapeo de todas las facturas referenciadas
+                all_bill_refs = set()
+                
+                # Identificar todas las referencias a facturas (tanto por billCode como por bill)
+                for op_data in values_list:
+                    if op_data.get('billCode', ''):
+                        all_bill_refs.add(op_data['billCode'])
+                    elif op_data.get('bill', ''):
+                        # Si es un UUID válido, no necesitamos mapearlo
+                        if not is_uuid(op_data['bill']):
+                            all_bill_refs.add(op_data['bill'])
+                
+                # Obtener facturas existentes
+                existing_bills = Bill.objects.filter(billId__in=all_bill_refs)
+                bill_mapping = {bill.billId: str(bill.id) for bill in existing_bills}
+                logger.debug(f"Facturas existentes mapeadas: {bill_mapping}")
+
+                # Crear facturas nuevas (solo primera ocurrencia)
+                for index, op_data in enumerate(values_list):
+                    bill_code = op_data.get('billCode', '')
+                    if bill_code and bill_code not in bill_mapping and op_data.get('_isFirstOccurrence', False):
+                        try:
+                            bill_id = self._create_or_get_bill(op_data)
+                            bill_mapping[bill_code] = bill_id
+                            logger.info(f"Factura creada: {bill_code} -> {bill_id}")
+                        except Exception as e:
+                            logger.error(f"Error creando factura {bill_code}: {str(e)}")
+                            errors.append({
+                                'index': index,
+                                'error': f"Error creando factura {bill_code}: {str(e)}",
+                                'data': op_data
+                            })
+
+                if errors:
+                    raise Exception("Error en creación de facturas")
+
+                # Fase 2: Procesar operaciones
+                for index, op_data in enumerate(values_list):
+                    if any(err['index'] == index for err in errors):
+                        continue
+
+                    try:
+                        operation_data = {**op_data}
+                        bill_ref = None
+                        
+                        # Caso 1: Tiene billCode (nueva factura)
+                        if op_data.get('billCode', ''):
+                            bill_ref = op_data['billCode']
+                            if bill_ref in bill_mapping:
+                                operation_data['bill'] = bill_mapping[bill_ref]
+                            else:
+                                raise ValueError(f"Factura {bill_ref} no existe")
+                        
+                        # Caso 2: Tiene bill que no es UUID (referencia por billId)
+                        elif op_data.get('bill', '') and not is_uuid(op_data['bill']):
+                            bill_ref = op_data['bill']
+                            if bill_ref in bill_mapping:
+                                operation_data['bill'] = bill_mapping[bill_ref]
+                            else:
+                                raise ValueError(f"Factura {bill_ref} no existe")
+                        
+                        # Caso 3: Tiene bill que es UUID (ya está correcto)
+                        
+                        serializer = PreOperationSerializer(
+                            data=operation_data,
+                            context={'request': request}
+                        )
+                        
+                        if not serializer.is_valid():
+                            logger.error(f"Error validación operación {index}: {serializer.errors}")
+                            raise serializers.ValidationError(serializer.errors)
+                        
+                        instance = serializer.save()
+                        operations_created.append({
+                            'index': index,
+                            'operation_id': str(instance.id),
+                            'bill_id': operation_data.get('bill')
+                        })
+
+                    except Exception as e:
+                        logger.error(f"Error en operación {index}: {str(e)}")
+                        errors.append({
+                            'index': index,
+                            'error': str(e),
+                            'data': op_data
+                        })
+
+                if errors:
+                    raise Exception("Algunas operaciones fallaron")
+
+                return response({
+                    'total_operations': len(values_list),
+                    'successful': operations_created,
+                    'failed': errors,
+                    'bill_mapping': bill_mapping
+                }, status.HTTP_201_CREATED)
+
+        except Exception as e:
+            logger.error(f"Error en operación masiva: {str(e)}")
+            return response({
+                'error': True,
+                'message': 'Operaciones fallidas',
+                'details': errors,
+                'successful_count': len(operations_created)
+            }, status.HTTP_400_BAD_REQUEST)
+
+    def _create_or_get_bill(self, operation_data):
+        """Helper to create or get existing bill"""
+        bill_code = operation_data['billCode']
+        logger.debug(operation_data)
+        try:
+            # Try to get existing bill first
+            logger.debug("aaaaaa donde creao")
+            bill = Bill.objects.filter(billId=bill_code).first()
+            logger.debug("paso aaa")
+            if bill:
+                return str(bill.id)
+            logger.debug("1")
+            # Create new bill
+            emitter = Client.objects.get(pk=operation_data['emitter'])
+            payer = Client.objects.get(pk=operation_data['payer'])
+            type_bill = TypeBill.objects.get(pk='fdb5feb4-24e9-41fc-9689-31aff60b76c9')
+            logger.debug("2")
+
+            if 'file' in operation_data:
+                fileUrl = operation_data.get('file', None)
+                if fileUrl:
+                    fileUrl = uploadFileBase64(files_bse64=[fileUrl], file_path=f'bill/{operation_data["id"]}')
+                    operation_data['file'] = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{fileUrl}"
+                    
+            bill = Bill.objects.create(
+                id=gen_uuid(),
+                typeBill=type_bill,
+                billId=bill_code,
+                emitterId=emitter.document_number,
+                emitterName=emitter.social_reason or f"{emitter.first_name} {emitter.last_name}",
+                payerId=payer.document_number,
+                payerName=payer.social_reason or f"{payer.first_name} {payer.last_name}",
+                billValue=operation_data['saldoInicialFactura'],
+                subTotal=operation_data['saldoInicialFactura'],
+                total=operation_data['saldoInicialFactura'],
+                currentBalance=operation_data.get('currentBalance', operation_data['saldoInicialFactura']),
+                dateBill=operation_data['DateBill'],
+                datePayment=operation_data['DateExpiration'],
+                expirationDate=operation_data['DateExpiration'],
+                file=operation_data['file']
+                
+            )
+            
+            return str(bill.id)
+        except Exception as e:
+            logger.error(f"Bill creation failed for {bill_code}: {str(e)}")
+            raise
+
+    def _prepare_operation_data(self, op_data, client_map, bill_mapping):
+        """Prepare clean operation data with validation"""
+        operation_data = {}
+        
+        # Validate required fields
+        required_fields = ['emitter', 'payer', 'DateBill', 'DateExpiration']
+        for field in required_fields:
+            if field not in op_data:
+                raise ValueError(f"Missing required field: {field}")
+            operation_data[field] = op_data[field]
+
+        # Handle bill reference
+        if op_data.get('billCode', '') != '':
+            bill_code = op_data['billCode']
+            if bill_code in bill_mapping:
+                operation_data['bill'] = bill_mapping[bill_code]
+            else:
+                raise ValueError(f"Bill {bill_code} does not exist in mapping")
+
+        # Copy other fields
+        for k, v in op_data.items():
+            if k not in ['billCode', '_isFirstOccurrence'] and k not in required_fields:
+                operation_data[k] = v
+
+        return operation_data
     
     @checkRole(['admin'])
     def get(self, request, pk=None):
@@ -160,6 +455,17 @@ class PreOperationAV(BaseAV):
                         serializer   = PreOperationSignatureSerializer(page, many=True)
                         return self.get_paginated_response(serializer.data)
                    
+                elif  request.query_params.get('investor') and request.query_params.get('status'):
+                    logger.debug(f"investor y status están definidos")
+                    
+                    # Obtener los datos de la operación
+                    preOperation = PreOperation.objects.filter(
+                        investor_id=request.query_params.get('investor'),
+                        status=request.query_params.get('status')
+                    )
+                    serializer = PreOperationReadOnlySerializer(preOperation, many=True)
+                    
+                    return response({'error': False, 'data': serializer.data}, 200)
                 
                 elif (request.query_params.get('opId') != 'undefined'):
                     logger.debug(f"request.query_params.get('opId') != 'undefined'")
@@ -235,7 +541,7 @@ class PreOperationAV(BaseAV):
                     serializer   = PreOperationSignatureSerializer(preOperation, many=True)
                     return self.get_paginated_response(serializer.data)                  
 
-
+                
             else:
                 logger.debug(f"else final")
                 preOperations = PreOperation.objects.filter(state=1)
@@ -250,6 +556,7 @@ class PreOperationAV(BaseAV):
     def patch(self, request, pk):
         try:
             if request.data['billCode'] != '':
+                logger.debug('a')
                 emitter = Client.objects.get(pk=request.data['emitter'])
                 payer = Client.objects.get(pk=request.data['payer'])
                 typeBill = TypeBill.objects.get(pk='a7c70741-8c1a-4485-8ed4-5297e54a978a')
@@ -274,6 +581,7 @@ class PreOperationAV(BaseAV):
             
             # check if massive and massiveByInvestor are in the request data
             if 'massive' not in request.data and 'massiveByInvestor' not in request.data:
+                logger.debug('bbbbbbbbbbbbbb')
                 preOperation = PreOperation.objects.get(pk=pk)
                 serializer   = PreOperationSerializer(preOperation, data=request.data, context={'request': request}, partial=True)
                 if serializer.is_valid():
@@ -282,13 +590,15 @@ class PreOperationAV(BaseAV):
                 else:
                     return response({'error': True, 'message': serializer.errors}, 500)
             elif request.data['massive'] == True:
+
+                logger.debug('c')
                 preOperation = PreOperation.objects.get(pk=pk)
                 if request.data['status'] == 2:
                     # get the operations with the same opId
                     operations = PreOperation.objects.filter(opId=preOperation.opId, investor=preOperation.investor)
                     for operation in operations:
                         operation.status = 2
-                        operation.bill.currentBalance += operation.payedAmount
+                        
 
                         log_balance_change(operation.clientAccount, operation.clientAccount.balance, (operation.clientAccount.balance + operation.presentValueInvestor), operation.presentValueInvestor, 'pre_operation', operation.id, 'PreOperation View - patch')
                         operation.clientAccount.balance += operation.presentValueInvestor
@@ -299,6 +609,7 @@ class PreOperationAV(BaseAV):
                         operation.save()
                     return response({'error': False, 'message': 'Operaciones Actualizada'}, 200)
                 else:
+                    logger.debug('d')
                     # get the operations with the same opId
                     operations = PreOperation.objects.filter(opId=preOperation.opId, investor=preOperation.investor)
                     for operation in operations:
@@ -311,11 +622,12 @@ class PreOperationAV(BaseAV):
                             operation.save()
                     return response({'error': False, 'message': 'Operaciones Actualizada'}, 200)
             elif request.data['massiveByInvestor'] == True:
+                logger.debug('e')
                 preOperation = PreOperation.objects.filter(opId=request.data['opId'], investor=request.data['investor'])
                 for operations in preOperation:
                     if request.data['status'] == 2:
                         operations.status = 2
-                        operations.bill.currentBalance += operations.payedAmount
+                       
                         
                         log_balance_change(operations.clientAccount, operations.clientAccount.balance, (operations.clientAccount.balance + operations.presentValueInvestor), operations.presentValueInvestor, 'pre_operation', operations.id, 'PreOperation View - patch 4')
                         operations.clientAccount.balance += operations.presentValueInvestor
@@ -329,7 +641,7 @@ class PreOperationAV(BaseAV):
                     elif request.data['status'] == 1:
                         if operations.status == 0 and operations.status != 1:
                             operations.status = 1
-
+                        
                             log_balance_change(operations.clientAccount, operations.clientAccount.balance, (operations.clientAccount.balance - (operations.presentValueInvestor + operations.GM)), -(operations.presentValueInvestor + operations.GM), 'pre_operation', operations.id, 'PreOperation View - patch 6')
                             operations.clientAccount.balance -= (operations.presentValueInvestor + operations.GM)
                             operations.clientAccount.save()
@@ -337,6 +649,7 @@ class PreOperationAV(BaseAV):
                         return response({'error': False, 'message': 'Operaciones Actualizada'}, 200)
 
                 if request.data['status'] == 1:
+                    logger.debug('f')
                     # get the operations with the same opId
                     operations = PreOperation.objects.filter(opId=preOperation.opId)
                     for operation in operations:
@@ -347,8 +660,12 @@ class PreOperationAV(BaseAV):
 
                 return response({'error': False, 'message': 'Operaciones Actualizada'}, 200)
 
-            else:     
+            else:
+                logger.debug('ag')
                 preOperation = PreOperation.objects.get(pk=pk)
+
+
+                logger.debug('caso editar',preOperation,request.data)
                 serializer   = PreOperationSerializer(preOperation, data=request.data, context={'request': request}, partial=True)
                 if serializer.is_valid():
                     serializer.save()
@@ -364,7 +681,7 @@ class PreOperationAV(BaseAV):
         try:
             preOperation       = PreOperation.objects.get(id=pk)
             # return the balance to the client
-            preOperation.bill.currentBalance   += preOperation.payedAmount
+            preOperation.bill.currentBalance   += preOperation.amount
             #preOperation.clientAccount.balance += preOperation.payedAmount
             preOperation.bill.save()
             #preOperation.clientAccount.save()
@@ -498,27 +815,120 @@ class GetOperationByParams(BaseAV):
                                                             Q(emitter__first_name__icontains=request.query_params.get('investor')) |
                                                             Q(emitter__social_reason__icontains=request.query_params.get('investor'))
                                                              
-)                           
+)          
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('mode') =='operations'):
+                logger.debug(f"modo operations sin mas parametros")
+                preOperations = PreOperation.objects.all()
+
+            elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('mode') =='operations'):
+                logger.debug(f"a modo operations" )
+                preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'), status__lte=4)
+
+
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('mode') =='operations'):                
+                logger.debug(f"b modo operations")
+                preOperations = PreOperation.objects.filter(bill_id__billId__icontains=request.query_params.get('billId'))
+
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('mode') =='operations'):
+                logger.debug(f"c modo operations")
+                preOperations = PreOperation.objects.filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
+                                                            Q(investor__first_name__icontains=request.query_params.get('investor')) |
+                                                            Q(investor__social_reason__icontains=request.query_params.get('investor')) |
+                                                            Q(emitter__last_name__icontains=request.query_params.get('investor')) |
+                                                            Q(emitter__first_name__icontains=request.query_params.get('investor')) |
+                                                          Q(emitter__social_reason__icontains=request.query_params.get('investor')))
+            
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('mode') =='operations'):
+                logger.debug(f"a con fecha sin mas parametros modo operations")
+                preOperations = PreOperation.objects.filter(
+                    opDate__gte=request.query_params.get('startDate'),
+                    opDate__lte=request.query_params.get('endDate')
+                )
+            elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('mode') =='operations'):
+                logger.debug(f"a con fecha modo operations")
+                preOperations = PreOperation.objects.filter(
+                    opId=request.query_params.get('opId'),
+                    status__lte=4,
+                    opDate__gte=request.query_params.get('startDate'),
+                    opDate__lte=request.query_params.get('endDate')
+                )
+
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('mode') =='operations'):                
+                logger.debug(f"b con fecha modo operations")
+                preOperations = PreOperation.objects.filter(
+                    bill_id__billId__icontains=request.query_params.get('billId'),
+                    opDate__gte=request.query_params.get('startDate'),
+                    opDate__lte=request.query_params.get('endDate')
+                )
+
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('mode') =='operations'):
+                logger.debug(f"c fecha modo operations")
+                preOperations = PreOperation.objects.filter(
+                    Q(investor__last_name__icontains=request.query_params.get('investor')) |
+                    Q(investor__first_name__icontains=request.query_params.get('investor')) |
+                    Q(investor__social_reason__icontains=request.query_params.get('investor')) |
+                    Q(emitter__last_name__icontains=request.query_params.get('investor')) |
+                    Q(emitter__first_name__icontains=request.query_params.get('investor')) |
+                    Q(emitter__social_reason__icontains=request.query_params.get('investor')),
+                    opDate__gte=request.query_params.get('startDate'),
+                    opDate__lte=request.query_params.get('endDate')
+                )
             elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('mode') =='operations'):
                 logger.debug(f"a c0n mode operations")
                 preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'), status__lte=4)
-            elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == ''):
+            elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == ''):
                 logger.debug(f"a")
-                preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'), status__lte=3)
+                preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'), status__lte=4)
 
 
-            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == ''):                
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == ''):                
                 logger.debug(f"b")
                 preOperations = PreOperation.objects.filter(bill_id__billId__icontains=request.query_params.get('billId'))
 
-            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != ''):
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == ''):
                 logger.debug(f"c")
                 preOperations = PreOperation.objects.filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__first_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__social_reason__icontains=request.query_params.get('investor')) |
                                                             Q(emitter__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(emitter__first_name__icontains=request.query_params.get('investor')) |
-                                                            Q(emitter__social_reason__icontains=request.query_params.get('investor')))
+                                                          Q(emitter__social_reason__icontains=request.query_params.get('investor')))
+            
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != ''):
+                logger.debug(f"a con fecha sin mas parametros")
+                preOperations = PreOperation.objects.filter(
+                    opDate__gte=request.query_params.get('startDate'),
+                    opDate__lte=request.query_params.get('endDate')
+                )
+            elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != ''):
+                logger.debug(f"a con fecha")
+                preOperations = PreOperation.objects.filter(
+                    opId=request.query_params.get('opId'),
+                    status__lte=4,
+                    opDate__gte=request.query_params.get('startDate'),
+                    opDate__lte=request.query_params.get('endDate')
+                )
+
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != ''):                
+                logger.debug(f"b con fecha")
+                preOperations = PreOperation.objects.filter(
+                    bill_id__billId__icontains=request.query_params.get('billId'),
+                    opDate__gte=request.query_params.get('startDate'),
+                    opDate__lte=request.query_params.get('endDate')
+                )
+
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != ''):
+                logger.debug(f"c fecha")
+                preOperations = PreOperation.objects.filter(
+                    Q(investor__last_name__icontains=request.query_params.get('investor')) |
+                    Q(investor__first_name__icontains=request.query_params.get('investor')) |
+                    Q(investor__social_reason__icontains=request.query_params.get('investor')) |
+                    Q(emitter__last_name__icontains=request.query_params.get('investor')) |
+                    Q(emitter__first_name__icontains=request.query_params.get('investor')) |
+                    Q(emitter__social_reason__icontains=request.query_params.get('investor')),
+                    opDate__gte=request.query_params.get('startDate'),
+                    opDate__lte=request.query_params.get('endDate')
+                )
             else:
                 logger.debug(f"d")
                 preOperations = PreOperation.objects.all()
@@ -605,7 +1015,7 @@ class GetOperationByParams(BaseAV):
                 serializer   = PreOperationByParamsSerializer(page, many=True)
                 logger.debug(f"m")
                 serializer.data[0]['calcs'] = data
-                logger.debug(f"{data}")
+              
                 return self.get_paginated_response(serializer.data)
             
         except PreOperation.DoesNotExist:
