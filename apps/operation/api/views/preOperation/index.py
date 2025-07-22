@@ -834,6 +834,7 @@ class GetOperationByParams(BaseAV):
                 logger.debug(f"c modo operations")
                 preOperations = PreOperation.objects.filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__first_name__icontains=request.query_params.get('investor')) |
+                                                            Q(bill_id__billId__icontains=request.query_params.get('investor')) |
                                                             Q(investor__social_reason__icontains=request.query_params.get('investor')) |
                                                             Q(emitter__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(emitter__first_name__icontains=request.query_params.get('investor')) |
