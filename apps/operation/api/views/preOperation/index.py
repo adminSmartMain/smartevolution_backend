@@ -773,10 +773,11 @@ class GetOperationByParams(BaseAV):
             if (request.query_params.get('opId') != '' and request.query_params.get('billId') != '' 
                 and request.query_params.get('investor') != ''):
                 preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'),  
-                                                            bill_id__billId__icontains=request.query_params.get('billId'),
+                                                            bill_id__billId__icontains=request.query_params.get('investor'),
                                                             ).filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__first_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__social_reason__icontains=request.query_params.get('investor')) |
+                                                   
                                                             Q(emitter__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(emitter__first_name__icontains=request.query_params.get('investor')) |
                                                             Q(emitter__social_reason__icontains=request.query_params.get('investor')))
@@ -889,6 +890,7 @@ class GetOperationByParams(BaseAV):
                 logger.debug(f"c")
                 preOperations = PreOperation.objects.filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__first_name__icontains=request.query_params.get('investor')) |
+                                                               Q(bill_id__billId__icontains=request.query_params.get('investor')) |
                                                             Q(investor__social_reason__icontains=request.query_params.get('investor')) |
                                                             Q(emitter__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(emitter__first_name__icontains=request.query_params.get('investor')) |
