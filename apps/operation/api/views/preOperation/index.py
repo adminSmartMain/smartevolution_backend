@@ -770,10 +770,9 @@ class GetOperationByParams(BaseAV):
     def get(self, request):
         logger.debug(f"GetOperationByParams")
         try:
-            if (request.query_params.get('opId') != '' and request.query_params.get('billId') != '' 
-                and request.query_params.get('investor') != ''):
+            if (request.query_params.get('opId') != '' and request.query_params.get('billId') != '' and request.query_params.get('investor') != ''):
                 preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'),  
-                                                            bill_id__billId__icontains=request.query_params.get('investor'),
+                                                            bill_id__billId__icontains=request.query_params.get('investor'),status__in=[0, 2]
                                                             ).filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__first_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__social_reason__icontains=request.query_params.get('investor')) |
@@ -784,10 +783,13 @@ class GetOperationByParams(BaseAV):
 
             elif (request.query_params.get('opId') != '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == ''):
                 preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'),
-                                                            bill_id__billId__icontains=request.query_params.get('billId'))
+                                                            bill_id__billId__icontains=request.query_params.get('billId'),
+                                                            status__in=[0, 2])
             elif (request.query_params.get('opId') != '' and request.query_params.get('investor') != '' and request.query_params.get('billId') == '' and request.query_params.get('mode') =='operations'):
                 logger.debug(f"caso opID e investor operations")
-                preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId')).filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
+                preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'),
+                                                            status__in=[1, 3, 4, 5] 
+                                                            ).filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__first_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__social_reason__icontains=request.query_params.get('investor')) |
                                                             Q(emitter__last_name__icontains=request.query_params.get('investor')) |
@@ -798,7 +800,7 @@ class GetOperationByParams(BaseAV):
                 logger.debug(f"caso opID e investor preoperations")
                 preOperations = PreOperation.objects.filter(
                 opId=request.query_params.get('opId'),
-                status__lte=3).filter(
+                 status__in=[0, 2]).filter(
                 Q(investor__last_name__icontains=request.query_params.get('investor')) |
                 Q(investor__first_name__icontains=request.query_params.get('investor')) |
                 Q(investor__social_reason__icontains=request.query_params.get('investor')) |
@@ -809,7 +811,8 @@ class GetOperationByParams(BaseAV):
 
             elif (request.query_params.get('billId') != '' and request.query_params.get('investor') != '' and request.query_params.get('opId') == ''):
                
-                preOperations = PreOperation.objects.filter(bill_id__billId__icontains=request.query_params.get('billId')).filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
+                preOperations = PreOperation.objects.filter(bill_id__billId__icontains=request.query_params.get('billId'),
+                                                             status__in=[0, 2]).filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__first_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__social_reason__icontains=request.query_params.get('investor')) |
                                                             Q(emitter__last_name__icontains=request.query_params.get('investor')) |
@@ -817,40 +820,42 @@ class GetOperationByParams(BaseAV):
                                                             Q(emitter__social_reason__icontains=request.query_params.get('investor'))
                                                              
 )          
-            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('mode') =='operations'):
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('mode') =='operations'and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == ''):
                 logger.debug(f"modo operations sin mas parametros")
-                preOperations = PreOperation.objects.all()
+                preOperations = PreOperation.objects.filter(status__in=[1, 3, 4, 5])
 
             elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('mode') =='operations'):
                 logger.debug(f"a modo operations" )
-                preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'), status__lte=4)
+                preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'), status__in=[1, 3, 4, 5])
 
 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('mode') =='operations'):                
                 logger.debug(f"b modo operations")
-                preOperations = PreOperation.objects.filter(bill_id__billId__icontains=request.query_params.get('billId'))
+                preOperations = PreOperation.objects.filter(bill_id__billId__icontains=request.query_params.get('billId'), status__in=[1, 3, 4, 5])
 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('mode') =='operations'):
                 logger.debug(f"c modo operations")
-                preOperations = PreOperation.objects.filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
+                preOperations = PreOperation.objects.filter(status__in=[1, 3, 4, 5]).filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__first_name__icontains=request.query_params.get('investor')) |
                                                             Q(bill_id__billId__icontains=request.query_params.get('investor')) |
                                                             Q(investor__social_reason__icontains=request.query_params.get('investor')) |
                                                             Q(emitter__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(emitter__first_name__icontains=request.query_params.get('investor')) |
-                                                          Q(emitter__social_reason__icontains=request.query_params.get('investor')))
+                                                          Q(emitter__social_reason__icontains=request.query_params.get('investor'))
+                                                          )
             
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('mode') =='operations'):
                 logger.debug(f"a con fecha sin mas parametros modo operations")
                 preOperations = PreOperation.objects.filter(
                     opDate__gte=request.query_params.get('startDate'),
-                    opDate__lte=request.query_params.get('endDate')
+                    opDate__lte=request.query_params.get('endDate'),
+                    status__in=[1, 3, 4, 5]
                 )
             elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('mode') =='operations'):
                 logger.debug(f"a con fecha modo operations")
                 preOperations = PreOperation.objects.filter(
                     opId=request.query_params.get('opId'),
-                    status__lte=4,
+                    status__in=[1, 3, 4, 5],
                     opDate__gte=request.query_params.get('startDate'),
                     opDate__lte=request.query_params.get('endDate')
                 )
@@ -858,6 +863,7 @@ class GetOperationByParams(BaseAV):
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('mode') =='operations'):                
                 logger.debug(f"b con fecha modo operations")
                 preOperations = PreOperation.objects.filter(
+                     status__in=[1, 3, 4, 5],
                     bill_id__billId__icontains=request.query_params.get('billId'),
                     opDate__gte=request.query_params.get('startDate'),
                     opDate__lte=request.query_params.get('endDate')
@@ -873,19 +879,20 @@ class GetOperationByParams(BaseAV):
                     Q(emitter__first_name__icontains=request.query_params.get('investor')) |
                     Q(emitter__social_reason__icontains=request.query_params.get('investor')),
                     opDate__gte=request.query_params.get('startDate'),
-                    opDate__lte=request.query_params.get('endDate')
+                    opDate__lte=request.query_params.get('endDate'),
+                     status__in=[1, 3, 4, 5],
                 )
             elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('mode') =='operations'):
                 logger.debug(f"a c0n mode operations")
-                preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'), status__lte=4)
+                preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'),  status__in=[1, 3, 4, 5])
             elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == ''):
                 logger.debug(f"a")
-                preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'), status__lte=4)
+                preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'),   status__in=[0, 2])
 
 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == ''):                
                 logger.debug(f"b")
-                preOperations = PreOperation.objects.filter(bill_id__billId__icontains=request.query_params.get('billId'))
+                preOperations = PreOperation.objects.filter(bill_id__billId__icontains=request.query_params.get('billId'),  status__in=[0, 2])
 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == ''):
                 logger.debug(f"c")
@@ -895,13 +902,13 @@ class GetOperationByParams(BaseAV):
                                                             Q(investor__social_reason__icontains=request.query_params.get('investor')) |
                                                             Q(emitter__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(emitter__first_name__icontains=request.query_params.get('investor')) |
-                                                          Q(emitter__social_reason__icontains=request.query_params.get('investor')))
+                                                          Q(emitter__social_reason__icontains=request.query_params.get('investor')),  status__in=[0, 2])
             
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != ''):
                 logger.debug(f"a con fecha sin mas parametros")
                 preOperations = PreOperation.objects.filter(
                     opDate__gte=request.query_params.get('startDate'),
-                    opDate__lte=request.query_params.get('endDate')
+                    opDate__lte=request.query_params.get('endDate'),  status__in=[0, 2]
                 )
             elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != ''):
                 logger.debug(f"a con fecha")
@@ -909,7 +916,7 @@ class GetOperationByParams(BaseAV):
                     opId=request.query_params.get('opId'),
                     status__lte=4,
                     opDate__gte=request.query_params.get('startDate'),
-                    opDate__lte=request.query_params.get('endDate')
+                    opDate__lte=request.query_params.get('endDate'),  status__in=[0, 2]
                 )
 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != ''):                
@@ -917,12 +924,13 @@ class GetOperationByParams(BaseAV):
                 preOperations = PreOperation.objects.filter(
                     bill_id__billId__icontains=request.query_params.get('billId'),
                     opDate__gte=request.query_params.get('startDate'),
-                    opDate__lte=request.query_params.get('endDate')
+                    opDate__lte=request.query_params.get('endDate'),  status__in=[0, 2]
                 )
 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != ''):
                 logger.debug(f"c fecha")
                 preOperations = PreOperation.objects.filter(
+                    
                     Q(investor__last_name__icontains=request.query_params.get('investor')) |
                     Q(investor__first_name__icontains=request.query_params.get('investor')) |
                     Q(investor__social_reason__icontains=request.query_params.get('investor')) |
@@ -930,11 +938,11 @@ class GetOperationByParams(BaseAV):
                     Q(emitter__first_name__icontains=request.query_params.get('investor')) |
                     Q(emitter__social_reason__icontains=request.query_params.get('investor')),
                     opDate__gte=request.query_params.get('startDate'),
-                    opDate__lte=request.query_params.get('endDate')
+                    opDate__lte=request.query_params.get('endDate'),  status__in=[0, 2]
                 )
             else:
                 logger.debug(f"d")
-                preOperations = PreOperation.objects.all()
+                preOperations = PreOperation.objects.filter(status__in=[0, 2])
 
             if (request.query_params.get('mode') != '' and request.query_params.get('mode') != None):
                 logger.debug(f"f")
