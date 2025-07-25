@@ -76,6 +76,10 @@ class BillCreationSerializer(serializers.ModelSerializer):
         except Exception as e:
             logger.error(f"Error al crear factura: {str(e)}")
             raise serializers.ValidationError(str(e))
+        
+
+
+
 class BillSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bill
