@@ -45,7 +45,15 @@ class BillCreationSerializer(serializers.ModelSerializer):
             'payerName', 'payerId', 'emitterName', 'datePayment','billValue','subTotal','total','file','ret_iva','ret_ica'
             ,'ret_fte','other_ret'
         ]
-    
+
+        
+    def validate_billId(self, value):
+        """
+        Validación personalizada para billId duplicado
+        """
+        if Bill.objects.filter(billId=value).exists():
+            raise serializers.ValidationError("Este ID de factura ya está registrado")
+        return value
     def create(self, validated_data):
         try:
             # Usar el usuario del request
@@ -68,6 +76,10 @@ class BillCreationSerializer(serializers.ModelSerializer):
         except Exception as e:
             logger.error(f"Error al crear factura: {str(e)}")
             raise serializers.ValidationError(str(e))
+        
+
+
+
 class BillSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bill

@@ -35,6 +35,7 @@ class BucketS3():
         return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{relative_url}"
 
 
+
 def uploadFileBase64(files_bse64=None, file_path=None):
     """
     Funcion que carga el archivo en base 64 a S3
@@ -42,8 +43,8 @@ def uploadFileBase64(files_bse64=None, file_path=None):
     for file in files_bse64:
         # Validamos si es un archivo PDF
         file_content = getContentInfo(file)
-        if file_content["file_format"] not in ('xml'):
-            raise HttpException(400, "Contenido multimedia no válido para almacenar.")
+        #if file_content["file_format"] not in ('xml'):
+         #   raise HttpException(400, "Contenido multimedia no válido para almacenar.")
         # Validamos si se proporciono el documento RUT
         bytes = b64decode(file_content["content"], validate=True)
         # Subiendo el documento a el storage de s3
