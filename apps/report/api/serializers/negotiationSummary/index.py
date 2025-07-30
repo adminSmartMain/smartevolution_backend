@@ -14,6 +14,22 @@ from apps.base.exceptions import HttpException
 # Models 
 from apps.report.api.models.pendingAccounts.index import PendingAccount
 from apps.administration.api.models.emitterDeposit.index import EmitterDeposit
+import logging
+
+# Configurar el logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Crear un handler de consola y definir el nivel
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Crear un formato para los mensajes de log
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# Añadir el handler al logger
+logger.addHandler(console_handler)
 
 class NegotiationSummarySerializer(serializers.ModelSerializer):
     class Meta:
@@ -57,8 +73,12 @@ class NegotiationSummaryReadOnlySerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         #accountingControl = []
         data = super().to_representation(instance)
+        logger.debug('si sale algo aqi es el fallo 1')
         data['pendingAccounts']  = PendingAccountSerializer(PendingAccount.objects.filter(opId=instance.opId), many=True).data
+
+        logger.debug('si sale algo aqi es el fallo 2')
         data['emitterDeposits']  = EmitterDepositSerializer(EmitterDeposit.objects.filter(operation__opId=instance.opId), many=True).data
+        logger.debug('si sale algo aqi es el fallo 3' )
         data['totalDeposits']    = sum([x['amount'] for x in data['emitterDeposits']]) if len(data['emitterDeposits']) > 0 else data['totalDeposits']
         data['pendingToDeposit'] = data['total'] - data['totalDeposits']  
         # get the account control of the emitter deposits
