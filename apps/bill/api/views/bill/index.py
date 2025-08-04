@@ -199,97 +199,869 @@ class BillAV(BaseAV):
     @checkRole(['admin','third'])
     def get(self, request, pk=None):
         try:
-
-            if len(request.query_params) > 0:
-                if request.query_params.get('emitter') != None:
-                    bills = Bill.objects.filter(emitterName__icontains=request.query_params.get('emitter'))
-                elif request.query_params.get('payer') != None:
-                    bills = Bill.objects.filter(payerName__icontains=request.query_params.get('payer'))
-                elif request.query_params.get('opId') != None:
-                    billList = []
-                    # get the bills of the operation
-                    # get the opId
-                    opId = PreOperation.objects.get(id=request.query_params.get('opId'))
-                    op   = PreOperation.objects.filter(opId=opId.opId)
-                    for x in op:
-                        bills = Bill.objects.get(id=x.bill.id)
-                        billList.append({
-                            'id': bills.id,
-                            'billId': bills.billId,
-                            'total': bills.total,
-                            'opAmount': x.payedAmount,
-                            'opExpiration':x.opExpiration,
-                            'dateBill': x.opDate
-                        })                   
-                    return response({'error': False, 'data': billList}, 200)
-
-                elif request.query_params.get('bill') != None:
-                    bills = Bill.objects.filter(billId__icontains=request.query_params.get('bill'))
+            # Normalizamos los parámetros (convertimos "" a None)
+            params = {
+                k: v if v != "" else None 
+                for k, v in request.query_params.items()
+            }
+            
+            # Verificamos si hay parámetros con valores reales
+            has_valid_params = any(v is not None for v in params.values())
+            
+            if has_valid_params:
+                logger.debug(f"Query params recibidos: {params}")
                 
-                elif request.query_params.get('operation') != None:
-                    billList = []
-                    # get the bills of the operation
-                    op   = PreOperation.objects.filter(opId=request.query_params.get('operation'))
-                    for x in op:
-                        bill = Bill.objects.get(id=x.bill.id)
-                        billList.append(bill)
-                    page       = self.paginate_queryset(billList)
-                    if page is not None:
-                        serializer = BillReadOnlySerializer(page, many=True)
-                        return self.get_paginated_response(serializer.data)
-                elif request.query_params.get('payerId') != None:
-                    # get the payer of the bill
+                # --- CASO 1: Búsqueda inteligente SIN filtros adicionales ---
+                if (params.get('emitter_or_payer_or_billId') is not None and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('operation') is None and 
+                    params.get('startDate') is None and 
+                    params.get('endDate') is None and
+                    params.get('typeBill') is None and
+                    params.get('channel') is None):
+                    
+                    logger.debug('Caso 1: Búsqueda inteligente sola')
+                    search_term = params.get('emitter_or_payer_or_billId')
+                    bills = Bill.objects.filter(
+                        Q(emitterName__icontains=search_term) |
+                        Q(payerName__icontains=search_term) |
+                        Q(billId__icontains=search_term),
+                        state=1
+                    )
+
+                # --- CASO 2: Solo filtro por typeBill ---
+                elif (params.get('emitter_or_payer_or_billId') is None and 
+                       params.get('mode') == 'intelligent_query' and 
+                 
+                    params.get('operation') is None and 
+                    params.get('startDate') is None and 
+                    params.get('endDate') is None and 
+                    params.get('typeBill') is not None and
+                    params.get('channel') is None):
+                    
+                    logger.debug('Caso 2: Solo typeBill')
+                    bills = Bill.objects.filter(
+                        typeBill=params.get('typeBill'),
+                        state=1
+                    )
+
+                # --- CASO 3: Búsqueda inteligente + typeBill ---
+                elif (params.get('emitter_or_payer_or_billId') is not None and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('operation') is None and 
+                    params.get('startDate') is None and 
+                    params.get('endDate') is None and 
+                    params.get('typeBill') is not None and
+                    params.get('channel') is None):
+                    
+                    logger.debug('Caso 3: Búsqueda + typeBill')
+                    search_term = params.get('emitter_or_payer_or_billId')
+                    bills = Bill.objects.filter(
+                        Q(emitterName__icontains=search_term) |
+                        Q(payerName__icontains=search_term) |
+                        Q(billId__icontains=search_term),
+                        typeBill=params.get('typeBill'),
+                        state=1
+                    )
+
+                # --- CASO 4: Búsqueda inteligente + fechas ---
+                elif (params.get('emitter_or_payer_or_billId') is not None and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('operation') is None and 
+                    params.get('startDate') is not None and 
+                    params.get('endDate') is not None and 
+                    params.get('typeBill') is None and
+                    params.get('channel') is None):
+                    
+                    logger.debug('Caso 4: Búsqueda + fechas')
+                    search_term = params.get('emitter_or_payer_or_billId')
+                    bills = Bill.objects.filter(
+                        Q(emitterName__icontains=search_term) |
+                        Q(payerName__icontains=search_term) |
+                        Q(billId__icontains=search_term),
+                        dateBill__gte=params.get('startDate'),
+                        dateBill__lte=params.get('endDate'),
+                        state=1
+                    )
+
+                # --- CASO 5: Búsqueda + fechas + typeBill ---
+                elif (params.get('emitter_or_payer_or_billId') is not None and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('operation') is None and 
+                    params.get('startDate') is not None and 
+                    params.get('endDate') is not None and 
+                    params.get('typeBill') is not None and
+                    params.get('channel') is None):
+                    
+                    logger.debug('Caso 5: Búsqueda + fechas + typeBill')
+                    search_term = params.get('emitter_or_payer_or_billId')
+                    bills = Bill.objects.filter(
+                        Q(emitterName__icontains=search_term) |
+                        Q(payerName__icontains=search_term) |
+                        Q(billId__icontains=search_term),
+                        typeBill=params.get('typeBill'),
+                        dateBill__gte=params.get('startDate'),
+                        dateBill__lte=params.get('endDate'),
+                        state=1
+                    )
+
+                # --- CASO 6: Solo filtro por channel (autogestión) ---
+                elif (params.get('emitter_or_payer_or_billId') is None and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('operation') is None and 
+                    params.get('startDate') is None and 
+                    params.get('endDate') is None and 
+                    params.get('typeBill') is None and
+                    params.get('channel') == 'autogestion'):
+                    
+                    logger.debug('Caso 6: Solo channel=autogestion')
+                    bills = Bill.objects.filter(
+                        integrationCode__isnull=False,
+                        integrationCode__gt='',  # Mayor que cadena vacía
+                        state=1
+                    )
+
+                # --- CASO 7: Solo filtro por channel (no-autogestion) ---
+                elif (params.get('emitter_or_payer_or_billId') is None and 
+                      params.get('mode') == 'intelligent_query' and 
+                    params.get('operation') is None and 
+                    params.get('startDate') is None and 
+                    params.get('endDate') is None and 
+                    params.get('typeBill') is None and
+                    params.get('channel') == 'no-autogestion'):
+                    
+                    logger.debug('Caso 7: Solo channel=no-autogestion')
+                    bills = Bill.objects.filter(
+                        (Q(integrationCode__isnull=True) | Q(integrationCode__exact='')) & Q(state=1)
+                    )
+
+                # --- CASO 8: Búsqueda + channel ---
+                elif (params.get('emitter_or_payer_or_billId') is not None and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('operation') is None and 
+                    params.get('startDate') is None and 
+                    params.get('endDate') is None and 
+                    params.get('typeBill') is None and
+                    params.get('channel') is not None):
+                    
+                    logger.debug('Caso 8: Búsqueda + channel')
+                    search_term = params.get('emitter_or_payer_or_billId')
+                    channel_filter = Q(integrationCode__isnull=False, integrationCode__gt='') if params.get('channel') == 'autogestion' else Q(Q(integrationCode__isnull=True) | Q(integrationCode__exact=''))
+                    
+                    bills = Bill.objects.filter(
+                        (Q(emitterName__icontains=search_term) |
+                        Q(payerName__icontains=search_term) |
+                        Q(billId__icontains=search_term)),
+                        channel_filter,
+                        state=1
+                    )
+
+                # --- CASO 9: Búsqueda + fechas + channel ---
+                elif (params.get('emitter_or_payer_or_billId') is not None and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('operation') is None and 
+                    params.get('startDate') is not None and 
+                    params.get('endDate') is not None and 
+                    params.get('typeBill') is None and
+                    params.get('channel') is not None):
+                    
+                    logger.debug('Caso 9: Búsqueda + fechas + channel')
+                    search_term = params.get('emitter_or_payer_or_billId')
+                    channel_filter = Q(integrationCode__isnull=False, integrationCode__gt='') if params.get('channel') == 'autogestion' else Q(Q(integrationCode__isnull=True) | Q(integrationCode__exact=''))
+                    
+                    bills = Bill.objects.filter(
+                        (Q(emitterName__icontains=search_term) |
+                        Q(payerName__icontains=search_term) |
+                        Q(billId__icontains=search_term)),
+                        channel_filter,
+                        dateBill__gte=params.get('startDate'),
+                        dateBill__lte=params.get('endDate'),
+                        state=1
+                    )
+
+                # --- CASO 10: TODOS LOS FILTROS (búsqueda + fechas + typeBill + channel) ---
+                elif (params.get('emitter_or_payer_or_billId') is not None and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('operation') is None and 
+                    params.get('startDate') is not None and 
+                    params.get('endDate') is not None and 
+                    params.get('typeBill') is not None and
+                    params.get('channel') is not None):
+                    
+                    logger.debug('Caso 10: TODOS LOS FILTROS')
+                    search_term = params.get('emitter_or_payer_or_billId')
+                    
+                    # Construimos el Q object para channel
+                    if params.get('channel') == 'autogestion':
+                        channel_q = Q(integrationCode__isnull=False) & ~Q(integrationCode__exact='')
+                    else:
+                        channel_q = Q(integrationCode__isnull=True) | Q(integrationCode__exact='')
+                    
+                    # Filtro combinado (todos los Q objects juntos)
+                    bills = Bill.objects.filter(
+                        Q(emitterName__icontains=search_term) |
+                        Q(payerName__icontains=search_term) |
+                        Q(billId__icontains=search_term),
+                        Q(typeBill=params.get('typeBill')),
+                        channel_q,
+                        Q(dateBill__gte=params.get('startDate')),
+                        Q(dateBill__lte=params.get('endDate')),
+                        Q(state=1)
+                    )
+                elif (params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('typeBill') and 
+                    params.get('channel') == 'autogestion' and 
+                    not params.get('startDate')):
+                    bills = Bill.objects.filter(
+                        # Búsqueda inteligente
+                        typeBill=params.get('typeBill'),
+                        integrationCode__isnull=False,
+                        integrationCode__gt='',
+                        state=1
+                    )
+
+                elif (params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('typeBill') and 
+                    params.get('channel') == 'no-autogestion' and 
+                    not params.get('startDate')):
+                    bills = Bill.objects.filter(
+                        # Búsqueda inteligente
+                        typeBill=params.get('typeBill'),
+                        integrationCode__isnull=True,
+                
+                        state=1
+                    )
+
+                
+                # --- CASOS ESPECIALES (operation, opId, etc.) ---
+                # Búsqueda por opId
+
+                elif (not params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('typeBill') and 
+                    params.get('channel') == 'autogestion' and 
+                    params.get('startDate')):
+                    bills = Bill.objects.filter(
+                        typeBill=params.get('typeBill'),
+                        integrationCode__isnull=False,
+                        integrationCode__gt='',
+                        dateBill__gte=params.get('startDate'),
+                        dateBill__lte=params.get('endDate'),
+                        state=1
+                    )
+                elif params.get('opId') is not None:
+                    logger.debug('Caso opId')
                     try:
-                        bill   = Bill.objects.get(id=request.query_params.get('payerId'))
+                        opId = params.get('opId')
+                        logger.debug(f'{opId}')
+                        bill_list = []
+                        operations = PreOperation.objects.filter(opId=opId)
+                        
+                        for op in operations:
+                            bill = op.bill
+                            bill_list.append({
+                                'id': bill.id,
+                                'billId': bill.billId,
+                                'total': bill.total,
+                                'opAmount': op.payedAmount,
+                                'opExpiration': op.opExpiration,
+                                'dateBill': op.opDate
+                            })
+                        return response({'error': False, 'data': bill_list}, 200)
+                    except Exception as e:
+                        logger.error(f"Error buscando por opId: {str(e)}")
+                        return response({'error': True, 'message': str(e)}, 400)
+                elif (not params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('typeBill') and 
+                    params.get('channel') == 'autogestion' and 
+                    not params.get('startDate') and 
+                    not params.get('endDate')):
+                    logger.debug('Caso 12: typeBill + autogestion')
+                    bills = Bill.objects.filter(
+                        typeBill=params.get('typeBill'),
+                        integrationCode__isnull=False,
+                        integrationCode__gt='',
+                        state=1
+                    )
+
+                elif (not params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('typeBill') and 
+                    params.get('channel') == 'no-autogestion' and 
+                    not params.get('startDate') and 
+                    not params.get('endDate')):
+                    logger.debug('Caso 13: typeBill + no-autogestion')
+                    bills = Bill.objects.filter(
+                        (Q(typeBill=params.get('typeBill')) &
+                        (Q(integrationCode__isnull=True) | Q(integrationCode__exact='')) &
+                        Q(state=1))
+                    )
+
+                elif (not params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    not params.get('typeBill') and 
+                    params.get('channel') == 'autogestion' and 
+                    params.get('startDate') and 
+                    params.get('endDate')):
+                    logger.debug('Caso 15: autogestion + fechas')
+                    bills = Bill.objects.filter(
+                        integrationCode__isnull=False,
+                        integrationCode__gt='',
+                        dateBill__gte=params.get('startDate'),
+                        dateBill__lte=params.get('endDate'),
+                        state=1
+                    )
+
+                elif (not params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    not params.get('typeBill') and 
+                    params.get('channel') == 'no-autogestion' and 
+                    params.get('startDate') and 
+                    params.get('endDate')):
+                    logger.debug('Caso 16: no-autogestion + fechas')
+                    bills = Bill.objects.filter(
+                        (Q(integrationCode__isnull=True) | Q(integrationCode__exact='')) &
+                        Q(dateBill__gte=params.get('startDate')) &
+                        Q(dateBill__lte=params.get('endDate')) &
+                        Q(state=1)
+                    )
+
+                elif (params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('typeBill') and 
+                    params.get('channel') == 'autogestion' and 
+                    not params.get('startDate') and 
+                    not params.get('endDate')):
+                    
+                    logger.debug('Caso 10: Búsqueda + typeBill + autogestion')
+                    search_term = params.get('emitter_or_payer_or_billId')
+                    bills = Bill.objects.filter(
+                        Q(emitterName__icontains=search_term) |
+                        Q(payerName__icontains=search_term) |
+                        Q(billId__icontains=search_term),
+                        typeBill=params.get('typeBill'),
+                        integrationCode__isnull=False,
+                        integrationCode__gt='',
+                        state=1
+                    )
+
+                elif (params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('typeBill') and 
+                    not params.get('channel') and 
+                    params.get('startDate') and 
+                    params.get('endDate')):
+                    
+                    logger.debug('Caso 12: Búsqueda + typeBill + fechas')
+                    search_term = params.get('emitter_or_payer_or_billId')
+                    bills = Bill.objects.filter(
+                        Q(emitterName__icontains=search_term) |
+                        Q(payerName__icontains=search_term) |
+                        Q(billId__icontains=search_term),
+                        typeBill=params.get('typeBill'),
+                        dateBill__gte=params.get('startDate'),
+                        dateBill__lte=params.get('endDate'),
+                        state=1
+                    )
+
+
+                elif (params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    not params.get('typeBill') and 
+                    params.get('channel') == 'autogestion' and 
+                    params.get('startDate') and 
+                    params.get('endDate')):
+                    
+                    logger.debug('Caso 13: Búsqueda + autogestion + fechas')
+                    search_term = params.get('emitter_or_payer_or_billId')
+                    bills = Bill.objects.filter(
+                        Q(emitterName__icontains=search_term) |
+                        Q(payerName__icontains=search_term) |
+                        Q(billId__icontains=search_term),
+                        integrationCode__isnull=False,
+                        integrationCode__gt='',
+                        dateBill__gte=params.get('startDate'),
+                        dateBill__lte=params.get('endDate'),
+                        state=1
+                    )
+                elif (params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    not params.get('typeBill') and 
+                    params.get('channel') == 'no-autogestion' and 
+                    params.get('startDate') and 
+                    params.get('endDate')):
+                    
+                    logger.debug('Caso 14: Búsqueda + no-autogestion + fechas')
+                    search_term = params.get('emitter_or_payer_or_billId')
+                    bills = Bill.objects.filter(
+                        Q(emitterName__icontains=search_term) |
+                        Q(payerName__icontains=search_term) |
+                        Q(billId__icontains=search_term),
+                        Q(integrationCode__isnull=True) | Q(integrationCode__exact=''),
+                        dateBill__gte=params.get('startDate'),
+                        dateBill__lte=params.get('endDate'),
+                        state=1
+                    )
+                elif (not params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('typeBill') and 
+                    params.get('channel') == 'autogestion' and 
+                    not params.get('startDate') and 
+                    not params.get('endDate')):
+                    
+                    logger.debug('Caso 15: typeBill + autogestion')
+                    bills = Bill.objects.filter(
+                        typeBill=params.get('typeBill'),
+                        integrationCode__isnull=False,
+                        integrationCode__gt='',
+                        state=1
+                    )
+                elif (not params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('typeBill') and 
+                    params.get('channel') == 'no-autogestion' and 
+                    not params.get('startDate') and 
+                    not params.get('endDate')):
+                    
+                    logger.debug('Caso 16: typeBill + no-autogestion')
+                    bills = Bill.objects.filter(
+                        # Primero los objetos Q
+                        Q(integrationCode__isnull=True) | Q(integrationCode__exact=''),
+                        
+                        # Luego los argumentos de palabra clave
+                        typeBill=params.get('typeBill'),
+                        state=1
+                    )
+                elif (not params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('typeBill') and 
+                    not params.get('channel') and 
+                    params.get('startDate') and 
+                    params.get('endDate')):
+                    
+                    logger.debug('Caso 17: typeBill + fechas')
+                    bills = Bill.objects.filter(
+                        typeBill=params.get('typeBill'),
+                        dateBill__gte=params.get('startDate'),
+                        dateBill__lte=params.get('endDate'),
+                        state=1
+                    )
+                elif (not params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    not params.get('typeBill') and 
+                    params.get('channel') == 'autogestion' and 
+                    params.get('startDate') and 
+                    params.get('endDate')):
+                    
+                    logger.debug('Caso 18: autogestion + fechas')
+                    bills = Bill.objects.filter(
+                        integrationCode__isnull=False,
+                        integrationCode__gt='',
+                        dateBill__gte=params.get('startDate'),
+                        dateBill__lte=params.get('endDate'),
+                        state=1
+                    )
+                elif (not params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    not params.get('typeBill') and 
+                    params.get('channel') == 'no-autogestion' and 
+                    params.get('startDate') and 
+                    params.get('endDate')):
+                    
+                    logger.debug('Caso 19: no-autogestion + fechas')
+                    bills = Bill.objects.filter(
+                        Q(integrationCode__isnull=True) | Q(integrationCode__exact=''),
+                        dateBill__gte=params.get('startDate'),
+                        dateBill__lte=params.get('endDate'),
+                        state=1
+                    )   
+                elif (params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('typeBill') and 
+                    params.get('channel') == 'no-autogestion' and 
+                    not params.get('startDate') and 
+                    not params.get('endDate')):
+                    
+                    logger.debug('Caso 11: Búsqueda + typeBill + no-autogestion')
+                    search_term = params.get('emitter_or_payer_or_billId')
+                    bills = Bill.objects.filter(
+                        (Q(emitterName__icontains=search_term) |
+                        Q(payerName__icontains=search_term) |
+                        Q(billId__icontains=search_term)) &
+                        Q(typeBill=params.get('typeBill')) &
+                        (Q(integrationCode__isnull=True) | Q(integrationCode__exact='')) &
+                        Q(state=1)
+                    )
+
+                elif (not params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('typeBill') and 
+                    params.get('channel') == 'autogestion' and 
+                    params.get('startDate') and 
+                    params.get('endDate')):
+                    
+                    logger.debug('Caso 20: typeBill + autogestion + fechas')
+                    bills = Bill.objects.filter(
+                        typeBill=params.get('typeBill'),
+                        integrationCode__isnull=False,
+                        integrationCode__gt='',
+                        dateBill__gte=params.get('startDate'),
+                        dateBill__lte=params.get('endDate'),
+                        state=1
+                    )
+                elif (not params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('typeBill') and 
+                    params.get('channel') == 'no-autogestion' and 
+                    params.get('startDate') and 
+                    params.get('endDate')):
+                    
+                    logger.debug('Caso 21: typeBill + no-autogestion + fechas')
+                    bills = Bill.objects.filter(
+                        (Q(integrationCode__isnull=True) | Q(integrationCode__exact='')),
+                        Q(typeBill=params.get('typeBill')),
+                        Q(dateBill__gte=params.get('startDate')),
+                        Q(dateBill__lte=params.get('endDate')),
+                        Q(state=1)
+                    )
+                elif (params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('typeBill') and 
+                    params.get('channel') == 'autogestion' and 
+                    params.get('startDate') and 
+                    params.get('endDate')):
+                    
+                    logger.debug('Caso 22: Búsqueda + typeBill + autogestion + fechas')
+                    search_term = params.get('emitter_or_payer_or_billId')
+                    bills = Bill.objects.filter(
+                        Q(emitterName__icontains=search_term) |
+                        Q(payerName__icontains=search_term) |
+                        Q(billId__icontains=search_term),
+                        typeBill=params.get('typeBill'),
+                        integrationCode__isnull=False,
+                        integrationCode__gt='',
+                        dateBill__gte=params.get('startDate'),
+                        dateBill__lte=params.get('endDate'),
+                        state=1
+                    )
+                elif (params.get('emitter_or_payer_or_billId') and 
+                    params.get('mode') == 'intelligent_query' and 
+                    params.get('typeBill') and 
+                    params.get('channel') == 'no-autogestion' and 
+                    params.get('startDate') and 
+                    params.get('endDate')):
+                    
+                    logger.debug('Caso 23: Búsqueda + typeBill + no-autogestion + fechas')
+                    search_term = params.get('emitter_or_payer_or_billId')
+                    bills = Bill.objects.filter(
+                        # Todos los argumentos posicionales (Q objects) primero
+                        Q(emitterName__icontains=search_term) |
+                        Q(payerName__icontains=search_term) |
+                        Q(billId__icontains=search_term),
+                        (Q(integrationCode__isnull=True) | Q(integrationCode__exact='')),
+                        typeBill=params.get('typeBill'),
+                        dateBill__gte=params.get('startDate'),
+                        dateBill__lte=params.get('endDate'),
+                        state=1
+                    )
+                # Búsqueda por operation
+                elif params.get('operation') is not None:
+                    try:
+                        bill_list = []
+                        operations = PreOperation.objects.filter(opId=params.get('operation'))
+                        for op in operations:
+                            bill_list.append(op.bill)
+                        
+                        page = self.paginate_queryset(bill_list)
+                        if page is not None:
+                            serializer = BillReadOnlySerializer(page, many=True)
+                            return self.get_paginated_response(serializer.data)
+                    except Exception as e:
+                        logger.error(f"Error buscando por operation: {str(e)}")
+                        return response({'error': True, 'message': str(e)}, 400)
+                elif (params.get('operation') and 
+                    params.get('typeBill')):
+                    
+                    logger.debug('Caso 25: operation + typeBill')
+                    try:
+                        bill_list = []
+                        operations = PreOperation.objects.filter(
+                            opId=params.get('operation'),
+                            bill__typeBill=params.get('typeBill')
+                        )
+                        for op in operations:
+                            bill_list.append(op.bill)
+                        
+                        page = self.paginate_queryset(bill_list)
+                        if page is not None:
+                            serializer = BillReadOnlySerializer(page, many=True)
+                            return self.get_paginated_response(serializer.data)
+                    except Exception as e:
+                        logger.error(f"Error buscando por operation + typeBill: {str(e)}")
+                        return response({'error': True, 'message': str(e)}, 400)
+                elif (params.get('operation') and 
+                    params.get('channel') == 'autogestion'):
+                    
+                    logger.debug('Caso 26: operation + autogestion')
+                    try:
+                        bill_list = []
+                        operations = PreOperation.objects.filter(
+                            opId=params.get('operation'),
+                            bill__integrationCode__isnull=False,
+                            bill__integrationCode__gt=''
+                        )
+                        for op in operations:
+                            bill_list.append(op.bill)
+                        
+                        page = self.paginate_queryset(bill_list)
+                        if page is not None:
+                            serializer = BillReadOnlySerializer(page, many=True)
+                            return self.get_paginated_response(serializer.data)
+                    except Exception as e:
+                        logger.error(f"Error buscando por operation + autogestion: {str(e)}")
+                        return response({'error': True, 'message': str(e)}, 400)
+                    
+                elif (params.get('operation') and 
+                    params.get('channel') == 'autogestion'):
+                    
+                    logger.debug('Caso 26: operation + autogestion')
+                    try:
+                        bill_list = []
+                        operations = PreOperation.objects.filter(
+                            opId=params.get('operation'),
+                            bill__integrationCode__isnull=False,
+                            bill__integrationCode__gt=''
+                        )
+                        for op in operations:
+                            bill_list.append(op.bill)
+                        
+                        page = self.paginate_queryset(bill_list)
+                        if page is not None:
+                            serializer = BillReadOnlySerializer(page, many=True)
+                            return self.get_paginated_response(serializer.data)
+                    except Exception as e:
+                        logger.error(f"Error buscando por operation + autogestion: {str(e)}")
+                        return response({'error': True, 'message': str(e)}, 400)
+                    
+                elif (params.get('operation') and 
+                    params.get('channel') == 'no-autogestion'):
+                    
+                    logger.debug('Caso 27: operation + no-autogestion')
+                    try:
+                        bill_list = []
+                        operations = PreOperation.objects.filter(
+                            Q(opId=params.get('operation')) &
+                            (Q(bill__integrationCode__isnull=True) | Q(bill__integrationCode__exact=''))
+                        )
+                        for op in operations:
+                            bill_list.append(op.bill)
+                        
+                        page = self.paginate_queryset(bill_list)
+                        if page is not None:
+                            serializer = BillReadOnlySerializer(page, many=True)
+                            return self.get_paginated_response(serializer.data)
+                    except Exception as e:
+                        logger.error(f"Error buscando por operation + no-autogestion: {str(e)}")
+                        return response({'error': True, 'message': str(e)}, 400)
+                    
+                elif (params.get('operation') and 
+                    params.get('startDate') and 
+                    params.get('endDate')):
+                    
+                    logger.debug('Caso 28: operation + fechas')
+                    try:
+                        bill_list = []
+                        operations = PreOperation.objects.filter(
+                            opId=params.get('operation'),
+                            opDate__gte=params.get('startDate'),
+                            opDate__lte=params.get('endDate')
+                        )
+                        for op in operations:
+                            bill_list.append(op.bill)
+                        
+                        page = self.paginate_queryset(bill_list)
+                        if page is not None:
+                            serializer = BillReadOnlySerializer(page, many=True)
+                            return self.get_paginated_response(serializer.data)
+                    except Exception as e:
+                        logger.error(f"Error buscando por operation + fechas: {str(e)}")
+                        return response({'error': True, 'message': str(e)}, 400)
+                    
+
+                elif (params.get('operation') and 
+                    params.get('typeBill') and 
+                    params.get('channel') == 'autogestion'):
+                    
+                    logger.debug('Caso 29: operation + typeBill + autogestion')
+                    try:
+                        bill_list = []
+                        operations = PreOperation.objects.filter(
+                            opId=params.get('operation'),
+                            bill__typeBill=params.get('typeBill'),
+                            bill__integrationCode__isnull=False,
+                            bill__integrationCode__gt=''
+                        )
+                        for op in operations:
+                            bill_list.append(op.bill)
+                        
+                        page = self.paginate_queryset(bill_list)
+                        if page is not None:
+                            serializer = BillReadOnlySerializer(page, many=True)
+                            return self.get_paginated_response(serializer.data)
+                    except Exception as e:
+                        logger.error(f"Error buscando por operation + typeBill + autogestion: {str(e)}")
+                        return response({'error': True, 'message': str(e)}, 400)
+                    
+
+                elif (params.get('operation') and 
+                    params.get('typeBill') and 
+                    params.get('startDate') and 
+                    params.get('endDate')):
+                    
+                    logger.debug('Caso 30: operation + typeBill + fechas')
+                    try:
+                        bill_list = []
+                        operations = PreOperation.objects.filter(
+                            opId=params.get('operation'),
+                            bill__typeBill=params.get('typeBill'),
+                            opDate__gte=params.get('startDate'),
+                            opDate__lte=params.get('endDate')
+                        )
+                        for op in operations:
+                            bill_list.append(op.bill)
+                        
+                        page = self.paginate_queryset(bill_list)
+                        if page is not None:
+                            serializer = BillReadOnlySerializer(page, many=True)
+                            return self.get_paginated_response(serializer.data)
+                    except Exception as e:
+                        logger.error(f"Error buscando por operation + typeBill + fechas: {str(e)}")
+                        return response({'error': True, 'message': str(e)}, 400)
+                    
+                elif (params.get('operation') and 
+                    params.get('channel') == 'autogestion' and 
+                    params.get('startDate') and 
+                    params.get('endDate')):
+                    
+                    logger.debug('Caso 31: operation + autogestion + fechas')
+                    try:
+                        bill_list = []
+                        operations = PreOperation.objects.filter(
+                            opId=params.get('operation'),
+                            bill__integrationCode__isnull=False,
+                            bill__integrationCode__gt='',
+                            opDate__gte=params.get('startDate'),
+                            opDate__lte=params.get('endDate')
+                        )
+                        for op in operations:
+                            bill_list.append(op.bill)
+                        
+                        page = self.paginate_queryset(bill_list)
+                        if page is not None:
+                            serializer = BillReadOnlySerializer(page, many=True)
+                            return self.get_paginated_response(serializer.data)
+                    except Exception as e:
+                        logger.error(f"Error buscando por operation + autogestion + fechas: {str(e)}")
+                        return response({'error': True, 'message': str(e)}, 400)
+                    
+                elif (params.get('operation') and 
+                    params.get('typeBill') and 
+                    params.get('channel') == 'autogestion' and 
+                    params.get('startDate') and 
+                    params.get('endDate')):
+                    
+                    logger.debug('Caso 32: operation + typeBill + autogestion + fechas')
+                    try:
+                        bill_list = []
+                        operations = PreOperation.objects.filter(
+                            opId=params.get('operation'),
+                            bill__typeBill=params.get('typeBill'),
+                            bill__integrationCode__isnull=False,
+                            bill__integrationCode__gt='',
+                            opDate__gte=params.get('startDate'),
+                            opDate__lte=params.get('endDate')
+                        )
+                        for op in operations:
+                            bill_list.append(op.bill)
+                        
+                        page = self.paginate_queryset(bill_list)
+                        if page is not None:
+                            serializer = BillReadOnlySerializer(page, many=True)
+                            return self.get_paginated_response(serializer.data)
+                    except Exception as e:
+                        logger.error(f"Error buscando por operation + typeBill + autogestion + fechas: {str(e)}")
+                        return response({'error': True, 'message': str(e)}, 400)
+                # Búsqueda por payerId
+                elif params.get('payerId') is not None:
+                    try:
+                        bill = Bill.objects.get(id=params.get('payerId'))
                         client = Client.objects.get(document_number=bill.payerId)
                         return response({'error': False, 'data': client.id}, 200)
-                    except:
-                        return response({'error': True, 'message': 'Pagador no Registrado'}, 400)
-
-                elif request.query_params.get('reBuy') != None:
-                    bill = PreOperation.objects.filter(bill_id=request.query_params.get('reBuy')).order_by('-opId').first()
-                    serializer = PreOperationReadOnlySerializer(bill)
-                    return response({'error': False, 'data': serializer.data}, 200)
+                    except Bill.DoesNotExist:
+                        return response({'error': True, 'message': 'Factura no encontrada'}, 404)
+                    except Client.DoesNotExist:
+                        return response({'error': True, 'message': 'Pagador no Registrado'}, 404)
+                    except Exception as e:
+                        logger.error(f"Error buscando por payerId: {str(e)}")
+                        return response({'error': True, 'message': str(e)}, 400)
                 
-                elif request.query_params.get('billEvent') != None:
-                    # Get the bill
-                    bill = Bill.objects.get(id=request.query_params.get('billEvent'))
-                    if bill.cufe:
-                        serializer = BillEventReadOnlySerializer(bill)
-                        return response({'error': False, 'data':serializer.data}, 200)
-                    else:
+                # Búsqueda por reBuy
+                elif params.get('reBuy') is not None:
+                    try:
+                        bill = PreOperation.objects.filter(
+                            bill_id=params.get('reBuy')
+                        ).order_by('-opId').first()
+                        if bill:
+                            serializer = PreOperationReadOnlySerializer(bill)
+                            return response({'error': False, 'data': serializer.data}, 200)
+                        return response({'error': True, 'message': 'No se encontraron operaciones'}, 404)
+                    except Exception as e:
+                        logger.error(f"Error buscando por reBuy: {str(e)}")
+                        return response({'error': True, 'message': str(e)}, 400)
+                
+                # Búsqueda por billEvent
+                elif params.get('billEvent') is not None:
+                    try:
+                        bill = Bill.objects.get(id=params.get('billEvent'))
+                        if bill.cufe:
+                            serializer = BillEventReadOnlySerializer(bill)
+                            return response({'error': False, 'data': serializer.data}, 200)
                         serializer = BillReadOnlySerializer(bill)
                         return response({'error': True, 'data': serializer.data}, 200)
+                    except Bill.DoesNotExist:
+                        return response({'error': True, 'message': 'Factura no encontrada'}, 404)
+                    except Exception as e:
+                        logger.error(f"Error buscando por billEvent: {str(e)}")
+                        return response({'error': True, 'message': str(e)}, 400)
+                
+                # Si hay parámetros pero no coinciden con ningún caso
                 else:
                     bills = Bill.objects.filter(state=1)
-                page       = self.paginate_queryset(bills)
+                
+                # Paginación común para los casos que devuelven querysets
+                page = self.paginate_queryset(bills)
                 if page is not None:
                     serializer = BillReadOnlySerializer(page, many=True)
                     return self.get_paginated_response(serializer.data)
-
-
-            if pk:
-                try:
-                    # Intenta obtener un cliente con este pk
-                    client = Client.objects.get(pk=pk)
-                    # Si existe el cliente, busca sus facturas
-                    bill = Bill.objects.filter(
-                        Q(emitterId=pk) | Q(emitterId=client.document_number)
-                    )
-                    serializer = BillReadOnlySerializer(bill, many=True)
-                    return response({'error': False, 'data': serializer.data}, 200)
-                except Client.DoesNotExist:
-                    # Si no es un cliente, tratar como búsqueda general
-                    pass
-                except Exception as e:
-                    return response({'error': True, 'message': str(e)}, 400)
             
-            # Caso else (búsqueda general o pk no es cliente)
+            # Caso cuando no hay parámetros válidos o todos están vacíos
             bills = Bill.objects.filter(state=1)
             
-            # Si se proporcionó un pk que no es cliente, filtrar por ID de factura
+            # Búsqueda por pk (ID de cliente o factura)
             if pk:
-                bills = bills.filter(Q(billId=pk))
+                try:
+                    client = Client.objects.get(pk=pk)
+                    bills = bills.filter(
+                        Q(emitterId=pk) | Q(emitterId=client.document_number)
+                    )
+                except Client.DoesNotExist:
+                    bills = bills.filter(Q(billId=pk))
+                except Exception as e:
+                    logger.error(f"Error buscando por pk: {str(e)}")
+                    return response({'error': True, 'message': str(e)}, 400)
             
             page = self.paginate_queryset(bills)
             if page is not None:
@@ -297,7 +1069,12 @@ class BillAV(BaseAV):
                 return self.get_paginated_response(serializer.data)
         
         except Exception as e:
-            return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
+            logger.error(f"Error en endpoint /api/bill/: {str(e)}", exc_info=True)
+            return response({
+                'error': True,
+                'message': 'Error interno del servidor',
+                'detail': str(e)
+            }, 500)
 
     @checkRole(['admin'])
     def patch(self, request, pk):
