@@ -1050,17 +1050,22 @@ class BillAV(BaseAV):
             # Caso cuando no hay parámetros válidos o todos están vacíos
             bills = Bill.objects.filter(state=1)
             
-            # Búsqueda por pk (ID de cliente o factura)
+              # Búsqueda por pk (ID de cliente o factura)
             if pk:
+                logger.debug('j')
                 try:
+                    # Intenta obtener un cliente con este pk
                     client = Client.objects.get(pk=pk)
-                    bills = bills.filter(
+                    # Si existe el cliente, busca sus facturas
+                    bill = Bill.objects.filter(
                         Q(emitterId=pk) | Q(emitterId=client.document_number)
                     )
+                    serializer = BillReadOnlySerializer(bill, many=True)
+                    return response({'error': False, 'data': serializer.data}, 200)
                 except Client.DoesNotExist:
-                    bills = bills.filter(Q(billId=pk))
+                    # Si no es un cliente, tratar como búsqueda general
+                    pass
                 except Exception as e:
-                    logger.error(f"Error buscando por pk: {str(e)}")
                     return response({'error': True, 'message': str(e)}, 400)
             
             page = self.paginate_queryset(bills)
