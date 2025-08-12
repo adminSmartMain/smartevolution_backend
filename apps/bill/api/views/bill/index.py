@@ -1030,7 +1030,7 @@ class BillAV(BaseAV):
                             serializer = BillEventReadOnlySerializer(bill)
                             return response({'error': False, 'data': serializer.data}, 200)
                         serializer = BillReadOnlySerializer(bill)
-                        return response({'error': True, 'data': serializer.data}, 200)
+                        return response({'error': False, 'data': serializer.data}, 200)
                     except Bill.DoesNotExist:
                         return response({'error': True, 'message': 'Factura no encontrada'}, 404)
                     except Exception as e:
@@ -1050,7 +1050,7 @@ class BillAV(BaseAV):
             # Caso cuando no hay parámetros válidos o todos están vacíos
             bills = Bill.objects.filter(state=1)
             
-              # Búsqueda por pk (ID de cliente o factura)
+            # Búsqueda por pk (ID de cliente o factura)
             if pk:
                 logger.debug('j')
                 try:

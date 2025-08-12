@@ -17,9 +17,12 @@ import uuid
 from django.conf import settings
 # Exceptions
 from apps.base.exceptions import HttpException
-
+import boto3
+from boto3.session import Session
+from botocore.exceptions import ClientError
 import logging
-
+import base64
+from base64 import b64decode
 # Configurar el logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -136,11 +139,75 @@ class BillReadOnlySerializer(serializers.ModelSerializer):
     sameCurrentOwner     = serializers.SerializerMethodField(method_name='get_sameCurrentOwner')
     endorsedBill         = serializers.SerializerMethodField(method_name='get_endorsedBill')
     currentOwnerName     = serializers.SerializerMethodField(method_name='get_currentOwnerName')
-    emitterIdOperation   = serializers.SerializerMethodField(method_name='get_emitter_id') 
+    emitterIdOperation   = serializers.SerializerMethodField(method_name='get_emitter_id')
+    file_content = serializers.SerializerMethodField(method_name='get_file_content')
+    file_content_type = serializers.SerializerMethodField(method_name='get_file_content_type')
     class Meta:
         model        = Bill
         fields       = '__all__'
-        extra_fields = ['creditNotes']
+        extra_fields = ['creditNotes','file_content', 'file_content_type']
+        
+    
+    def get_file_content(self, obj):
+        if not obj.file:
+            return None
+            
+        try:
+            s3 = boto3.client(
+                's3',
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name=settings.AWS_REGION
+            )
+            
+            # Extraer el key de S3 correctamente (versión más robusta)
+            bucket = settings.AWS_STORAGE_BUCKET_NAME
+            s3_url = obj.file
+            
+            # Manejar diferentes formatos de URL de S3
+            if f's3.amazonaws.com/{bucket}/' in s3_url:
+                key = s3_url.split(f's3.amazonaws.com/{bucket}/')[-1]
+            elif f'{bucket}.s3.amazonaws.com/' in s3_url:
+                key = s3_url.split(f'{bucket}.s3.amazonaws.com/')[-1]
+            else:
+                key = s3_url.split(f'{bucket}/')[-1]
+            
+            # Obtener el archivo con manejo de tiempo de espera
+            response = s3.get_object(
+                Bucket=bucket,
+                Key=key,
+                RequestPayer='requester'  # Necesario si el bucket requiere requester pays
+            )
+            
+            # Leer el contenido con tamaño máximo
+            max_size = 10 * 1024 * 1024  # 10MB máximo
+            file_bytes = response['Body'].read(amt=max_size)
+            
+            # Verificar si el archivo está completo
+            if len(file_bytes) == max_size:
+                remaining_bytes = response['Body'].read()  # Leer el resto para vaciar el stream
+                if remaining_bytes:
+                    raise ValueError("El archivo excede el tamaño máximo permitido")
+            
+            return base64.b64encode(file_bytes).decode('utf-8')
+            
+        except Exception as e:
+            logger.error(f"Error obteniendo archivo para bill {obj.id}: {str(e)}")
+            return None
+                
+
+    def get_file_content_type(self, obj):
+        if not obj.file:
+            return None
+            
+        if obj.file.lower().endswith('.pdf'):
+            return 'application/pdf'
+        elif obj.file.lower().endswith(('.jpg', '.jpeg')):
+            return 'image/jpeg'
+        elif obj.file.lower().endswith('.png'):
+            return 'image/png'
+        else:
+            return 'application/octet-stream'
 
     def get_creditNotes(self, obj):
         creditNotes = CreditNote.objects.filter(Bill=obj)
@@ -190,11 +257,56 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
     endorsedBill         = serializers.SerializerMethodField(method_name='get_endorsedBill')
     currentOwnerName     = serializers.SerializerMethodField(method_name='get_currentOwnerName')
     events               = serializers.SerializerMethodField(method_name='get_events')
+    file_presigned_url   = serializers.SerializerMethodField(method_name='get_file_presigned_url')
+    file_access_error    = serializers.SerializerMethodField(method_name='get_file_access_error') 
+    
     class Meta:
         model        = Bill
         fields       = '__all__'
-        extra_fields = ['creditNotes']
+        extra_fields = ['creditNotes','file_presigned_url', 'file_access_error']
+        
+        
+    def get_file_presigned_url(self, obj):
+        if not obj.file:
+            return None
+            
+        try:
+            # Extraer la clave S3 de la URL completa
+            s3_url = obj.file
+            key = s3_url.split('devsmartevolution.s3.amazonaws.com/')[-1]
+            
+            s3_client = boto3.client(
+                's3',
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name=settings.AWS_S3_REGION_NAME
+            )
+            
+            # Generar URL pre-firmada válida por 1 hora
+            presigned_url = s3_client.generate_presigned_url(
+                'get_object',
+                Params={
+                    'Bucket': settings.AWS_STORAGE_BUCKET_NAME,
+                    'Key': key
+                },
+                ExpiresIn=3600
+            )
+            return presigned_url
+        except Exception as e:
+            logger.error(f"Error generating presigned URL for bill {obj.id}: {str(e)}")
+            return None
 
+    def get_file_access_error(self, obj):
+        if not obj.file:
+            return None
+        try:
+            # Verificar si podemos generar la URL
+            url = self.get_file_presigned_url(obj)
+            return not bool(url)
+        except:
+            return True
+        
+        
     def get_creditNotes(self, obj):
         creditNotes = CreditNote.objects.filter(Bill=obj)
         return CreditNoteSerializer(creditNotes, many=True).data
