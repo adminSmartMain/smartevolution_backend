@@ -23,9 +23,35 @@ from botocore.exceptions import ClientError
 import logging
 import base64
 from base64 import b64decode
+from rest_framework.exceptions import ValidationError
 # Configurar el logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
+
+def delete_old_file_from_s3(file_url):
+    """
+    Elimina un archivo antiguo de S3 dado su URL completo.
+    """
+    try:
+        bucket = settings.AWS_STORAGE_BUCKET_NAME
+        # Extraer la clave del archivo desde la URL
+        if f's3.amazonaws.com/{bucket}/' in file_url:
+            key = file_url.split(f's3.amazonaws.com/{bucket}/')[-1]
+        elif f'{bucket}.s3.amazonaws.com/' in file_url:
+            key = file_url.split(f'{bucket}.s3.amazonaws.com/')[-1]
+        else:
+            key = file_url.split(f'{bucket}/')[-1]
+        s3 = boto3.client(
+            's3',
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=getattr(settings, 'AWS_REGION', getattr(settings, 'AWS_S3_REGION_NAME', None))
+        )
+        s3.delete_object(Bucket=bucket, Key=key)
+    except Exception as e:
+        logger.warning(f"Error deleting old file from S3: {e}")
 
 # Crear un handler de consola y definir el nivel
 console_handler = logging.StreamHandler()
@@ -130,6 +156,43 @@ class BillSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.updated_at = dt.now()
         instance.user_updated_at = self.context['request'].user
+        
+        if 'file' in validated_data:
+            file_data = validated_data.get('file')
+            
+            # Solo procesar si es un nuevo archivo base64
+            if file_data and isinstance(file_data, str) and file_data.startswith('data:'):
+                try:
+                    # Extraer el tipo de archivo del prefijo base64
+                    file_type = file_data.split(';')[0].split('/')[-1]
+                    if file_type not in ['pdf', 'jpeg', 'png']:
+                        raise ValidationError("Formato de archivo no soportado")
+                    
+                    # Subir a S3 usando el ID de la instancia
+                    file_key = uploadFileBase64(
+                        files_bse64=[file_data], 
+                        file_path=f'bills/{instance.id}'  # Usar instance.id
+                    )
+                    
+                    if not file_key:
+                        raise ValueError("Error al subir archivo a S3")
+                    
+                    validated_data['file'] = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{file_key}"
+                    
+                    # Opcional: Eliminar archivo antiguo si existe
+                    if instance.file:
+                        try:
+                            # Implementar esta función según tu SDK de AWS
+                            delete_old_file_from_s3(instance.file)
+                        except Exception as delete_error:
+                            logger.warning(f"No se pudo eliminar archivo antiguo: {delete_error}")
+                            
+                except Exception as upload_error:
+                    logger.error(f"Error subiendo archivo: {upload_error}")
+                    # Mantener el archivo existente si falla la subida
+                    validated_data['file'] = instance.file
+                    # O alternativamente: del validated_data['file']
+        
         return super().update(instance, validated_data)
 
 
@@ -180,7 +243,7 @@ class BillReadOnlySerializer(serializers.ModelSerializer):
             )
             
             # Leer el contenido con tamaño máximo
-            max_size = 10 * 1024 * 1024  # 10MB máximo
+            max_size = 20 * 1024 * 1024  # 10MB máximo
             file_bytes = response['Body'].read(amt=max_size)
             
             # Verificar si el archivo está completo
