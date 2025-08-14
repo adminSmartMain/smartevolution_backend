@@ -110,7 +110,7 @@ class PreOperationSerializer(serializers.ModelSerializer):
 
 
                 
-                validated_data['opPendingAmount'] = validated_data['amount']
+                validated_data['opPendingAmount'] = validated_data['payedAmount']
             
             instance = super().create(validated_data)
             logger.info(f"PreOperation creada exitosamente: {instance.id}")
