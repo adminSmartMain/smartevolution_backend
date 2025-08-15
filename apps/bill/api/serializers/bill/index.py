@@ -23,6 +23,7 @@ from botocore.exceptions import ClientError
 import logging
 import base64
 from base64 import b64decode
+from django.core.cache import cache
 from rest_framework.exceptions import ValidationError
 # Configurar el logger
 logger = logging.getLogger(__name__)
@@ -47,7 +48,7 @@ def delete_old_file_from_s3(file_url):
             's3',
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-            region_name=getattr(settings, 'AWS_REGION', getattr(settings, 'AWS_S3_REGION_NAME', None))
+            region_name=getattr(settings, 'AWS_REGION', getattr(settings, 'AWS_REGION', None))
         )
         s3.delete_object(Bucket=bucket, Key=key)
     except Exception as e:
@@ -211,8 +212,15 @@ class BillReadOnlySerializer(serializers.ModelSerializer):
         extra_fields = ['creditNotes','file_content', 'file_content_type']
         
     
+
+
     def get_file_content(self, obj):
         if not obj.file:
+            return None
+        
+        # Verificar en cache si ya sabemos que este archivo no existe
+        cache_key = f"missing_file_{obj.id}"
+        if cache.get(cache_key):
             return None
             
         try:
@@ -223,35 +231,53 @@ class BillReadOnlySerializer(serializers.ModelSerializer):
                 region_name=settings.AWS_REGION
             )
             
-            # Extraer el key de S3 correctamente (versión más robusta)
             bucket = settings.AWS_STORAGE_BUCKET_NAME
             s3_url = obj.file
             
-            # Manejar diferentes formatos de URL de S3
-            if f's3.amazonaws.com/{bucket}/' in s3_url:
-                key = s3_url.split(f's3.amazonaws.com/{bucket}/')[-1]
-            elif f'{bucket}.s3.amazonaws.com/' in s3_url:
-                key = s3_url.split(f'{bucket}.s3.amazonaws.com/')[-1]
-            else:
-                key = s3_url.split(f'{bucket}/')[-1]
+            # Extracción robusta de la key
+            key = None
+            patterns = [
+                f's3.amazonaws.com/{bucket}/',
+                f'{bucket}.s3.amazonaws.com/',
+                f'{bucket}/'
+            ]
             
-            # Obtener el archivo con manejo de tiempo de espera
+            for pattern in patterns:
+                if pattern in s3_url:
+                    key = s3_url.split(pattern)[-1]
+                    break
+                    
+            if not key:
+                logger.warning(f"Formato de URL S3 no reconocido para bill {obj.id}")
+                return None
+                
+            # Verificar primero si el objeto existe antes de intentar leerlo
+            try:
+                s3.head_object(Bucket=bucket, Key=key)
+            except s3.exceptions.NoSuchKey:
+                # Registrar en cache que este archivo no existe (por 24 horas)
+                cache.set(cache_key, True, timeout=86400)
+                logger.warning(f"Archivo no encontrado en S3 para bill {obj.id}, key: {key}")
+                return None
+            except Exception as e:
+                logger.error(f"Error verificando archivo para bill {obj.id}: {str(e)}")
+                return None
+                
+            # Si llegamos aquí, el archivo existe, proceder a leerlo
             response = s3.get_object(
                 Bucket=bucket,
                 Key=key,
-                RequestPayer='requester'  # Necesario si el bucket requiere requester pays
+                RequestPayer='requester'
             )
             
-            # Leer el contenido con tamaño máximo
-            max_size = 20 * 1024 * 1024  # 10MB máximo
+            max_size = 20 * 1024 * 1024
             file_bytes = response['Body'].read(amt=max_size)
             
-            # Verificar si el archivo está completo
             if len(file_bytes) == max_size:
-                remaining_bytes = response['Body'].read()  # Leer el resto para vaciar el stream
+                remaining_bytes = response['Body'].read()
                 if remaining_bytes:
                     raise ValueError("El archivo excede el tamaño máximo permitido")
-            
+                    
             return base64.b64encode(file_bytes).decode('utf-8')
             
         except Exception as e:
@@ -328,6 +354,7 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
         fields       = '__all__'
         extra_fields = ['creditNotes','file_presigned_url', 'file_access_error']
         
+    
         
     def get_file_presigned_url(self, obj):
         if not obj.file:
@@ -342,7 +369,7 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
                 's3',
                 aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
                 aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                region_name=settings.AWS_S3_REGION_NAME
+                region_name=settings.AWS_REGION
             )
             
             # Generar URL pre-firmada válida por 1 hora
