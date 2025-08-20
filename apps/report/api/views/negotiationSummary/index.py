@@ -6,6 +6,7 @@ from apps.administration.api.serializers.accountingControl.index import Accounti
 # Utils
 from apps.base.utils.index import response, checkTypeIdentity, BaseAV
 from django.template.loader import get_template
+from apps.base.utils.index import response, BaseAV, gen_uuid, pdfToBase64
 import requests
 # Decorators
 from apps.base.decorators.index import checkRole
@@ -443,11 +444,45 @@ class NegotiationSummaryAV(BaseAV):
                         'amount': x.amount,
                         'date': x.date,
                     })
-                
+                logger.debug(f'aaaa')
                 template = get_template('negotiationSummary.html')
-                test = template.render(data) ## Aqui el backend envia la información al html con un json dados sus atributos
-                pdf = requests.post('https://j2ncm3xeo7.execute-api.us-east-1.amazonaws.com/dev/api/html-to-pdf', json={'html': test})
-                return response({'error': False, 'pdf': pdf.json()['pdf'], 'data': data}, 200)
+                logger.debug(f'bbbb')
+
+                # Asegúrate de que 'data' esté bien formado y sea un diccionario
+                context = data if isinstance(data, dict) else {'data': data}
+                html_content = template.render(context)  # Usar context en lugar de data directamente
+
+                logger.debug(f'HTML content generated successfully')
+                logger.debug(f'cccc')
+
+                try:
+                    # Convertir HTML a PDF (asegúrate de que pdfToBase64 esté definida)
+                    parseBase64 = pdfToBase64(html_content)
+                    
+                    # Verificar que la respuesta tenga la estructura esperada
+                    if 'pdf' in parseBase64:
+                        pdf_base64 = parseBase64['pdf']
+                        logger.debug(f'PDF generated successfully')
+                        logger.debug(f'dddddd')
+                        
+                        return response({
+                            'error': False, 
+                            'pdf': pdf_base64,  # Usar directamente el base64, no .json()
+                            'data': data
+                        }, 200)
+                    else:
+                        logger.error(f"Estructura inesperada en parseBase64: {parseBase64}")
+                        return response({
+                            'error': True, 
+                            'message': 'Formato de PDF incorrecto'
+                        }, 500)
+
+                except Exception as e:
+                    logger.error(f"Error generating PDF: {str(e)}")
+                    return response({
+                        'error': True, 
+                        'message': f'Error al generar PDF: {str(e)}'
+                    }, 500)
             
             elif request.query_params['opId'] != 'undefined':
                 logger.debug(f'f {request.query_params}')
@@ -470,6 +505,7 @@ class NegotiationSummaryAV(BaseAV):
             return response({'error': False, 'message':'El Cliente no posee perfil de riesgo'}, 404)
         except Exception as e:
             return response({'error': True, 'message': str(e)}, 500)
+
 
 
     @checkRole(['admin'])
