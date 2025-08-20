@@ -1,6 +1,6 @@
 from django.db.models import Q
 # Serializers
-from apps.bill.api.serializers.index import BillSerializer, BillReadOnlySerializer, BillEventReadOnlySerializer,BillCreationSerializer
+from apps.bill.api.serializers.index import BillSerializer, BillReadOnlySerializer, BillEventReadOnlySerializer,BillCreationSerializer,BillDetailSerializer
 from apps.operation.api.serializers.index import PreOperationReadOnlySerializer
 # Models
 from apps.bill.models import Bill
@@ -413,6 +413,7 @@ class BillAV(BaseAV):
                     params.get('typeBill') and 
                     params.get('channel') == 'autogestion' and 
                     not params.get('startDate')):
+                    logger.debug('Caso 11')
                     bills = Bill.objects.filter(
                         # Búsqueda inteligente
                         typeBill=params.get('typeBill'),
@@ -426,6 +427,8 @@ class BillAV(BaseAV):
                     params.get('typeBill') and 
                     params.get('channel') == 'no-autogestion' and 
                     not params.get('startDate')):
+                    
+                    logger.debug('Caso 12')
                     bills = Bill.objects.filter(
                         # Búsqueda inteligente
                         typeBill=params.get('typeBill'),
@@ -443,6 +446,8 @@ class BillAV(BaseAV):
                     params.get('typeBill') and 
                     params.get('channel') == 'autogestion' and 
                     params.get('startDate')):
+                    
+                    logger.debug('Caso 13')
                     bills = Bill.objects.filter(
                         typeBill=params.get('typeBill'),
                         integrationCode__isnull=False,
@@ -479,7 +484,7 @@ class BillAV(BaseAV):
                     params.get('channel') == 'autogestion' and 
                     not params.get('startDate') and 
                     not params.get('endDate')):
-                    logger.debug('Caso 12: typeBill + autogestion')
+                    logger.debug('Caso 15: typeBill + autogestion')
                     bills = Bill.objects.filter(
                         typeBill=params.get('typeBill'),
                         integrationCode__isnull=False,
@@ -493,7 +498,7 @@ class BillAV(BaseAV):
                     params.get('channel') == 'no-autogestion' and 
                     not params.get('startDate') and 
                     not params.get('endDate')):
-                    logger.debug('Caso 13: typeBill + no-autogestion')
+                    logger.debug('Caso 16: typeBill + no-autogestion')
                     bills = Bill.objects.filter(
                         (Q(typeBill=params.get('typeBill')) &
                         (Q(integrationCode__isnull=True) | Q(integrationCode__exact='')) &
@@ -506,7 +511,7 @@ class BillAV(BaseAV):
                     params.get('channel') == 'autogestion' and 
                     params.get('startDate') and 
                     params.get('endDate')):
-                    logger.debug('Caso 15: autogestion + fechas')
+                    logger.debug('Caso 17: autogestion + fechas')
                     bills = Bill.objects.filter(
                         integrationCode__isnull=False,
                         integrationCode__gt='',
@@ -521,7 +526,7 @@ class BillAV(BaseAV):
                     params.get('channel') == 'no-autogestion' and 
                     params.get('startDate') and 
                     params.get('endDate')):
-                    logger.debug('Caso 16: no-autogestion + fechas')
+                    logger.debug('Caso 18: no-autogestion + fechas')
                     bills = Bill.objects.filter(
                         (Q(integrationCode__isnull=True) | Q(integrationCode__exact='')) &
                         Q(dateBill__gte=params.get('startDate')) &
@@ -536,7 +541,7 @@ class BillAV(BaseAV):
                     not params.get('startDate') and 
                     not params.get('endDate')):
                     
-                    logger.debug('Caso 10: Búsqueda + typeBill + autogestion')
+                    logger.debug('Caso 19: Búsqueda + typeBill + autogestion')
                     search_term = params.get('emitter_or_payer_or_billId')
                     bills = Bill.objects.filter(
                         Q(emitterName__icontains=search_term) |
@@ -555,7 +560,7 @@ class BillAV(BaseAV):
                     params.get('startDate') and 
                     params.get('endDate')):
                     
-                    logger.debug('Caso 12: Búsqueda + typeBill + fechas')
+                    logger.debug('Caso 20: Búsqueda + typeBill + fechas')
                     search_term = params.get('emitter_or_payer_or_billId')
                     bills = Bill.objects.filter(
                         Q(emitterName__icontains=search_term) |
@@ -575,7 +580,7 @@ class BillAV(BaseAV):
                     params.get('startDate') and 
                     params.get('endDate')):
                     
-                    logger.debug('Caso 13: Búsqueda + autogestion + fechas')
+                    logger.debug('Caso 21: Búsqueda + autogestion + fechas')
                     search_term = params.get('emitter_or_payer_or_billId')
                     bills = Bill.objects.filter(
                         Q(emitterName__icontains=search_term) |
@@ -594,7 +599,7 @@ class BillAV(BaseAV):
                     params.get('startDate') and 
                     params.get('endDate')):
                     
-                    logger.debug('Caso 14: Búsqueda + no-autogestion + fechas')
+                    logger.debug('Caso 22: Búsqueda + no-autogestion + fechas')
                     search_term = params.get('emitter_or_payer_or_billId')
                     bills = Bill.objects.filter(
                         Q(emitterName__icontains=search_term) |
@@ -612,7 +617,7 @@ class BillAV(BaseAV):
                     not params.get('startDate') and 
                     not params.get('endDate')):
                     
-                    logger.debug('Caso 15: typeBill + autogestion')
+                    logger.debug('Caso23: typeBill + autogestion')
                     bills = Bill.objects.filter(
                         typeBill=params.get('typeBill'),
                         integrationCode__isnull=False,
@@ -626,7 +631,7 @@ class BillAV(BaseAV):
                     not params.get('startDate') and 
                     not params.get('endDate')):
                     
-                    logger.debug('Caso 16: typeBill + no-autogestion')
+                    logger.debug('Caso 24: typeBill + no-autogestion')
                     bills = Bill.objects.filter(
                         # Primero los objetos Q
                         Q(integrationCode__isnull=True) | Q(integrationCode__exact=''),
@@ -642,7 +647,7 @@ class BillAV(BaseAV):
                     params.get('startDate') and 
                     params.get('endDate')):
                     
-                    logger.debug('Caso 17: typeBill + fechas')
+                    logger.debug('Caso 25: typeBill + fechas')
                     bills = Bill.objects.filter(
                         typeBill=params.get('typeBill'),
                         dateBill__gte=params.get('startDate'),
@@ -656,7 +661,7 @@ class BillAV(BaseAV):
                     params.get('startDate') and 
                     params.get('endDate')):
                     
-                    logger.debug('Caso 18: autogestion + fechas')
+                    logger.debug('Caso 26: autogestion + fechas')
                     bills = Bill.objects.filter(
                         integrationCode__isnull=False,
                         integrationCode__gt='',
@@ -671,7 +676,7 @@ class BillAV(BaseAV):
                     params.get('startDate') and 
                     params.get('endDate')):
                     
-                    logger.debug('Caso 19: no-autogestion + fechas')
+                    logger.debug('Caso 27: no-autogestion + fechas')
                     bills = Bill.objects.filter(
                         Q(integrationCode__isnull=True) | Q(integrationCode__exact=''),
                         dateBill__gte=params.get('startDate'),
@@ -685,7 +690,7 @@ class BillAV(BaseAV):
                     not params.get('startDate') and 
                     not params.get('endDate')):
                     
-                    logger.debug('Caso 11: Búsqueda + typeBill + no-autogestion')
+                    logger.debug('Caso 28: Búsqueda + typeBill + no-autogestion')
                     search_term = params.get('emitter_or_payer_or_billId')
                     bills = Bill.objects.filter(
                         (Q(emitterName__icontains=search_term) |
@@ -703,7 +708,7 @@ class BillAV(BaseAV):
                     params.get('startDate') and 
                     params.get('endDate')):
                     
-                    logger.debug('Caso 20: typeBill + autogestion + fechas')
+                    logger.debug('Caso 29: typeBill + autogestion + fechas')
                     bills = Bill.objects.filter(
                         typeBill=params.get('typeBill'),
                         integrationCode__isnull=False,
@@ -719,7 +724,7 @@ class BillAV(BaseAV):
                     params.get('startDate') and 
                     params.get('endDate')):
                     
-                    logger.debug('Caso 21: typeBill + no-autogestion + fechas')
+                    logger.debug('Caso 30: typeBill + no-autogestion + fechas')
                     bills = Bill.objects.filter(
                         (Q(integrationCode__isnull=True) | Q(integrationCode__exact='')),
                         Q(typeBill=params.get('typeBill')),
@@ -734,7 +739,7 @@ class BillAV(BaseAV):
                     params.get('startDate') and 
                     params.get('endDate')):
                     
-                    logger.debug('Caso 22: Búsqueda + typeBill + autogestion + fechas')
+                    logger.debug('Caso 31: Búsqueda + typeBill + autogestion + fechas')
                     search_term = params.get('emitter_or_payer_or_billId')
                     bills = Bill.objects.filter(
                         Q(emitterName__icontains=search_term) |
@@ -754,7 +759,7 @@ class BillAV(BaseAV):
                     params.get('startDate') and 
                     params.get('endDate')):
                     
-                    logger.debug('Caso 23: Búsqueda + typeBill + no-autogestion + fechas')
+                    logger.debug('Caso 32: Búsqueda + typeBill + no-autogestion + fechas')
                     search_term = params.get('emitter_or_payer_or_billId')
                     bills = Bill.objects.filter(
                         # Todos los argumentos posicionales (Q objects) primero
@@ -769,6 +774,8 @@ class BillAV(BaseAV):
                     )
                 # Búsqueda por operation
                 elif params.get('operation') is not None:
+                    
+                    logger.debug('Caso 33: Búsqueda + typeBill + no-autogestion + fechas')
                     try:
                         bill_list = []
                         operations = PreOperation.objects.filter(opId=params.get('operation'))
@@ -785,7 +792,7 @@ class BillAV(BaseAV):
                 elif (params.get('operation') and 
                     params.get('typeBill')):
                     
-                    logger.debug('Caso 25: operation + typeBill')
+                    logger.debug('Caso 34: Búsqueda + typeBill + no-autogestion + fechas')
                     try:
                         bill_list = []
                         operations = PreOperation.objects.filter(
@@ -805,7 +812,7 @@ class BillAV(BaseAV):
                 elif (params.get('operation') and 
                     params.get('channel') == 'autogestion'):
                     
-                    logger.debug('Caso 26: operation + autogestion')
+                    logger.debug('Caso 33: Búsqueda + typeBill + no-autogestion + fechas')
                     try:
                         bill_list = []
                         operations = PreOperation.objects.filter(
@@ -827,7 +834,7 @@ class BillAV(BaseAV):
                 elif (params.get('operation') and 
                     params.get('channel') == 'autogestion'):
                     
-                    logger.debug('Caso 26: operation + autogestion')
+                    logger.debug('Caso 34: operation + autogestion')
                     try:
                         bill_list = []
                         operations = PreOperation.objects.filter(
@@ -849,7 +856,7 @@ class BillAV(BaseAV):
                 elif (params.get('operation') and 
                     params.get('channel') == 'no-autogestion'):
                     
-                    logger.debug('Caso 27: operation + no-autogestion')
+                    logger.debug('Caso 35: operation + no-autogestion')
                     try:
                         bill_list = []
                         operations = PreOperation.objects.filter(
@@ -871,7 +878,7 @@ class BillAV(BaseAV):
                     params.get('startDate') and 
                     params.get('endDate')):
                     
-                    logger.debug('Caso 28: operation + fechas')
+                    logger.debug('Caso 36: operation + fechas')
                     try:
                         bill_list = []
                         operations = PreOperation.objects.filter(
@@ -895,7 +902,7 @@ class BillAV(BaseAV):
                     params.get('typeBill') and 
                     params.get('channel') == 'autogestion'):
                     
-                    logger.debug('Caso 29: operation + typeBill + autogestion')
+                    logger.debug('Caso 37: operation + typeBill + autogestion')
                     try:
                         bill_list = []
                         operations = PreOperation.objects.filter(
@@ -921,7 +928,7 @@ class BillAV(BaseAV):
                     params.get('startDate') and 
                     params.get('endDate')):
                     
-                    logger.debug('Caso 30: operation + typeBill + fechas')
+                    logger.debug('Caso 38: operation + typeBill + fechas')
                     try:
                         bill_list = []
                         operations = PreOperation.objects.filter(
@@ -946,7 +953,7 @@ class BillAV(BaseAV):
                     params.get('startDate') and 
                     params.get('endDate')):
                     
-                    logger.debug('Caso 31: operation + autogestion + fechas')
+                    logger.debug('Caso 39: operation + autogestion + fechas')
                     try:
                         bill_list = []
                         operations = PreOperation.objects.filter(
@@ -973,7 +980,7 @@ class BillAV(BaseAV):
                     params.get('startDate') and 
                     params.get('endDate')):
                     
-                    logger.debug('Caso 32: operation + typeBill + autogestion + fechas')
+                    logger.debug('Caso 40: operation + typeBill + autogestion + fechas')
                     try:
                         bill_list = []
                         operations = PreOperation.objects.filter(
@@ -996,6 +1003,7 @@ class BillAV(BaseAV):
                         return response({'error': True, 'message': str(e)}, 400)
                 # Búsqueda por payerId
                 elif params.get('payerId') is not None:
+                    logger.debug('Caso 41: operation + typeBill + autogestion + fechas')
                     try:
                         bill = Bill.objects.get(id=params.get('payerId'))
                         client = Client.objects.get(document_number=bill.payerId)
@@ -1010,6 +1018,7 @@ class BillAV(BaseAV):
                 
                 # Búsqueda por reBuy
                 elif params.get('reBuy') is not None:
+                    logger.debug('Caso 42: operation + typeBill + autogestion + fechas')
                     try:
                         bill = PreOperation.objects.filter(
                             bill_id=params.get('reBuy')
@@ -1024,12 +1033,14 @@ class BillAV(BaseAV):
                 
                 # Búsqueda por billEvent
                 elif params.get('billEvent') is not None:
+                    logger.debug('Caso 43: billEvent')
                     try:
                         bill = Bill.objects.get(id=params.get('billEvent'))
                         if bill.cufe:
+                            logger.debug('Caso 43: con cufe')
                             serializer = BillEventReadOnlySerializer(bill)
                             return response({'error': False, 'data': serializer.data}, 200)
-                        serializer = BillReadOnlySerializer(bill)
+                        serializer =BillDetailSerializer(bill)
                         return response({'error': False, 'data': serializer.data}, 200)
                     except Bill.DoesNotExist:
                         return response({'error': True, 'message': 'Factura no encontrada'}, 404)
@@ -1039,11 +1050,13 @@ class BillAV(BaseAV):
                 
                 # Si hay parámetros pero no coinciden con ningún caso
                 else:
+                    logger.debug('Caso 44: operation + typeBill + autogestion + fechas')
                     bills = Bill.objects.filter(state=1)
-                
+                logger.debug('Caso 45: operation + typeBill + autogestion + fechas')
                 # Paginación común para los casos que devuelven querysets
                 page = self.paginate_queryset(bills)
                 if page is not None:
+                    logger.debug('Caso 46: operation + typeBill + autogestion + fechas')
                     serializer = BillReadOnlySerializer(page, many=True)
                     return self.get_paginated_response(serializer.data)
             
@@ -1070,7 +1083,12 @@ class BillAV(BaseAV):
             
             page = self.paginate_queryset(bills)
             if page is not None:
-                serializer = BillReadOnlySerializer(page, many=True)
+                if params.get('billEvent') or request.method == 'GET' and 'billEvent' not in params:
+                    # Usar serializador de lista para consultas generales
+                    serializer = BillReadOnlySerializer(page, many=True)
+                else:
+                    # Usar serializador de detalle para casos específicos
+                    serializer = BillDetailSerializer(page, many=True)
                 return self.get_paginated_response(serializer.data)
         
         except Exception as e:

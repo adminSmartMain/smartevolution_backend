@@ -30,7 +30,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-
 def delete_old_file_from_s3(file_url):
     """
     Elimina un archivo antiguo de S3 dado su URL completo.
@@ -106,6 +105,9 @@ class BillCreationSerializer(serializers.ModelSerializer):
         except Exception as e:
             logger.error(f"Error al crear factura: {str(e)}")
             raise serializers.ValidationError(str(e))
+        
+        
+        
 class BillSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bill
@@ -203,17 +205,59 @@ class BillReadOnlySerializer(serializers.ModelSerializer):
     sameCurrentOwner     = serializers.SerializerMethodField(method_name='get_sameCurrentOwner')
     endorsedBill         = serializers.SerializerMethodField(method_name='get_endorsedBill')
     currentOwnerName     = serializers.SerializerMethodField(method_name='get_currentOwnerName')
-    emitterIdOperation   = serializers.SerializerMethodField(method_name='get_emitter_id')
-    file_content = serializers.SerializerMethodField(method_name='get_file_content')
-    file_content_type = serializers.SerializerMethodField(method_name='get_file_content_type')
+    emitterIdOperation   = serializers.SerializerMethodField(method_name='get_emitter_id') 
     class Meta:
         model        = Bill
         fields       = '__all__'
-        extra_fields = ['creditNotes','file_content', 'file_content_type']
+        extra_fields = ['creditNotes']
+
+    def get_creditNotes(self, obj):
+        creditNotes = CreditNote.objects.filter(Bill=obj)
+        return CreditNoteSerializer(creditNotes, many=True).data
+
+    def get_associatedBill(self, obj):
+        try:
+            op = PreOperation.objects.filter(bill=obj).order_by('-created_at')
+            payedAmount = 0
+            for row in op:
+                payedAmount+=row.payedAmount
+                
+            return { 'opId': op[0].opId, 'payedAmount':payedAmount }
+        except Exception as e:
+            return None
         
+    def get_sameCurrentOwner(self, obj):
+        try:
+            return False
+        except:
+            return False
     
+    def get_endorsedBill(self, obj):
+        try:
+            return False
+        except:
+            return False
 
+    def get_currentOwnerName(self, obj):
+        try:
+            return None
+        except:
+            return None
+        
+    def get_emitter_id(self, obj):
+        try:
+            return Client.objects.get(document_number=obj.emitterId).id
+        except:
+            return None
+        
+class BillDetailSerializer(BillReadOnlySerializer):
+    file_content = serializers.SerializerMethodField(method_name='get_file_content')
+    file_content_type = serializers.SerializerMethodField(method_name='get_file_content_type')
 
+    class Meta(BillReadOnlySerializer.Meta):
+        extra_fields = ['creditNotes', 'file_content', 'file_content_type']
+
+    
     def get_file_content(self, obj):
         if not obj.file:
             return None
@@ -297,47 +341,6 @@ class BillReadOnlySerializer(serializers.ModelSerializer):
             return 'image/png'
         else:
             return 'application/octet-stream'
-
-    def get_creditNotes(self, obj):
-        creditNotes = CreditNote.objects.filter(Bill=obj)
-        return CreditNoteSerializer(creditNotes, many=True).data
-
-    def get_associatedBill(self, obj):
-        try:
-            op = PreOperation.objects.filter(bill=obj).order_by('-created_at')
-            payedAmount = 0
-            for row in op:
-                payedAmount+=row.payedAmount
-                
-            return { 'opId': op[0].opId, 'payedAmount':payedAmount }
-        except Exception as e:
-            return None
-        
-    def get_sameCurrentOwner(self, obj):
-        try:
-            return False
-        except:
-            return False
-    
-    def get_endorsedBill(self, obj):
-        try:
-            return False
-        except:
-            return False
-
-    def get_currentOwnerName(self, obj):
-        try:
-            return None
-        except:
-            return None
-        
-    def get_emitter_id(self, obj):
-        try:
-            return Client.objects.get(document_number=obj.emitterId).id
-        except:
-            return None
-        
-
 
 class BillEventReadOnlySerializer(serializers.ModelSerializer):
     creditNotes          = serializers.SerializerMethodField(method_name='get_creditNotes')
