@@ -174,7 +174,7 @@ class BillSerializer(serializers.ModelSerializer):
                     # Subir a S3 usando el ID de la instancia
                     file_key = uploadFileBase64(
                         files_bse64=[file_data], 
-                        file_path=f'bills/{instance.id}'  # Usar instance.id
+                        file_path=f'bill/{instance.id}'  # Usar instance.id
                     )
                     
                     if not file_key:
