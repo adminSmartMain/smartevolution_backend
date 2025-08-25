@@ -244,6 +244,22 @@ class BillAV(BaseAV):
                         typeBill=params.get('typeBill'),
                         state=1
                     )
+                 # --- CASO : Solo filtro por fecha ---
+                elif (params.get('emitter_or_payer_or_billId') is None and 
+                       params.get('mode') == 'intelligent_query' and 
+                 
+                    params.get('operation') is None and 
+                    params.get('startDate') is not None and 
+                    params.get('endDate')  is not None  and 
+                    params.get('typeBill') is None and
+                    params.get('channel') is None):
+                    
+                    logger.debug('Caso :Solo fecha')
+                    bills = Bill.objects.filter(
+                         dateBill__gte=params.get('startDate'),
+                        dateBill__lte=params.get('endDate'),
+                        state=1
+                    )
 
                 # --- CASO 3: Búsqueda inteligente + typeBill ---
                 elif (params.get('emitter_or_payer_or_billId') is not None and 
@@ -1050,13 +1066,13 @@ class BillAV(BaseAV):
                 
                 # Si hay parámetros pero no coinciden con ningún caso
                 else:
-                    logger.debug('Caso 44: operation + typeBill + autogestion + fechas')
+                    logger.debug('Caso 44: sin parameteos')
                     bills = Bill.objects.filter(state=1)
-                logger.debug('Caso 45: operation + typeBill + autogestion + fechas')
+                logger.debug('paginacion')
                 # Paginación común para los casos que devuelven querysets
                 page = self.paginate_queryset(bills)
                 if page is not None:
-                    logger.debug('Caso 46: operation + typeBill + autogestion + fechas')
+                    logger.debug('Caso 46: paso por serializer')
                     serializer = BillReadOnlySerializer(page, many=True)
                     return self.get_paginated_response(serializer.data)
             
