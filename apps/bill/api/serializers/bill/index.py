@@ -71,7 +71,7 @@ class BillCreationSerializer(serializers.ModelSerializer):
         fields = [
             'typeBill', 'billId', 'emitterId', 
             'currentBalance', 'dateBill', 'expirationDate',
-            'payerName', 'payerId', 'emitterName', 'datePayment','billValue','subTotal','total','file','ret_iva','ret_ica'
+            'payerName', 'payerId', 'emitterName', 'datePayment','billValue','subTotal','total','file','ret_iva','ret_ica','iva'
             ,'ret_fte','other_ret'
         ]
 
