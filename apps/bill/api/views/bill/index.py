@@ -1063,7 +1063,21 @@ class BillAV(BaseAV):
                     except Exception as e:
                         logger.error(f"Error buscando por billEvent: {str(e)}")
                         return response({'error': True, 'message': str(e)}, 400)
-                
+                elif params.get('bill_operation') is not None:
+                    logger.debug('Caso: obtener factura para comprobar antes de crear operacion')
+                    try:
+                        bill = Bill.objects.get(billId=params.get('bill_operation'))
+                        if bill.cufe:
+                            logger.debug('Caso 43: con cufe')
+                            serializer = BillEventReadOnlySerializer(bill)
+                            return response({'error': False, 'data': serializer.data}, 200)
+                        serializer =BillDetailSerializer(bill)
+                        return response({'error': False, 'data': serializer.data}, 200)
+                    except Bill.DoesNotExist:
+                        return response({'error': True, 'message': 'Factura no encontrada'}, 404)
+                    except Exception as e:
+                        logger.error(f"Error buscando por bill_operation: {str(e)}")
+                        return response({'error': True, 'message': str(e)}, 400)
                 # Si hay parámetros pero no coinciden con ningún caso
                 else:
                     logger.debug('Caso 44: sin parameteos')
