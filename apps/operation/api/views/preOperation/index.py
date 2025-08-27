@@ -145,6 +145,7 @@ class PreOperationAV(BaseAV):
 
     def _handle_single_operation(self, request, operation_data):
         """Process single operation with atomic creation of bill if needed"""
+        logger.debug(f"Single operation data: {operation_data}")
         try:
             with transaction.atomic():
                 # Create bill if billCode exists
@@ -185,7 +186,7 @@ class PreOperationAV(BaseAV):
         operations_created = []
         errors = []
         bill_mapping = {}
-
+        logger.debug(f"Handling bulk operations: {len(values_list)} items")
         try:
             with transaction.atomic():
                 # Fase 1: Mapeo de todas las facturas referenciadas
