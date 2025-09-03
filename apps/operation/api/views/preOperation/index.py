@@ -898,6 +898,9 @@ class GetOperationByParams(BaseAV):
                     preOperations = PreOperation.objects.filter(
                         opExpiration__lt=today
                     ).exclude(status=4)
+                elif request.query_params.get('status') == '1':
+                    today = timezone.now().date()
+                    preOperations = PreOperation.objects.filter(opExpiration__gt=today, status=1)
                 else:
                     preOperations = PreOperation.objects.filter(
                         
@@ -914,6 +917,10 @@ class GetOperationByParams(BaseAV):
                         opId=request.query_params.get('opId'),
                         opExpiration__lt=today  # Solo esto, NO filtrar por status
                     ).exclude(status=4)  # Excluir operaciones con status 4
+                    
+                elif request.query_params.get('status') == '1':
+                    today = timezone.now().date()
+                    preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'),opExpiration__gt=today, status=1)
                 else:
                     # Para otros status, usar la lógica normal
                     preOperations = PreOperation.objects.filter(
@@ -932,6 +939,14 @@ class GetOperationByParams(BaseAV):
                         opDate__lte=request.query_params.get('endDate'),
                         opExpiration__lt=today
                     ).exclude(status=4)
+                elif request.query_params.get('status') == '1':
+                    today = timezone.now().date()
+                    preOperations = PreOperation.objects.filter(
+                        opDate__gte=request.query_params.get('startDate'),
+                        opDate__lte=request.query_params.get('endDate'),
+                        opExpiration__gt=today,
+                        status=1
+                    )
                 else:
                     preOperations = PreOperation.objects.filter(
                         opDate__gte=request.query_params.get('startDate'),
@@ -956,6 +971,20 @@ class GetOperationByParams(BaseAV):
                         opDate__lte=request.query_params.get('endDate'),
                         opExpiration__lt=today
                     ).exclude(status=4)
+                elif request.query_params.get('status') == '1':
+                    today = timezone.now().date()
+                    preOperations = PreOperation.objects.filter(
+                        (Q(investor__last_name__icontains=request.query_params.get('investor')) |
+                        Q(investor__first_name__icontains=request.query_params.get('investor')) |
+                        Q(investor__social_reason__icontains=request.query_params.get('investor')) |
+                        Q(emitter__last_name__icontains=request.query_params.get('investor')) |
+                        Q(emitter__first_name__icontains=request.query_params.get('investor')) |
+                        Q(emitter__social_reason__icontains=request.query_params.get('investor'))),
+                        opDate__gte=request.query_params.get('startDate'),
+                        opDate__lte=request.query_params.get('endDate'),
+                        opExpiration__gt=today,
+                        status=1
+                    )
                 else:
                     preOperations = PreOperation.objects.filter(
                         (Q(investor__last_name__icontains=request.query_params.get('investor')) |
@@ -981,6 +1010,15 @@ class GetOperationByParams(BaseAV):
                         opDate__lte=request.query_params.get('endDate'),
                         opExpiration__lt=today
                     ).exclude(status=4)
+                elif request.query_params.get('status') == '1':
+                    today = timezone.now().date()
+                    preOperations = PreOperation.objects.filter(
+                        opId=request.query_params.get('opId'),
+                        opDate__gte=request.query_params.get('startDate'),
+                        opDate__lte=request.query_params.get('endDate'),
+                        opExpiration__gt=today,
+                        status=1
+                    )
                 else:
                     preOperations = PreOperation.objects.filter(
                         opId=request.query_params.get('opId'),
@@ -1001,6 +1039,15 @@ class GetOperationByParams(BaseAV):
                         opDate__lte=request.query_params.get('endDate'),
                         opExpiration__lt=today
                     ).exclude(status=4)
+                elif request.query_params.get('status') == '1':
+                    today = timezone.now().date()
+                    preOperations = PreOperation.objects.filter(
+                        bill_id__billId__icontains=request.query_params.get('billId'),
+                        opDate__gte=request.query_params.get('startDate'),
+                        opDate__lte=request.query_params.get('endDate'),
+                        opExpiration__gt=today,
+                        status=1
+                    )
                 else:
                     preOperations = PreOperation.objects.filter(
                         bill_id__billId__icontains=request.query_params.get('billId'),
