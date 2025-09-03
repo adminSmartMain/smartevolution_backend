@@ -259,14 +259,15 @@ class BuyOrderWebhookAV(BaseAV):
 
                 # get the operations with the same opId and the same investor then update the status to 1
                 operations = PreOperation.objects.filter(opId=buyOrder.operation.opId, investor=buyOrder.operation.investor)
-
+               
                 for operation in operations:
+                 
                     operation.status = 1
-                log_balance_change(operation.clientAccount, operation.clientAccount.balance, (operation.clientAccount.balance - (operation.presentValueInvestor + operation.GM)), -(operation.presentValueInvestor + operation.GM), 'buy_order', operation.id, 'BuyOrderWebHookAv - post')
-
-                operation.clientAccount.balance -= (operation.presentValueInvestor + operation.GM)
-                operation.clientAccount.save()
-                operation.save()
+                    log_balance_change(operation.clientAccount, operation.clientAccount.balance, (operation.clientAccount.balance - (operation.presentValueInvestor + operation.GM)), -(operation.presentValueInvestor + operation.GM), 'buy_order', operation.id, 'BuyOrderWebHookAv - post')
+                    operation.clientAccount.balance -= (operation.presentValueInvestor + operation.GM)
+                    operation.clientAccount.save()
+                    operation.save()
+               
 
                 # get the investors from the operation 
                 investors = PreOperation.objects.filter(opId=buyOrder.operation.opId).values('investor').distinct()
