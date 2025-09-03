@@ -63,6 +63,12 @@ class BuyOrderAV(BaseAV):
             parsedTemplate = template.render(sellOffer)
             pdf            = pdfToBase64(parsedTemplate)
             
+            logger.debug(  {
+                'name' : sellOffer['legalRepresentative'],
+                'email': sellOffer['legalRepresentativeEmail'],
+                'phone': sellOffer['legalRepresentativePhone'],
+                'label': True
+            })
             # gen the electronic signature
             electronicSignature = genElectronicSignature(pdf, requestId, 'Orden de compra', requestId, [
             {
@@ -256,11 +262,11 @@ class BuyOrderWebhookAV(BaseAV):
 
                 for operation in operations:
                     operation.status = 1
-                    log_balance_change(operation.clientAccount, operation.clientAccount.balance, (operation.clientAccount.balance - (operation.presentValueInvestor + operation.GM)), -(operation.presentValueInvestor + operation.GM), 'buy_order', operation.id, 'BuyOrderWebHookAv - post')
+                log_balance_change(operation.clientAccount, operation.clientAccount.balance, (operation.clientAccount.balance - (operation.presentValueInvestor + operation.GM)), -(operation.presentValueInvestor + operation.GM), 'buy_order', operation.id, 'BuyOrderWebHookAv - post')
 
-                    operation.clientAccount.balance -= (operation.presentValueInvestor + operation.GM)
-                    operation.clientAccount.save()
-                    operation.save()
+                operation.clientAccount.balance -= (operation.presentValueInvestor + operation.GM)
+                operation.clientAccount.save()
+                operation.save()
 
                 # get the investors from the operation 
                 investors = PreOperation.objects.filter(opId=buyOrder.operation.opId).values('investor').distinct()
