@@ -484,28 +484,29 @@ class BuyOrderWebhookAV(BaseAV):
                     "Authorization":"LaKhDHjvVsmHuS/BNXfOdk1b8Y2w4fmNcDBUGtAnFnSlMieWJWvgcVHOJbgTORTJHeIXy3RgHCXEUVHGJf4cVA="
                 }
                 logger.debug('sent the request') 
-                url = f"https://fd-appservice-prod.azurewebsites.net/api/v1/Negotiation/{integrationCode}/IntegrateNegotiation"
-                res = requests.post(url, data={"NumeroOperacion":opId}, files=filesBody, headers=Headers)
-                logger.debug('prepared url and res') 
-                if res.status_code != 200:
-                    IntegrationHistory.objects.create(
-                        id=gen_uuid(),
-                        integrationCode=integrationCode,
-                        status='FAILED',
-                        message="",
-                        response=res.json()
-                        )
+               # url = f"https://fd-appservice-prod.azurewebsites.net/api/v1/Negotiation/{integrationCode}/IntegrateNegotiation"
+               # res = requests.post(url, data={"NumeroOperacion":opId}, files=filesBody, headers=Headers)
+               # logger.debug(res)
+               # logger.debug('prepared url and res') 
+               # if res.status_code != 200:
+                   # IntegrationHistory.objects.create(
+                      #  id=gen_uuid(),
+                    #    integrationCode=integrationCode,
+                    #    status='FAILED',
+                      #  message="",
+                    #    response=res.json()
+                     #   )
                     
                 
-                else:
+               # else:
                     # save the integration history
-                    IntegrationHistory.objects.create(
-                        id=gen_uuid(),
-                        integrationCode=integrationCode,
-                        status='SUCCESS',
-                        message="",
-                        response=res.json()
-                    )
+                   # IntegrationHistory.objects.create(
+                    #    id=gen_uuid(),
+                    #    integrationCode=integrationCode,
+                    #    status='SUCCESS',
+                    #    message="",
+                   #     response=res.json()
+                  #  )
                     
                 logger.debug('if terminado de creacion de integrationHistory') 
                 # delete the files
