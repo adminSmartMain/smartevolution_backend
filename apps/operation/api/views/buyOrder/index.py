@@ -259,7 +259,7 @@ class BuyOrderWebhookAV(BaseAV):
 
                 # get the operations with the same opId and the same investor then update the status to 1
                 operations = PreOperation.objects.filter(opId=buyOrder.operation.opId, investor=buyOrder.operation.investor)
-               
+                
                 for operation in operations:
                  
                     operation.status = 1
@@ -267,11 +267,11 @@ class BuyOrderWebhookAV(BaseAV):
                     operation.clientAccount.balance -= (operation.presentValueInvestor + operation.GM)
                     operation.clientAccount.save()
                     operation.save()
-               
+                logger.debug('cambió status a 1 y guarda las operaciones')
 
                 # get the investors from the operation 
                 investors = PreOperation.objects.filter(opId=buyOrder.operation.opId).values('investor').distinct()
-                
+                logger.debug('obtiene inversores')
                 allBuyOrdersSent = False
                 buyOrders        = []
 
@@ -283,10 +283,10 @@ class BuyOrderWebhookAV(BaseAV):
                     else:
                         allBuyOrdersSent = True
                         buyOrders.append(BuyOrder.objects.get(operation__opId=buyOrder.operation.opId, operation__investor=investor['investor']))
-
+                logger.debug('checked if every investor has a buy order')
                 if allBuyOrdersSent == False:
                     return response({'error': False, 'message': 'ok'}, 200)
-
+                logger.debug('condicional allBuyOrdersSent')
                 buyOrdersSigned = False
                 buyOrderCodes   = []
 
@@ -298,21 +298,23 @@ class BuyOrderWebhookAV(BaseAV):
                     else:
                         buyOrdersSigned = True
                         buyOrderCodes.append(buyOrder.code)
-                
+                logger.debug('checked if all the buy orders are signed - status 1')
                 if buyOrdersSigned == False:
                     return response({'error': False, 'message': 'ok - buy order'}, 200)
-                
+                logger.debug('checked if buyOrdersSigned == False')
                 ordersSigned = False
                 ordersUrl    = []
 
                 for buyOrderCode in buyOrderCodes:
                     # Download the buy order
                     signature = getSignatureStatus(buyOrderCode)
+                    logger.debug('obtener signature')
                     if signature['message']['status'] == 'FINISH':
                         ordersSigned = True
                         # get the buy order from the document code
                         buyOrderData = BuyOrder.objects.get(code=buyOrderCode)
                         downloadDocument = requests.get(signature['message']['url'])
+                        logger.debug('111')
                         if downloadDocument.status_code == 200:
                             route = f'orden-de-compra-{gen_uuid()}.pdf'
                             with open(route, 'wb') as archivo:
@@ -333,26 +335,35 @@ class BuyOrderWebhookAV(BaseAV):
                     else:
                         ordersSigned = False
                         break
-
+                
+                logger.debug('checked if buyOrdersSigned == False')
+                
                 if ordersSigned == False:
                     # remove the files
                     for order in ordersUrl:
                         os.remove(order['route'])
                     return response({'error': False, 'message': 'ok'}, 200)
                 
-
+                logger.debug('checked ordersSigned == False')
                 # Gen the negotiation summary
                 operation = PreOperation.objects.filter(opId=opId)
+                logger.debug('find preoperation by opId')
+                if not operation.exists():  # ✅ Verificar si hay resultados
+                    return response({'error': True, 'message': 'No operations found'}, 404)
                 serializer   = PreOperationReadOnlySerializer(operation, many=True)
                 # get the legal client of the emitter
-    
+                logger.debug('finded preoperation by opId')
                 legalRepresentative = LegalRepresentative.objects.filter(client=operation[0].emitter.id)
+                logger.debug('finded legal representative')
                 # get the negotiation Summary
                 negotiationSummary = NegotiationSummary.objects.get(opId=opId)
+                logger.debug('finded negotationSummary')
                 # get the emitter deposits
                 emitterDeposits = EmitterDeposit.objects.filter(operation__opId=opId)
+                logger.debug('finded emitterDeposits')
                 # get the pending Accounts
                 pendingAccounts = PendingAccount.objects.filter(opId=opId)
+                logger.debug('finded pendingAccounts')
                 data = {
                     'sellReport':{
                     'opId': buyOrder.operation.opId,
@@ -406,6 +417,8 @@ class BuyOrderWebhookAV(BaseAV):
                 'emitterDeposits': [],
                 'pendingAccounts': [],
                 }
+                
+                logger.debug('grouping data')
                 fileName = f'resumen-de-negociacion-{gen_uuid()}.pdf'
                 for x in serializer.data:
                         data['sellReport']['bills']  += 1
@@ -426,7 +439,8 @@ class BuyOrderWebhookAV(BaseAV):
                             'VRBuy': x['presentValueInvestor'],
                             'VRFuture': x['payedAmount'],
                             'totalGM': x['amount']
-                        })        
+                        })
+                logger.debug('For del serializer')        
                 for x in emitterDeposits:
                     data['emitterDeposits'].append({
                             'beneficiary': x.beneficiary,
@@ -434,39 +448,45 @@ class BuyOrderWebhookAV(BaseAV):
                             'date': x.date,
                             'amount': x.amount,
                         })
+                    
+                logger.debug('For de emitterDeposits') 
                 for x in pendingAccounts:
                         data['pendingAccounts'].append({
                             'description':x.description,
                             'amount': x.amount,
                             'date': x.date,
                         })
-
+                logger.debug('For de pendingAccounts') 
 
                 filesBody = []
                 # generate the negotiation summary pdf
                 template = get_template('negotiationSummary.html')
                 renderedTemplate = template.render(data)
                 parseBase64 = pdfToBase64(renderedTemplate)
-
+                logger.debug('creating pdf') 
                 # Add the data:application/pdf;base64, to the base64 string
                 file = parseBase64['pdf']
+                logger.debug('parsing64') 
                 # Save temporal pdf                        
                 xmlData = b64decode(file, validate=True)
+                logger.debug('Save temporal pdf ') 
                 with open(fileName, 'wb') as f:
                     f.write(xmlData)
-
+                logger.debug('writed xml') 
                 # add the negotiation summary to filesBody
                 filesBody.append(('archivo', (f'RESUMEN DE NEGOCIACION OP {opId}.pdf', open(fileName, 'rb'), 'application/pdf')))
+                logger.debug('added the negotiation summary to filesBody') 
                 for order in ordersUrl:
                     filesBody.append(('archivo', (f'ORDEN DE COMPRA OP {opId} {order["investor"]}.pdf', open(order['route'], 'rb'), 'application/pdf')))
-
+                logger.debug('finished for order in ordersUrl') 
                 # send the request
                 Headers = {
                     "Authorization":"LaKhDHjvVsmHuS/BNXfOdk1b8Y2w4fmNcDBUGtAnFnSlMieWJWvgcVHOJbgTORTJHeIXy3RgHCXEUVHGJf4cVA="
                 }
+                logger.debug('sent the request') 
                 url = f"https://fd-appservice-prod.azurewebsites.net/api/v1/Negotiation/{integrationCode}/IntegrateNegotiation"
                 res = requests.post(url, data={"NumeroOperacion":opId}, files=filesBody, headers=Headers)
-                
+                logger.debug('prepared url and res') 
                 if res.status_code != 200:
                     IntegrationHistory.objects.create(
                         id=gen_uuid(),
@@ -475,6 +495,8 @@ class BuyOrderWebhookAV(BaseAV):
                         message="",
                         response=res.json()
                         )
+                    
+                
                 else:
                     # save the integration history
                     IntegrationHistory.objects.create(
@@ -484,12 +506,21 @@ class BuyOrderWebhookAV(BaseAV):
                         message="",
                         response=res.json()
                     )
+                    
+                logger.debug('if terminado de creacion de integrationHistory') 
                 # delete the files
                 os.remove(fileName)
                 for order in ordersUrl:
                     os.remove(order['route'])
+                logger.debug('deleted the files') 
                 return response({'error': False, 'message': 'ok'}, 200)
+                
+            else:
+                # ❌ Faltaba manejar el caso cuando status != 'FINISH'
+                logger.debug('# ❌ Faltaba manejar el caso cuando status != FINISH') 
+                return response({'error': False, 'message': 'Status not FINISH'}, 200)
         except Exception as e:
+            logger.debug('# ❌ todo falló') 
             IntegrationHistory.objects.create(
             id=gen_uuid(),
             integrationCode=None,
@@ -497,4 +528,5 @@ class BuyOrderWebhookAV(BaseAV):
             message=str(e),
             response=None
             )
-            return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
+            status_code = getattr(e, 'status_code', 500) if hasattr(e, 'status_code') else 500
+            return response({'error': True, 'message': str(e)}, status_code)
