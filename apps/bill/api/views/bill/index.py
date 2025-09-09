@@ -1065,14 +1065,50 @@ class BillAV(BaseAV):
                         return response({'error': True, 'message': str(e)}, 400)
                 elif params.get('bill_operation') is not None:
                     logger.debug('Caso: obtener factura para comprobar antes de crear operacion')
+                    
+                    bill_id = params.get('bill_operation')
+                    emitter_id = params.get('emitter')  # Nuevo parámetro opcional
+                    
                     try:
-                        bill = Bill.objects.get(billId=params.get('bill_operation'))
+                        if emitter_id:
+                            # Si se proporciona emitter_id, buscar por billId Y emitterId
+                            try:
+                                # Obtener el document_number del emisor
+                                emitter_client = Client.objects.get(pk=emitter_id)
+                                emitter_doc_number = emitter_client.document_number
+                                
+                                # Buscar factura por billId y emitterId
+                                bill = Bill.objects.get(
+                                    billId=bill_id,
+                                    emitterId=emitter_doc_number
+                                )
+                            except Client.DoesNotExist:
+                                return response({
+                                    'error': True, 
+                                    'message': f'Emisor con ID {emitter_id} no encontrado'
+                                }, 404)
+                        else:
+                            # Si no se proporciona emitter_id, buscar solo por billId
+                            bills = Bill.objects.filter(billId=bill_id)
+                            
+                            if bills.count() == 0:
+                                return response({'error': True, 'message': 'Factura no encontrada'}, 404)
+                            elif bills.count() > 1:
+                                # Si hay múltiples facturas, devolver la primera con advertencia
+                                bill = bills.first()
+                                logger.warning(f'Múltiples facturas encontradas con billId {bill_id}. Usando la primera: {bill.id}')
+                            else:
+                                bill = bills.first()
+                        
+                        # Factura encontrada, proceder con la serialización
                         if bill.cufe:
                             logger.debug('Caso 43: con cufe')
                             serializer = BillEventReadOnlySerializer(bill)
                             return response({'error': False, 'data': serializer.data}, 200)
-                        serializer =BillDetailSerializer(bill)
+                        
+                        serializer = BillDetailSerializer(bill)
                         return response({'error': False, 'data': serializer.data}, 200)
+                        
                     except Bill.DoesNotExist:
                         return response({'error': True, 'message': 'Factura no encontrada'}, 404)
                     except Exception as e:

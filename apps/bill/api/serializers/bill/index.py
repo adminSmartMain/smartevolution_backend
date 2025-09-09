@@ -78,25 +78,43 @@ class BillCreationSerializer(serializers.ModelSerializer):
         
     def validate_billId(self, value):
         """
-        Validación personalizada para billId duplicado
+        Validación personalizada para billId duplicado por emisor
         """
-        if Bill.objects.filter(billId=value).exists():
-            raise serializers.ValidationError("Este ID de factura ya está registrado")
+        # Obtener el emitterId del contexto de los datos
+        emitter_id = self.initial_data.get('emitterId')
+        
+        if not emitter_id:
+            raise serializers.ValidationError("El campo emitterId es requerido para la validación")
+        
+        # Verificar si ya existe una factura con el mismo billId y emitterId
+        if Bill.objects.filter(billId=value, emitterId=emitter_id).exists():
+            raise serializers.ValidationError(
+                f"El ID de factura '{value}' ya está registrado para el emisor '{emitter_id}'"
+            )
+        
         return value
+
     def create(self, validated_data):
         try:
             # Usar el usuario del request
             validated_data['id'] = gen_uuid()
             validated_data['user_created_at'] = self.context['request'].user
-            # upload the bill to s3
+            
+            # Subir el archivo a S3
             if 'file' in validated_data:
                 fileUrl = validated_data.get('file', None)
                 if fileUrl:
-                    fileUrl = uploadFileBase64(files_bse64=[fileUrl], file_path=f'bill/{validated_data["id"]}')
+                    fileUrl = uploadFileBase64(
+                        files_bse64=[fileUrl], 
+                        file_path=f'bill/{validated_data["id"]}'
+                    )
                     validated_data['file'] = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{fileUrl}"
-            # Si necesitas igualar currentBalance con total
-            if 'currentBalance' in validated_data:
-                validated_data['currentBalance'] = validated_data['currentBalance']
+            
+            # Asegurar que currentBalance sea igual a total si no se especifica
+            if 'currentBalance' not in validated_data:
+                validated_data['currentBalance'] = validated_data.get('total', 0)
+            elif validated_data.get('total'):
+                validated_data['currentBalance'] = validated_data['total']
             
             # Crear la factura
             bill = Bill.objects.create(**validated_data)
@@ -104,8 +122,8 @@ class BillCreationSerializer(serializers.ModelSerializer):
             
         except Exception as e:
             logger.error(f"Error al crear factura: {str(e)}")
-            raise serializers.ValidationError(str(e))
-        
+            raise serializers.ValidationError(f"Error al crear la factura: {str(e)}")
+            
         
         
 class BillSerializer(serializers.ModelSerializer):

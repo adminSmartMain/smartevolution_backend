@@ -16,6 +16,19 @@ from apps.operation.enums import ReceiptStatusEnum
 #utils
 from apps.base.utils.logBalanceAccount import log_balance_change
 
+import logging
+
+# Configurar el logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Crear un handler de consola y definir el nivel
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Crear un formato para los mensajes de log
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
 class ReceiptSerializer(serializers.ModelSerializer):
     class Meta:
         model = Receipt
@@ -28,7 +41,7 @@ class ReceiptSerializer(serializers.ModelSerializer):
             validated_data['id'] = gen_uuid()
             account   = validated_data['account']
             operation = validated_data['operation']
-            
+            user = self.context['request'].user
             # check if the receiptStatus is "recompra"
             if validated_data['receiptStatus'].id == ReceiptStatusEnum.RECOMPRA.value:
                 operation.bill.currentBalance = operation.bill.total
@@ -68,7 +81,8 @@ class ReceiptSerializer(serializers.ModelSerializer):
                 validated_data['dId'] = 1
 
             validated_data['created_at']      = timezone.now()
-            validated_data['user_created_at'] = None
+            
+            validated_data['user_created_at_id'] = user.id  # ← CORRECCIÓN AQUÍ
             return Receipt.objects.create(**validated_data)
                 
         except Exception as e:
