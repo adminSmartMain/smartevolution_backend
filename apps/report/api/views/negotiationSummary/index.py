@@ -129,7 +129,7 @@ class NegotiationSummaryAV(BaseAV):
             
             elif 'mode' in request.query_params and request.query_params['mode'] == 'query' and (request.query_params['id'] != 'undefined') and (len(request.query_params)==2):
                 try:
-                    logger.debug(f'b {request.query_params}')
+                    logger.debug(f'bbbbbbbbbbbbbbbb')
                     data = NegotiationSummary.objects.get(opId=int(request.query_params['id']))
                     serializer = NegotiationSummaryReadOnlySerializer(data)
                     logger.debug(data)
@@ -140,7 +140,7 @@ class NegotiationSummaryAV(BaseAV):
 
             elif 'mode' in request.query_params and 'id' in request.query_params and  ('startDate' not in request.query_params) and ('endDate' not in request.query_params) and request.query_params['mode'] == 'filter' and (request.query_params['id'] != 'undefined') and (request.query_params['emitter'] == '') and (len(request.query_params)==3):
                 try:
-                    logger.debug(f'c {request.query_params}')
+                    logger.debug(f'ccccccccccccccccccccccccccccccccc')
                     data = NegotiationSummary.objects.get(opId=int(request.query_params['id']))
                     serializer = NegotiationSummaryReadOnlySerializer(data)
                     logger.debug(data)
@@ -484,9 +484,13 @@ class NegotiationSummaryAV(BaseAV):
                         'message': f'Error al generar PDF: {str(e)}'
                     }, 500)
             
+            
+            
+            
+            
             elif request.query_params['opId'] != 'undefined':
-                logger.debug(f'f {request.query_params}')
-                data = NegotiationSummary.objects.get(id = request.query_params['opId'])
+                logger.debug(f'ffffffffffff')
+                data = NegotiationSummary.objects.get(opId = request.query_params['opId'])
                 serializer = NegotiationSummaryReadOnlySerializer(data)
                 logger.debug(f'h')
                 return response({'error': False, 'data': serializer.data}, 200)

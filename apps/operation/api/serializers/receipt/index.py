@@ -4,7 +4,7 @@ from django.db import transaction
 # Utils
 from apps.operation.models import Receipt
 # Serializers
-from apps.operation.api.serializers.index import PreOperationSerializer
+from apps.operation.api.serializers.index import PreOperationSerializer,PreOperationReadOnlySerializer
 from apps.misc.api.serializers.index import TypeReceiptSerializer, ReceiptStatusSerializer
 from apps.client.api.serializers.index import AccountSerializer
 from django.utils import timezone
@@ -33,7 +33,9 @@ class ReceiptSerializer(serializers.ModelSerializer):
     class Meta:
         model = Receipt
         fields = '__all__'
+    
 
+    
     @transaction.atomic
     def create(self, validated_data):
         try:
@@ -99,7 +101,7 @@ class ReceiptSerializer(serializers.ModelSerializer):
             raise HttpException(400, e)
 
 class ReceiptReadOnlySerializer(serializers.ModelSerializer):
-    operation     = PreOperationSerializer(read_only=True)
+    operation     = PreOperationReadOnlySerializer(read_only=True)
     typeReceipt   = TypeReceiptSerializer(read_only=True)
     account       = AccountSerializer(read_only=True)
     receiptStatus = ReceiptStatusSerializer(read_only=True)
