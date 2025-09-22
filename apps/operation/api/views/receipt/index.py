@@ -167,7 +167,7 @@ class ReceiptAV(BaseAV):
                         logger.error(f"Error filtering receipts: {str(e)}")
                 elif request.query_params.get('opId_billId') == '' and request.query_params.get('statusReceipt')!='' and request.query_params.get('startDate')!='' and request.query_params.get('endDate')!='':
                     logger.debug(f"Filtering receipts with status: {request.query_params.get('statusReceipt')}, start date: {request.query_params.get('startDate')}, end date: {request.query_params.get('endDate')}")
-                    receipts    = Receipt.objects.filter(operation__opId=request.query_params.get('opId_billId'),
+                    receipts    = Receipt.objects.filter(
                                                          date__gte=request.query_params.get('startDate'),
                                                             date__lte=request.query_params.get('endDate'),
                                                             typeReceipt_id=request.query_params.get('statusReceipt'))
