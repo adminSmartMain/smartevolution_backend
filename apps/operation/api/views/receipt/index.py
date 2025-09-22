@@ -31,7 +31,25 @@ class ReceiptAV(BaseAV):
         try:
             
             if len(request.query_params) > 0:
-                if request.query_params.get('opId_billId') not in [None, ''] and request.query_params.get('statusReceipt') in [None, ''] and request.query_params.get('startDate') in [None, ''] and request.query_params.get('endDate') in [None, '']:
+                
+                if request.query_params.get('id') != '' and len(request.query_params) == 1: #and request.query_params.get('opId_billId') in [None, ''] and request.query_params.get('statusReceipt') in [None, ''] and request.query_params.get('startDate') in [None, ''] and request.query_params.get('endDate') in [None, '']:
+                    logger.debug(f"get un recaudo by id {request.query_params.get('id')}")
+                    receipts    = Receipt.objects.filter(id=request.query_params.get('id'))
+                    page        = self.paginate_queryset(receipts)
+                    if page is not None:
+                        serializer = ReceiptReadOnlySerializer(page, many=True)
+                        return self.get_paginated_response(serializer.data)
+                
+                elif request.query_params.get('opId') != '' and len(request.query_params) == 2: #and request.query_params.get('opId_billId') in [None, ''] and request.query_params.get('statusReceipt') in [None, ''] and request.query_params.get('startDate') in [None, ''] and request.query_params.get('endDate') in [None, '']:
+                    logger.debug(f"a")
+                    receipts    = Receipt.objects.filter(operation__opId=request.query_params.get('opId'))
+                    page        = self.paginate_queryset(receipts)
+                    if page is not None:
+                        serializer = ReceiptReadOnlySerializer(page, many=True)
+                        return self.get_paginated_response(serializer.data)
+               
+
+                elif request.query_params.get('opId_billId') not in [None, ''] and request.query_params.get('statusReceipt') in [None, ''] and request.query_params.get('startDate') in [None, ''] and request.query_params.get('endDate') in [None, '']:
                     try:
                         search_value = request.query_params.get('opId_billId', '').strip()
                         logger.debug(f"Filtering receipts with value: {search_value}")
