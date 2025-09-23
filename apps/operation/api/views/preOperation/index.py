@@ -81,7 +81,8 @@ from rest_framework.response import Response
 from rest_framework import status
 
 import uuid
-
+from django.utils import timezone
+from datetime import date
 
 # Configurar el logger
 logger = logging.getLogger(__name__)
@@ -148,11 +149,38 @@ class PreOperationAV(BaseAV):
         logger.debug(f"Single operation data: {operation_data}")
         try:
             with transaction.atomic():
-                # Create bill if billCode exists
+                # Create bill if billCode exists and it's the first occurrence
                 bill_id = None
-                if operation_data.get('billCode', '') != '':
+                if operation_data.get('billCode', '') != '' and operation_data.get('_isFirstOccurrence', False):
                     bill_id = self._create_or_get_bill(operation_data)
                     operation_data['bill'] = bill_id
+                elif operation_data.get('bill', '') and is_uuid(operation_data['bill']):
+                    # Si ya tiene un bill ID válido, lo usamos directamente
+                    bill_id = operation_data['bill']
+                elif operation_data.get('bill', '') and not is_uuid(operation_data['bill']):
+                    # Si tiene un bill que no es UUID, buscamos la factura por billId Y emitter
+                    emitter_id = operation_data.get('emitter')
+                    if not emitter_id:
+                        raise ValueError("Se requiere emitter para buscar la factura por billId")
+                    
+                    # Buscar cliente emisor para obtener document_number
+                    try:
+                        emitter_client = Client.objects.get(pk=emitter_id)
+                        emitter_doc_number = emitter_client.document_number
+                    except Client.DoesNotExist:
+                        raise ValueError(f"Emisor con ID {emitter_id} no encontrado")
+                    
+                    # Buscar factura por billId Y emitterId
+                    bill = Bill.objects.filter(
+                        billId=operation_data['bill'],
+                        emitterId=emitter_doc_number
+                    ).first()
+                    
+                    if bill:
+                        operation_data['bill'] = str(bill.id)
+                        bill_id = str(bill.id)
+                    else:
+                        raise ValueError(f"Factura con billId {operation_data['bill']} y emisor {emitter_doc_number} no encontrada")
 
                 # Validate and save operation
                 serializer = PreOperationSerializer(
@@ -185,72 +213,147 @@ class PreOperationAV(BaseAV):
     def _handle_bulk_operations(self, request, values_list):
         operations_created = []
         errors = []
-        bill_mapping = {}
         logger.debug(f"Handling bulk operations: {len(values_list)} items")
+        
         try:
             with transaction.atomic():
-                # Fase 1: Mapeo de todas las facturas referenciadas
-                all_bill_refs = set()
+                # Fase 1: Identificar y crear facturas necesarias
+                bills_to_create = {}
+                existing_bills_to_find = {}  # Cambiado a dict para guardar emitter también
                 
-                # Identificar todas las referencias a facturas (tanto por billCode como por bill)
-                for op_data in values_list:
-                    if op_data.get('billCode', ''):
-                        all_bill_refs.add(op_data['billCode'])
-                    elif op_data.get('bill', ''):
-                        # Si es un UUID válido, no necesitamos mapearlo
-                        if not is_uuid(op_data['bill']):
-                            all_bill_refs.add(op_data['bill'])
-                
-                # Obtener facturas existentes
-                existing_bills = Bill.objects.filter(billId__in=all_bill_refs)
-                bill_mapping = {bill.billId: str(bill.id) for bill in existing_bills}
-                logger.debug(f"Facturas existentes mapeadas: {bill_mapping}")
-
-                # Crear facturas nuevas (solo primera ocurrencia)
                 for index, op_data in enumerate(values_list):
-                    bill_code = op_data.get('billCode', '')
-                    if bill_code and bill_code not in bill_mapping and op_data.get('_isFirstOccurrence', False):
-                        try:
-                            bill_id = self._create_or_get_bill(op_data)
-                            bill_mapping[bill_code] = bill_id
-                            logger.info(f"Factura creada: {bill_code} -> {bill_id}")
-                        except Exception as e:
-                            logger.error(f"Error creando factura {bill_code}: {str(e)}")
+                    # Si tiene billCode y es primera ocurrencia, necesita crear factura
+                    if op_data.get('billCode', '') and op_data.get('_isFirstOccurrence', False):
+                        bill_code = op_data['billCode']
+                        if bill_code not in bills_to_create:
+                            bills_to_create[bill_code] = op_data
+                    
+                    # Si tiene bill que no es UUID, necesitamos buscar la factura existente
+                    elif op_data.get('bill', '') and not is_uuid(op_data['bill']):
+                        bill_id_ref = op_data['bill']
+                        emitter_id = op_data.get('emitter')
+                        
+                        if emitter_id:
+                            # Guardar la combinación billId + emitter
+                            key = f"{bill_id_ref}_{emitter_id}"
+                            existing_bills_to_find[key] = {
+                                'billId': bill_id_ref,
+                                'emitterId': emitter_id,
+                                'indexes': existing_bills_to_find.get(key, {}).get('indexes', []) + [index]
+                            }
+                        else:
                             errors.append({
                                 'index': index,
-                                'error': f"Error creando factura {bill_code}: {str(e)}",
+                                'error': "Se requiere emitter para buscar factura existente",
                                 'data': op_data
                             })
-
-                if errors:
-                    raise Exception("Error en creación de facturas")
-
+                
+                # Crear nuevas facturas
+                bill_mapping = {}
+                for bill_code, op_data in bills_to_create.items():
+                    try:
+                        bill_id = self._create_or_get_bill(op_data)
+                        bill_mapping[bill_code] = bill_id
+                        logger.info(f"Factura creada: {bill_code} -> {bill_id}")
+                    except Exception as e:
+                        logger.error(f"Error creando factura {bill_code}: {str(e)}")
+                        # Encontrar todos los índices que usan esta factura
+                        for index, op_data in enumerate(values_list):
+                            if op_data.get('billCode') == bill_code:
+                                errors.append({
+                                    'index': index,
+                                    'error': f"Error creando factura {bill_code}: {str(e)}",
+                                    'data': op_data
+                                })
+                
+                # Buscar facturas existentes por billId Y emitterId
+                if existing_bills_to_find:
+                    # Obtener todos los emisores necesarios
+                    emitter_ids = [item['emitterId'] for item in existing_bills_to_find.values()]
+                    emitters = Client.objects.filter(id__in=emitter_ids)
+                    emitter_map = {str(emitter.id): emitter.document_number for emitter in emitters}
+                    
+                    # Buscar facturas
+                    for key, bill_info in existing_bills_to_find.items():
+                        bill_id_ref = bill_info['billId']
+                        emitter_client_id = bill_info['emitterId']
+                        emitter_doc_number = emitter_map.get(emitter_client_id)
+                        
+                        if not emitter_doc_number:
+                            for index in bill_info['indexes']:
+                                errors.append({
+                                    'index': index,
+                                    'error': f"Emisor con ID {emitter_client_id} no encontrado",
+                                    'data': values_list[index]
+                                })
+                            continue
+                        
+                        # Buscar factura por billId Y emitterId
+                        bill = Bill.objects.filter(
+                            billId=bill_id_ref,
+                            emitterId=emitter_doc_number
+                        ).first()
+                        
+                        if bill:
+                            bill_mapping[key] = str(bill.id)
+                        else:
+                            for index in bill_info['indexes']:
+                                errors.append({
+                                    'index': index,
+                                    'error': f"Factura con billId {bill_id_ref} y emisor {emitter_doc_number} no encontrada",
+                                    'data': values_list[index]
+                                })
+                
                 # Fase 2: Procesar operaciones
                 for index, op_data in enumerate(values_list):
                     if any(err['index'] == index for err in errors):
                         continue
-
+                    
                     try:
                         operation_data = {**op_data}
-                        bill_ref = None
                         
-                        # Caso 1: Tiene billCode (nueva factura)
+                        # Manejar referencia a factura
                         if op_data.get('billCode', ''):
-                            bill_ref = op_data['billCode']
-                            if bill_ref in bill_mapping:
-                                operation_data['bill'] = bill_mapping[bill_ref]
+                            # Operación con nueva factura
+                            bill_code = op_data['billCode']
+                            if bill_code in bill_mapping:
+                                operation_data['bill'] = bill_mapping[bill_code]
                             else:
-                                raise ValueError(f"Factura {bill_ref} no existe")
+                                raise ValueError(f"Factura {bill_code} no encontrada en el mapeo")
                         
-                        # Caso 2: Tiene bill que no es UUID (referencia por billId)
                         elif op_data.get('bill', '') and not is_uuid(op_data['bill']):
-                            bill_ref = op_data['bill']
-                            if bill_ref in bill_mapping:
-                                operation_data['bill'] = bill_mapping[bill_ref]
+                            # Operación con factura existente referenciada por billId
+                            bill_id_ref = op_data['bill']
+                            emitter_id = op_data.get('emitter')
+                            
+                            if not emitter_id:
+                                raise ValueError("Se requiere emitter para buscar factura existente")
+                            
+                            # Crear clave única para el mapeo
+                            key = f"{bill_id_ref}_{emitter_id}"
+                            
+                            if key in bill_mapping:
+                                operation_data['bill'] = bill_mapping[key]
                             else:
-                                raise ValueError(f"Factura {bill_ref} no existe")
+                                # Intentar buscar directamente
+                                try:
+                                    emitter_client = Client.objects.get(pk=emitter_id)
+                                    emitter_doc_number = emitter_client.document_number
+                                    
+                                    bill = Bill.objects.filter(
+                                        billId=bill_id_ref,
+                                        emitterId=emitter_doc_number
+                                    ).first()
+                                    
+                                    if bill:
+                                        operation_data['bill'] = str(bill.id)
+                                        bill_mapping[key] = str(bill.id)
+                                    else:
+                                        raise ValueError(f"Factura con billId {bill_id_ref} y emisor {emitter_doc_number} no encontrada")
+                                except Client.DoesNotExist:
+                                    raise ValueError(f"Emisor con ID {emitter_id} no encontrado")
                         
-                        # Caso 3: Tiene bill que es UUID (ya está correcto)
+                        # Si ya tiene un bill UUID válido, lo dejamos como está
                         
                         serializer = PreOperationSerializer(
                             data=operation_data,
@@ -296,34 +399,42 @@ class PreOperationAV(BaseAV):
             }, status.HTTP_400_BAD_REQUEST)
 
     def _create_or_get_bill(self, operation_data):
-        """Helper to create or get existing bill"""
+        """Helper to create or get existing bill by billId and emitterId"""
         bill_code = operation_data['billCode']
-        logger.debug(operation_data)
+        
         try:
-            # Try to get existing bill first
-            logger.debug("aaaaaa donde creao")
-            bill = Bill.objects.filter(billId=bill_code).first()
-            logger.debug("paso aaa")
+            # Obtener emitter document_number
+            emitter = Client.objects.get(pk=operation_data['emitter'])
+            emitter_doc_number = emitter.document_number
+            
+            # Primero intentar buscar si ya existe una factura con este billId Y emitterId
+            bill = Bill.objects.filter(
+                billId=bill_code,
+                emitterId=emitter_doc_number
+            ).first()
+            
             if bill:
                 return str(bill.id)
-            logger.debug("1")
-            # Create new bill
-            emitter = Client.objects.get(pk=operation_data['emitter'])
+            
+            # Crear nueva factura si no existe
             payer = Client.objects.get(pk=operation_data['payer'])
             type_bill = TypeBill.objects.get(pk='fdb5feb4-24e9-41fc-9689-31aff60b76c9')
-            logger.debug("2")
 
-            if 'file' in operation_data:
-                fileUrl = operation_data.get('file', None)
-                if fileUrl:
-                    fileUrl = uploadFileBase64(files_bse64=[fileUrl], file_path=f'bill/{operation_data["id"]}')
-                    operation_data['file'] = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{fileUrl}"
-                    
+            # Manejar archivo si existe
+            file_url = None
+            if 'file' in operation_data and operation_data['file']:
+                file_url = uploadFileBase64(
+                    files_bse64=[operation_data['file']], 
+                    file_path=f'bill/{operation_data.get("id", gen_uuid())}'
+                )
+                file_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{file_url}"
+
+            # Crear la nueva factura
             bill = Bill.objects.create(
                 id=gen_uuid(),
                 typeBill=type_bill,
                 billId=bill_code,
-                emitterId=emitter.document_number,
+                emitterId=emitter_doc_number,
                 emitterName=emitter.social_reason or f"{emitter.first_name} {emitter.last_name}",
                 payerId=payer.document_number,
                 payerName=payer.social_reason or f"{payer.first_name} {payer.last_name}",
@@ -334,40 +445,15 @@ class PreOperationAV(BaseAV):
                 dateBill=operation_data['DateBill'],
                 datePayment=operation_data['DateExpiration'],
                 expirationDate=operation_data['DateExpiration'],
-                file=operation_data['file']
-                
+                file=file_url
             )
             
             return str(bill.id)
+            
         except Exception as e:
             logger.error(f"Bill creation failed for {bill_code}: {str(e)}")
             raise
 
-    def _prepare_operation_data(self, op_data, client_map, bill_mapping):
-        """Prepare clean operation data with validation"""
-        operation_data = {}
-        
-        # Validate required fields
-        required_fields = ['emitter', 'payer', 'DateBill', 'DateExpiration']
-        for field in required_fields:
-            if field not in op_data:
-                raise ValueError(f"Missing required field: {field}")
-            operation_data[field] = op_data[field]
-
-        # Handle bill reference
-        if op_data.get('billCode', '') != '':
-            bill_code = op_data['billCode']
-            if bill_code in bill_mapping:
-                operation_data['bill'] = bill_mapping[bill_code]
-            else:
-                raise ValueError(f"Bill {bill_code} does not exist in mapping")
-
-        # Copy other fields
-        for k, v in op_data.items():
-            if k not in ['billCode', '_isFirstOccurrence'] and k not in required_fields:
-                operation_data[k] = v
-
-        return operation_data
     
     @checkRole(['admin'])
     def get(self, request, pk=None):
@@ -770,6 +856,7 @@ class GetOperationByEmitter(APIView):
 class GetOperationByParams(BaseAV):
     def get(self, request):
         logger.debug(f"GetOperationByParams")
+        logger.debug(request.query_params)
         try:
             if (request.query_params.get('opId') != '' and request.query_params.get('billId') != '' and request.query_params.get('investor') != ''):
                 preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'),  
@@ -821,20 +908,20 @@ class GetOperationByParams(BaseAV):
                                                             Q(emitter__social_reason__icontains=request.query_params.get('investor'))
                                                              
 )          
-            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('mode') =='operations'and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == ''):
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('mode') =='operations'and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('status') == ''):
                 logger.debug(f"modo operations sin mas parametros")
                 preOperations = PreOperation.objects.filter(status__in=[1, 3, 4, 5])
 
-            elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('mode') =='operations'):
+            elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('mode') =='operations' and request.query_params.get('status') == ''):
                 logger.debug(f"a modo operations" )
                 preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'), status__in=[1, 3, 4, 5])
 
 
-            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('mode') =='operations'):                
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('mode') =='operations' and request.query_params.get('status') == ''):                
                 logger.debug(f"b modo operations")
                 preOperations = PreOperation.objects.filter(bill_id__billId__icontains=request.query_params.get('billId'), status__in=[1, 3, 4, 5])
 
-            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('mode') =='operations'):
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('mode') =='operations' and request.query_params.get('status') == ''):
                 logger.debug(f"c modo operations")
                 preOperations = PreOperation.objects.filter(status__in=[1, 3, 4, 5]).filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__first_name__icontains=request.query_params.get('investor')) |
@@ -845,14 +932,14 @@ class GetOperationByParams(BaseAV):
                                                           Q(emitter__social_reason__icontains=request.query_params.get('investor'))
                                                           )
             
-            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('mode') =='operations'):
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('mode') =='operations' and request.query_params.get('status') == ''):
                 logger.debug(f"a con fecha sin mas parametros modo operations")
                 preOperations = PreOperation.objects.filter(
                     opDate__gte=request.query_params.get('startDate'),
                     opDate__lte=request.query_params.get('endDate'),
                     status__in=[1, 3, 4, 5]
                 )
-            elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('mode') =='operations'):
+            elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('mode') =='operations' and request.query_params.get('status') == ''):
                 logger.debug(f"a con fecha modo operations")
                 preOperations = PreOperation.objects.filter(
                     opId=request.query_params.get('opId'),
@@ -860,8 +947,8 @@ class GetOperationByParams(BaseAV):
                     opDate__gte=request.query_params.get('startDate'),
                     opDate__lte=request.query_params.get('endDate')
                 )
-
-            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('mode') =='operations'):                
+            
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('mode') =='operations' and request.query_params.get('status') == ''):                
                 logger.debug(f"b con fecha modo operations")
                 preOperations = PreOperation.objects.filter(
                      status__in=[1, 3, 4, 5],
@@ -870,7 +957,7 @@ class GetOperationByParams(BaseAV):
                     opDate__lte=request.query_params.get('endDate')
                 )
 
-            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('mode') =='operations'):
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('mode') =='operations' and request.query_params.get('status') == ''):
                 logger.debug(f"c fecha modo operations")
                 preOperations = PreOperation.objects.filter(
                     Q(investor__last_name__icontains=request.query_params.get('investor')) |
@@ -883,19 +970,186 @@ class GetOperationByParams(BaseAV):
                     opDate__lte=request.query_params.get('endDate'),
                      status__in=[1, 3, 4, 5],
                 )
-            elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('mode') =='operations'):
+            elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('mode') =='operations' and request.query_params.get('status') == ''):
                 logger.debug(f"a c0n mode operations")
                 preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'),  status__in=[1, 3, 4, 5])
-            elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == ''):
+            
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('status') != '' and request.query_params.get('mode') =='operations'):
+                logger.debug(f"solo estatus c0n mode operations")
+                
+                if request.query_params.get('status') == '5':
+                    # Caso especial para status 5: operaciones expiradas (opExpiration < hoy) y status != 4
+                    today = timezone.now().date()
+                    preOperations = PreOperation.objects.filter(
+                        opExpiration__lt=today
+                    ).exclude(status=4)
+                elif request.query_params.get('status') == '1':
+                    today = timezone.now().date()
+                    preOperations = PreOperation.objects.filter(opExpiration__gt=today, status=1)
+                else:
+                    preOperations = PreOperation.objects.filter(
+                        
+                    status__icontains=request.query_params.get('status')
+                    )
+                
+            elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') =='' and request.query_params.get('endDate') == '' and request.query_params.get('status') != '' and request.query_params.get('mode') =='operations'):
+                logger.debug(f"solo estatus y opId con mode operations")
+                
+                if request.query_params.get('status') == '5':
+                    # Caso especial para status 5: solo opExpiration < hoy y excluir status 4
+                    today = timezone.now().date()
+                    preOperations = PreOperation.objects.filter(
+                        opId=request.query_params.get('opId'),
+                        opExpiration__lt=today  # Solo esto, NO filtrar por status
+                    ).exclude(status=4)  # Excluir operaciones con status 4
+                    
+                elif request.query_params.get('status') == '1':
+                    today = timezone.now().date()
+                    preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'),opExpiration__gt=today, status=1)
+                else:
+                    # Para otros status, usar la lógica normal
+                    preOperations = PreOperation.objects.filter(
+                        opId=request.query_params.get('opId'),  
+                        status__icontains=request.query_params.get('status')
+                    )
+                
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('status') != '' and request.query_params.get('mode') =='operations'):
+                logger.debug(f"solo estatus fechas ")
+                
+                if request.query_params.get('status') == '5':
+                    # Caso especial para status 5 con fechas
+                    today = timezone.now().date()
+                    preOperations = PreOperation.objects.filter(
+                        opDate__gte=request.query_params.get('startDate'),
+                        opDate__lte=request.query_params.get('endDate'),
+                        opExpiration__lt=today
+                    ).exclude(status=4)
+                elif request.query_params.get('status') == '1':
+                    today = timezone.now().date()
+                    preOperations = PreOperation.objects.filter(
+                        opDate__gte=request.query_params.get('startDate'),
+                        opDate__lte=request.query_params.get('endDate'),
+                        opExpiration__gt=today,
+                        status=1
+                    )
+                else:
+                    preOperations = PreOperation.objects.filter(
+                        opDate__gte=request.query_params.get('startDate'),
+                        opDate__lte=request.query_params.get('endDate'),
+                        status__icontains=request.query_params.get('status')
+                    )
+
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor')  !='' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('status') != '' and request.query_params.get('mode') =='operations'):
+                logger.debug(f"solo estatus fechas e investor")
+                
+                if request.query_params.get('status') == '5':
+                    # Caso especial para status 5 con fechas e investor
+                    today = timezone.now().date()
+                    preOperations = PreOperation.objects.filter(
+                        (Q(investor__last_name__icontains=request.query_params.get('investor')) |
+                        Q(investor__first_name__icontains=request.query_params.get('investor')) |
+                        Q(investor__social_reason__icontains=request.query_params.get('investor')) |
+                        Q(emitter__last_name__icontains=request.query_params.get('investor')) |
+                        Q(emitter__first_name__icontains=request.query_params.get('investor')) |
+                        Q(emitter__social_reason__icontains=request.query_params.get('investor'))),
+                        opDate__gte=request.query_params.get('startDate'),
+                        opDate__lte=request.query_params.get('endDate'),
+                        opExpiration__lt=today
+                    ).exclude(status=4)
+                elif request.query_params.get('status') == '1':
+                    today = timezone.now().date()
+                    preOperations = PreOperation.objects.filter(
+                        (Q(investor__last_name__icontains=request.query_params.get('investor')) |
+                        Q(investor__first_name__icontains=request.query_params.get('investor')) |
+                        Q(investor__social_reason__icontains=request.query_params.get('investor')) |
+                        Q(emitter__last_name__icontains=request.query_params.get('investor')) |
+                        Q(emitter__first_name__icontains=request.query_params.get('investor')) |
+                        Q(emitter__social_reason__icontains=request.query_params.get('investor'))),
+                        opDate__gte=request.query_params.get('startDate'),
+                        opDate__lte=request.query_params.get('endDate'),
+                        opExpiration__gt=today,
+                        status=1
+                    )
+                else:
+                    preOperations = PreOperation.objects.filter(
+                        (Q(investor__last_name__icontains=request.query_params.get('investor')) |
+                        Q(investor__first_name__icontains=request.query_params.get('investor')) |
+                        Q(investor__social_reason__icontains=request.query_params.get('investor')) |
+                        Q(emitter__last_name__icontains=request.query_params.get('investor')) |
+                        Q(emitter__first_name__icontains=request.query_params.get('investor')) |
+                        Q(emitter__social_reason__icontains=request.query_params.get('investor'))),
+                        opDate__gte=request.query_params.get('startDate'),
+                        opDate__lte=request.query_params.get('endDate'),
+                        status__icontains=request.query_params.get('status')
+                    )
+
+            elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') !='' and request.query_params.get('endDate') != '' and request.query_params.get('status') != '' and request.query_params.get('mode') =='operations'):
+                logger.debug(f"solo estatus fechas y opId operations")
+                
+                if request.query_params.get('status') == '5':
+                    # Caso especial para status 5 con fechas y opId
+                    today = timezone.now().date()
+                    preOperations = PreOperation.objects.filter(
+                        opId=request.query_params.get('opId'),
+                        opDate__gte=request.query_params.get('startDate'),
+                        opDate__lte=request.query_params.get('endDate'),
+                        opExpiration__lt=today
+                    ).exclude(status=4)
+                elif request.query_params.get('status') == '1':
+                    today = timezone.now().date()
+                    preOperations = PreOperation.objects.filter(
+                        opId=request.query_params.get('opId'),
+                        opDate__gte=request.query_params.get('startDate'),
+                        opDate__lte=request.query_params.get('endDate'),
+                        opExpiration__gt=today,
+                        status=1
+                    )
+                else:
+                    preOperations = PreOperation.objects.filter(
+                        opId=request.query_params.get('opId'),
+                        status__icontains=request.query_params.get('status'),
+                        opDate__gte=request.query_params.get('startDate'),
+                        opDate__lte=request.query_params.get('endDate')
+                    )
+
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') !='' and request.query_params.get('endDate') != '' and request.query_params.get('status') != '' and request.query_params.get('mode') =='operations'):
+                logger.debug(f"solo estatus fechas y billId")
+                
+                if request.query_params.get('status') == '5':
+                    # Caso especial para status 5 con fechas y billId
+                    today = timezone.now().date()
+                    preOperations = PreOperation.objects.filter(
+                        bill_id__billId__icontains=request.query_params.get('billId'),
+                        opDate__gte=request.query_params.get('startDate'),
+                        opDate__lte=request.query_params.get('endDate'),
+                        opExpiration__lt=today
+                    ).exclude(status=4)
+                elif request.query_params.get('status') == '1':
+                    today = timezone.now().date()
+                    preOperations = PreOperation.objects.filter(
+                        bill_id__billId__icontains=request.query_params.get('billId'),
+                        opDate__gte=request.query_params.get('startDate'),
+                        opDate__lte=request.query_params.get('endDate'),
+                        opExpiration__gt=today,
+                        status=1
+                    )
+                else:
+                    preOperations = PreOperation.objects.filter(
+                        bill_id__billId__icontains=request.query_params.get('billId'),
+                        status__icontains=request.query_params.get('status'),
+                        opDate__gte=request.query_params.get('startDate'),
+                        opDate__lte=request.query_params.get('endDate')
+                    )
+            elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('status') == '' ):
                 logger.debug(f"a")
                 preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'),   status__in=[0, 2])
 
 
-            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == ''):                
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('status') == ''):                
                 logger.debug(f"b")
                 preOperations = PreOperation.objects.filter(bill_id__billId__icontains=request.query_params.get('billId'),  status__in=[0, 2])
 
-            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == ''):
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('status') == ''):
                 logger.debug(f"c")
                 preOperations = PreOperation.objects.filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__first_name__icontains=request.query_params.get('investor')) |
@@ -905,13 +1159,13 @@ class GetOperationByParams(BaseAV):
                                                             Q(emitter__first_name__icontains=request.query_params.get('investor')) |
                                                           Q(emitter__social_reason__icontains=request.query_params.get('investor')),  status__in=[0, 2])
             
-            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != ''):
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('status') == ''):
                 logger.debug(f"a con fecha sin mas parametros")
                 preOperations = PreOperation.objects.filter(
                     opDate__gte=request.query_params.get('startDate'),
                     opDate__lte=request.query_params.get('endDate'),  status__in=[0, 2]
                 )
-            elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != ''):
+            elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('status') == ''):
                 logger.debug(f"a con fecha")
                 preOperations = PreOperation.objects.filter(
                     opId=request.query_params.get('opId'),
@@ -920,7 +1174,7 @@ class GetOperationByParams(BaseAV):
                     opDate__lte=request.query_params.get('endDate'),  status__in=[0, 2]
                 )
 
-            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != ''):                
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('status') == ''):                
                 logger.debug(f"b con fecha")
                 preOperations = PreOperation.objects.filter(
                     bill_id__billId__icontains=request.query_params.get('billId'),
@@ -928,7 +1182,7 @@ class GetOperationByParams(BaseAV):
                     opDate__lte=request.query_params.get('endDate'),  status__in=[0, 2]
                 )
 
-            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != ''):
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('status') == ''):
                 logger.debug(f"c fecha")
                 preOperations = PreOperation.objects.filter(
                     
@@ -940,6 +1194,59 @@ class GetOperationByParams(BaseAV):
                     Q(emitter__social_reason__icontains=request.query_params.get('investor')),
                     opDate__gte=request.query_params.get('startDate'),
                     opDate__lte=request.query_params.get('endDate'),  status__in=[0, 2]
+                )
+                
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('status') != ''):
+                logger.debug(f"solo estatus")
+                preOperations = PreOperation.objects.filter(
+                    
+                  status__icontains=request.query_params.get('status')
+                )
+                
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('status') != ''):
+                logger.debug(f"solo estatus fechas ")
+                preOperations = PreOperation.objects.filter(
+                   opDate__gte=request.query_params.get('startDate'),
+                    opDate__lte=request.query_params.get('endDate'), 
+                  status__icontains=request.query_params.get('status')
+                )
+                
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor')  !='' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('status') != ''):
+                logger.debug(f"solo estatus fechas e investor")
+                preOperations = PreOperation.objects.filter(
+                     Q(investor__last_name__icontains=request.query_params.get('investor')) |
+                    Q(investor__first_name__icontains=request.query_params.get('investor')) |
+                    Q(investor__social_reason__icontains=request.query_params.get('investor')) |
+                    Q(emitter__last_name__icontains=request.query_params.get('investor')) |
+                    Q(emitter__first_name__icontains=request.query_params.get('investor')) |
+                    Q(emitter__social_reason__icontains=request.query_params.get('investor')),
+                   opDate__gte=request.query_params.get('startDate'),
+                    opDate__lte=request.query_params.get('endDate'), 
+                  status__icontains=request.query_params.get('status')
+                )
+            elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') =='' and request.query_params.get('endDate') == '' and request.query_params.get('status') != ''):
+                logger.debug(f"solo estatus y opId")
+                preOperations = PreOperation.objects.filter(
+                  opId=request.query_params.get('opId'),  
+                  status__icontains=request.query_params.get('status'),
+              
+                )   
+            elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') !='' and request.query_params.get('endDate') != '' and request.query_params.get('status') != ''):
+                logger.debug(f"solo estatus  fechas y opId")
+                preOperations = PreOperation.objects.filter(
+                  opId=request.query_params.get('opId'),  
+                  status__icontains=request.query_params.get('status'),
+                  opDate__gte=request.query_params.get('startDate'),
+                opDate__lte=request.query_params.get('endDate')
+                )
+                
+            elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') !='' and request.query_params.get('endDate') != '' and request.query_params.get('status') != ''):
+                logger.debug(f"solo estatus fechas y billId")
+                preOperations = PreOperation.objects.filter(
+                  bill_id__billId__icontains=request.query_params.get('billId'),
+                  status__icontains=request.query_params.get('status'),
+                  opDate__gte=request.query_params.get('startDate'),
+                opDate__lte=request.query_params.get('endDate')
                 )
             else:
                 logger.debug(f"d")
