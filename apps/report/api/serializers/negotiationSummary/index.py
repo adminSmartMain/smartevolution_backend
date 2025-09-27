@@ -43,6 +43,7 @@ class NegotiationSummarySerializer(serializers.ModelSerializer):
         # create the pending Accounts of the operation
         if 'pendingAccounts' in self.context['request'].data:
             for x in self.context['request'].data['pendingAccounts']:
+                print(x)
                 serializer = PendingAccountSerializer(data=x, context={'request': self.context['request']})
                 if serializer.is_valid():
                     serializer.save()
@@ -73,12 +74,12 @@ class NegotiationSummaryReadOnlySerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         #accountingControl = []
         data = super().to_representation(instance)
-        logger.debug('si sale algo aqi es el fallo 1')
+        logger.debug('aqui se trae pendingAccounts')
         data['pendingAccounts']  = PendingAccountSerializer(PendingAccount.objects.filter(opId=instance.opId), many=True).data
-
-        logger.debug('si sale algo aqi es el fallo 2')
+        logger.debug(data['pendingAccounts'])
+     
         data['emitterDeposits']  = EmitterDepositSerializer(EmitterDeposit.objects.filter(operation__opId=instance.opId), many=True).data
-        logger.debug('si sale algo aqi es el fallo 3' )
+        
         data['totalDeposits']    = sum([x['amount'] for x in data['emitterDeposits']]) if len(data['emitterDeposits']) > 0 else data['totalDeposits']
         data['pendingToDeposit'] = data['total'] - data['totalDeposits']  
         # get the account control of the emitter deposits

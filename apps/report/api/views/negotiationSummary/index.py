@@ -41,12 +41,14 @@ class NegotiationSummaryAV(BaseAV):
     @checkRole(['admin'])
     def get(self, request):
         try:
-            if( request.query_params['id'] != 'undefined') and (len(request.query_params)== 1):
+            query_params = request.query_params
+            logger.debug(f'Parámetros recibidos: {dict(query_params)}')
+            if 'opId' in request.query_params and request.query_params['opId'] != 'undefined' and len(request.query_params) == 1:
                 data = {}
                 operationId = []
                 logger.debug(f'a {request.query_params}')
                 # get the operation
-                operation = PreOperation.objects.filter(opId=request.query_params['id'])
+                operation = PreOperation.objects.filter(opId=request.query_params['opId'])
                 # get the serializer
                 serializer = PreOperationReadOnlySerializer(operation, many=True)
                 # Prepare the data
@@ -126,29 +128,58 @@ class NegotiationSummaryAV(BaseAV):
                 emitterDeposits = EmitterDeposit.objects.filter(operation__opId=data['operation']['opId']).filter(state=1)
                 serializer = EmitterDepositNSSerializer(emitterDeposits, many=True)
                 data['emitterDeposits'] = serializer.data
+                
+            elif 'id' in request.query_params and request.query_params['id'] != 'undefined':
+                logger.debug(f'busqueda por id')
+                try:
+                    logger.debug(f'busqueda por id')
+                    data = NegotiationSummary.objects.get(id=request.query_params['id'])
+                    serializer = NegotiationSummaryReadOnlySerializer(data)
+                    logger.debug(data)
+                    return response({'error': False, 'data': serializer.data}, 200)
+                except NegotiationSummary.DoesNotExist:
+                    # Handle case when NegotiationSummary is not found
+                    return response({'error': True, 'message': 'NegotiationSummary matching query does not exist.'}, 404)
+            #parametro para buscar por opId
+            elif ('opId' in query_params and query_params['opId'] != 'undefined' and 'pdf' in query_params and query_params['pdf'] == 'undefined' and 
+              'id' in query_params and query_params['id'] == 'undefined' and 
+                len(query_params) == 3):
+                logger.debug(f'Búsqueda por opId con solo: {query_params}')
+                logger.debug(f'{request.query_params}')
+                data = NegotiationSummary.objects.get(opId = request.query_params['opId'])
+                serializer = NegotiationSummaryReadOnlySerializer(data)
+               
+                return response({'error': False, 'data': serializer.data}, 200)
             
-            elif 'mode' in request.query_params and request.query_params['mode'] == 'query' and (request.query_params['id'] != 'undefined') and (len(request.query_params)==2):
+            elif ('mode' in query_params and query_params['mode'] == 'query' and 
+              'opId' in query_params and query_params['opId'] != 'undefined' and 
+              len(query_params) == 2):
                 try:
-                    logger.debug(f'bbbbbbbbbbbbbbbb')
-                    data = NegotiationSummary.objects.get(opId=int(request.query_params['id']))
+                    data = NegotiationSummary.objects.get(opId=int(request.query_params['opId']))
                     serializer = NegotiationSummaryReadOnlySerializer(data)
                     logger.debug(data)
                     return response({'error': False, 'data': serializer.data}, 200)
                 except NegotiationSummary.DoesNotExist:
                     # Handle case when NegotiationSummary is not found
                     return response({'error': True, 'message': 'NegotiationSummary matching query does not exist.'}, 404)
-
-            elif 'mode' in request.query_params and 'id' in request.query_params and  ('startDate' not in request.query_params) and ('endDate' not in request.query_params) and request.query_params['mode'] == 'filter' and (request.query_params['id'] != 'undefined') and (request.query_params['emitter'] == '') and (len(request.query_params)==3):
+            ## FILTRO emitter opid y fecha
+            elif ('mode' in query_params and 'opId' in query_params and 
+              'startDate' not in query_params and 'endDate' not in query_params and 
+              query_params['mode'] == 'filter' and query_params['opId'] != 'undefined' and 
+              query_params.get('emitter', '') == '' and len(query_params) == 3):
                 try:
-                    logger.debug(f'ccccccccccccccccccccccccccccccccc')
-                    data = NegotiationSummary.objects.get(opId=int(request.query_params['id']))
+                    logger.debug(f'modo filtro solo id ',request.query_params['opId'])
+                    data = NegotiationSummary.objects.get(opId=int(request.query_params['opId']))
                     serializer = NegotiationSummaryReadOnlySerializer(data)
                     logger.debug(data)
                     return response({'error': False, 'data': serializer.data}, 200)
                 except NegotiationSummary.DoesNotExist:
                     # Handle case when NegotiationSummary is not found
                     return response({'error': True, 'message': 'NegotiationSummary matching query does not exist.'}, 404)
-            elif 'mode' in request.query_params and 'emitter' in request.query_params and request.query_params['mode'] == 'filter'and ('startDate' not in request.query_params) and ('endDate' not in request.query_params) and (request.query_params['id'] == '') and (request.query_params['emitter'] != ''):
+            elif ('mode' in query_params and 'emitter' in query_params and 
+              query_params['mode'] == 'filter' and 'startDate' not in query_params and 
+              'endDate' not in query_params and query_params.get('opId', '') == '' and 
+              query_params['emitter'] != ''):
                     logger.debug('solo emisor')
                     try:
                         # Filtrar por el emisor de la solicitud
@@ -181,7 +212,10 @@ class NegotiationSummaryAV(BaseAV):
                         # Manejo de errores
                         return response({'error': True, 'message': str(e)}, status=500)
                     
-            elif 'mode' in request.query_params and 'startDate' in request.query_params and request.query_params['mode'] == 'filter' and (request.query_params['id'] == '') and (request.query_params['emitter'] == '' ) and (request.query_params['startDate']!= '') and (request.query_params['endDate'] != ''):
+            elif ('mode' in query_params and 'startDate' in query_params and 
+              query_params['mode'] == 'filter' and query_params.get('opId', '') == '' and 
+              query_params.get('emitter', '') == '' and query_params['startDate'] != '' and 
+              query_params['endDate'] != ''):
                     logger.debug('solo fecha')
                     try:
                         # Inicializar el filtro básico por estado
@@ -224,15 +258,18 @@ class NegotiationSummaryAV(BaseAV):
                         # Manejo de errores
                         return response({'error': True, 'message': str(e)}, status=500)
 
-            elif ('mode' in request.query_params) and ('startDate' in request.query_params) and ('id' in request.query_params )and 'endDate' in request.query_params and (request.query_params['mode'] == 'filter') and (request.query_params['id'] != '') and (request.query_params['emitter'] == ''):
-                logger.debug('filtro de id y fecha')
+            elif ('mode' in query_params and 'startDate' in query_params and 
+              'opId' in query_params and 'endDate' in query_params and 
+              query_params['mode'] == 'filter' and query_params['opId'] != '' and 
+              query_params.get('emitter', '') == ''):
+                logger.debug('filtro de opId y fecha')
                 try:
                     # Filtro básico por estado
                     filters = {'state': 1}
 
                     # Verificar si 'id' está presente y filtramos por ID
-                    if 'id' in request.query_params and request.query_params['id']:
-                        filters['id'] = request.query_params['id']  # Filtrar por ID
+                    if 'opId' in request.query_params and request.query_params['opId']:
+                        filters['opId'] = request.query_params['opId']  # Filtrar por ID
 
                     # Verificar si 'startDate' está presente y filtrar por fecha de inicio
                     if 'startDate' in request.query_params and request.query_params['startDate']:
@@ -270,7 +307,10 @@ class NegotiationSummaryAV(BaseAV):
                 except Exception as e:
                     # Manejo de errores
                     return response({'error': True, 'message': str(e)}, status=500)
-            elif 'mode' in request.query_params and 'emitter' in request.query_params and 'startDate' in request.query_params and 'endDate' in request.query_params and request.query_params['mode'] == 'filter' and (request.query_params['id'] == '') and request.query_params['emitter'] != '':
+            elif ('mode' in query_params and 'emitter' in query_params and 
+              'startDate' in query_params and 'endDate' in query_params and 
+              query_params['mode'] == 'filter' and query_params.get('opId', '') == '' and 
+              query_params['emitter'] != ''):
                 logger.debug('filtro de emisor y fecha')
                 try:
                     # Filtro básico por estado
@@ -316,8 +356,8 @@ class NegotiationSummaryAV(BaseAV):
                 except Exception as e:
                     # Manejo de errores
                     return response({'error': True, 'message': str(e)}, status=500)
-
-            elif request.query_params['pdf'] != 'undefined':
+            #parametro para pdf
+            elif 'pdf' in request.query_params and request.query_params['pdf'] != 'undefined':
                 
                 logger.debug(f'e {request.query_params}')
                 # get the operation 
@@ -485,15 +525,8 @@ class NegotiationSummaryAV(BaseAV):
                     }, 500)
             
             
-            
-            
-            
-            elif request.query_params['opId'] != 'undefined':
-                logger.debug(f'ffffffffffff')
-                data = NegotiationSummary.objects.get(opId = request.query_params['opId'])
-                serializer = NegotiationSummaryReadOnlySerializer(data)
-                logger.debug(f'h')
-                return response({'error': False, 'data': serializer.data}, 200)
+             #parametro para buscar por id
+           
             else:
                 data = NegotiationSummary.objects.filter(state = 1)
                 logger.debug(f'g {request.query_params}')
