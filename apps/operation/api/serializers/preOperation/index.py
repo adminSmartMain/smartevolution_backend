@@ -322,7 +322,7 @@ class PreOperationByParamsSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_bill_data(self, obj):
-        
+        logger.debug(obj)
         return obj.bill.billId
     
     def get_emitter_name(self, obj):

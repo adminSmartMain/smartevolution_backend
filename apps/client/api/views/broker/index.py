@@ -42,10 +42,10 @@ class BrokerAV(BaseAV):
                 return response({'error': False, 'data': serializer.data}, 200)
             else:
                 brokers = Broker.objects.filter(state=1)
-                page       = self.paginate_queryset(brokers)
+                page       = brokers
                 if page is not None:
                     serializer = BrokerSerializer(page, many=True)
-                    return self.get_paginated_response(serializer.data)
+                    return response({'error': False, 'brokers': serializer.data}, 200)
         except Broker.DoesNotExist:
             return response({'error': True, 'message': 'Corredor/es no encontrado'}, 404)
         except Exception as e:

@@ -8,7 +8,22 @@ from apps.operation.api.serializers.index import ReceiptSerializer, ReceiptReadO
 from apps.base.utils.index import response, BaseAV
 # Decorators
 from apps.base.decorators.index import checkRole
+from django.db.models import Q, Count
+import logging
+# Configurar el logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
+# Crear un handler de consola y definir el nivel
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Crear un formato para los mensajes de log
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# Añadir el handler al logger
+logger.addHandler(console_handler)
 class ReceiptAV(BaseAV):
 
     @checkRole(['admin'])
@@ -16,12 +31,165 @@ class ReceiptAV(BaseAV):
         try:
             
             if len(request.query_params) > 0:
-                if request.query_params.get('opId') != '':
+                
+                if request.query_params.get('id') != '' and len(request.query_params) == 1: #and request.query_params.get('opId_billId') in [None, ''] and request.query_params.get('statusReceipt') in [None, ''] and request.query_params.get('startDate') in [None, ''] and request.query_params.get('endDate') in [None, '']:
+                    logger.debug(f"get un recaudo by id {request.query_params.get('id')}")
+                    receipts    = Receipt.objects.filter(id=request.query_params.get('id'))
+                    page        = self.paginate_queryset(receipts)
+                    if page is not None:
+                        serializer = ReceiptReadOnlySerializer(page, many=True)
+                        return self.get_paginated_response(serializer.data)
+                
+                elif request.query_params.get('opId') != '' and len(request.query_params) == 2: #and request.query_params.get('opId_billId') in [None, ''] and request.query_params.get('statusReceipt') in [None, ''] and request.query_params.get('startDate') in [None, ''] and request.query_params.get('endDate') in [None, '']:
+                    logger.debug(f"a")
                     receipts    = Receipt.objects.filter(operation__opId=request.query_params.get('opId'))
                     page        = self.paginate_queryset(receipts)
                     if page is not None:
                         serializer = ReceiptReadOnlySerializer(page, many=True)
                         return self.get_paginated_response(serializer.data)
+               
+
+                elif request.query_params.get('opId_billId') not in [None, ''] and request.query_params.get('statusReceipt') in [None, ''] and request.query_params.get('startDate') in [None, ''] and request.query_params.get('endDate') in [None, '']:
+                    try:
+                        search_value = request.query_params.get('opId_billId', '').strip()
+                        logger.debug(f"Filtering receipts with value: {search_value}")
+                        
+                        # Intentar buscar como opId (numérico)
+                        try:
+                            op_id_value = int(search_value)
+                            receipts_by_opid = Receipt.objects.filter(operation__opId=op_id_value)
+                        except (ValueError, TypeError):
+                            receipts_by_opid = Receipt.objects.none()
+                        
+                        # Buscar como billId (texto)
+                        receipts_by_billid = Receipt.objects.filter(operation__bill__billId=search_value)
+                        
+                        # Combinar resultados
+                        receipts = receipts_by_opid | receipts_by_billid
+                        
+                        page = self.paginate_queryset(receipts)
+                        if page is not None:
+                            serializer = ReceiptReadOnlySerializer(page, many=True)
+                            return self.get_paginated_response(serializer.data)
+                            
+                    except Exception as e:
+                        logger.error(f"Error filtering receipts: {str(e)}")
+                     
+                     
+                elif request.query_params.get('opId_billId') != '' and request.query_params.get('statusReceipt')!='' and request.query_params.get('startDate')=='' and request.query_params.get('endDate')=='':
+                    try:
+                        search_value = request.query_params.get('opId_billId', '').strip()
+                        logger.debug(f"Filtering receipts with value  and status: {search_value} {request.query_params.get('statusReceipt')}")
+                        
+                        # Intentar buscar como opId (numérico)
+                        try:
+                            op_id_value = int(search_value)
+                            receipts_by_opid = Receipt.objects.filter(operation__opId=op_id_value,
+                                                         typeReceipt_id=request.query_params.get('statusReceipt'))
+                        except (ValueError, TypeError):
+                            receipts_by_opid = Receipt.objects.none()
+                        
+                        # Buscar como billId (texto)
+                        receipts_by_billid = Receipt.objects.filter(operation__bill__billId=search_value,
+                                                         typeReceipt_id=request.query_params.get('statusReceipt'))
+                        
+                        # Combinar resultados
+                        receipts = receipts_by_opid | receipts_by_billid
+                        
+                        page = self.paginate_queryset(receipts)
+                        if page is not None:
+                            serializer = ReceiptReadOnlySerializer(page, many=True)
+                            return self.get_paginated_response(serializer.data)
+                            
+                    except Exception as e:
+                        logger.error(f"Error filtering receipts: {str(e)}")
+                elif request.query_params.get('opId_billId') != '' and request.query_params.get('statusReceipt')!='' and request.query_params.get('startDate')!='' and request.query_params.get('endDate')!='':
+                    try:
+                        search_value = request.query_params.get('opId_billId', '').strip()
+                        logger.debug(f"Filtering receipts with value and status and date: {search_value}")
+                        
+                        # Intentar buscar como opId (numérico)
+                        try:
+                            op_id_value = int(search_value)
+                            receipts_by_opid = Receipt.objects.filter(operation__opId=op_id_value,
+                                                        date__gte=request.query_params.get('startDate'),
+                                                        date__lte=request.query_params.get('endDate'),
+                                                        typeReceipt_id=request.query_params.get('statusReceipt'))
+                        except (ValueError, TypeError):
+                            receipts_by_opid = Receipt.objects.none()
+                        
+                        # Buscar como billId (texto)
+                        receipts_by_billid = Receipt.objects.filter(operation__bill__billId=search_value,
+                                                        date__gte=request.query_params.get('startDate'),
+                                                        date__lte=request.query_params.get('endDate'),
+                                                        typeReceipt_id=request.query_params.get('statusReceipt'))
+                        
+                        # Combinar resultados
+                        receipts = receipts_by_opid | receipts_by_billid
+                        
+                        page = self.paginate_queryset(receipts)
+                        if page is not None:
+                            serializer = ReceiptReadOnlySerializer(page, many=True)
+                            return self.get_paginated_response(serializer.data)
+                            
+                    except Exception as e:
+                        logger.error(f"Error filtering receipts: {str(e)}")
+                elif request.query_params.get('opId_billId') != '' and request.query_params.get('statusReceipt')=='' and request.query_params.get('startDate')!='' and request.query_params.get('endDate')!='':
+                    try:
+                        search_value = request.query_params.get('opId_billId', '').strip()
+                        logger.debug(f"Filtering receipts with value: {search_value}")
+                        
+                        # Intentar buscar como opId (numérico)
+                        try:
+                            op_id_value = int(search_value)
+                            receipts_by_opid = Receipt.objects.filter(operation__opId=op_id_value,
+                                                        date__gte=request.query_params.get('startDate'),
+                                                        date__lte=request.query_params.get('endDate'),
+                                                        )
+                        except (ValueError, TypeError):
+                            receipts_by_opid = Receipt.objects.none()
+                        
+                        # Buscar como billId (texto)
+                        receipts_by_billid = Receipt.objects.filter(operation__bill__billId=search_value,
+                                                        date__gte=request.query_params.get('startDate'),
+                                                        date__lte=request.query_params.get('endDate'),
+                                                        )
+                        
+                        # Combinar resultados
+                        receipts = receipts_by_opid | receipts_by_billid
+                        
+                        page = self.paginate_queryset(receipts)
+                        if page is not None:
+                            serializer = ReceiptReadOnlySerializer(page, many=True)
+                            return self.get_paginated_response(serializer.data)
+                            
+                    except Exception as e:
+                        logger.error(f"Error filtering receipts: {str(e)}")
+                elif request.query_params.get('opId_billId') == '' and request.query_params.get('statusReceipt')!='' and request.query_params.get('startDate')!='' and request.query_params.get('endDate')!='':
+                    logger.debug(f"Filtering receipts with status: {request.query_params.get('statusReceipt')}, start date: {request.query_params.get('startDate')}, end date: {request.query_params.get('endDate')}")
+                    receipts    = Receipt.objects.filter(
+                                                         date__gte=request.query_params.get('startDate'),
+                                                            date__lte=request.query_params.get('endDate'),
+                                                            typeReceipt_id=request.query_params.get('statusReceipt'))
+                    page        = self.paginate_queryset(receipts)
+                    if page is not None:
+                        serializer = ReceiptReadOnlySerializer(page, many=True)
+                        return self.get_paginated_response(serializer.data)
+                elif request.query_params.get('opId_billId') == '' and request.query_params.get('statusReceipt')=='' and request.query_params.get('startDate')!='' and request.query_params.get('endDate')!='':
+                    logger.debug(f"Filtering receipts with start date: {request.query_params.get('startDate')}, end date: {request.query_params.get('endDate')}")
+                    receipts    = Receipt.objects.filter(date__gte=request.query_params.get('startDate'),
+                                                        date__lte=request.query_params.get('endDate'))
+                    page        = self.paginate_queryset(receipts)
+                    if page is not None:
+                        serializer = ReceiptReadOnlySerializer(page, many=True)
+                        return self.get_paginated_response(serializer.data)
+                elif request.query_params.get('opId_billId') == '' and request.query_params.get('statusReceipt')!='' and request.query_params.get('startDate')=='' and request.query_params.get('endDate')=='':
+                    logger.debug(f"Filtering receipts with status: {request.query_params.get('statusReceipt')}")
+                    receipts    = Receipt.objects.filter(typeReceipt_id=request.query_params.get('statusReceipt'))
+                    page        = self.paginate_queryset(receipts)
+                    if page is not None:
+                        serializer = ReceiptReadOnlySerializer(page, many=True)
+                        return self.get_paginated_response(serializer.data)    
                 else:
                     receipts    = Receipt.objects.filter(state=1)
                     page        = self.paginate_queryset(receipts)
