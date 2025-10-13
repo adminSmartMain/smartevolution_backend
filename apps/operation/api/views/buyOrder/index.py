@@ -282,6 +282,7 @@ class BuyOrderWebhookAV(BaseAV):
                         break
                     else:
                         allBuyOrdersSent = True
+                        logger.debug(f'searching buy order from opId and investor {buyOrder.operation.opId}')
                         buyOrders.append(BuyOrder.objects.get(operation__opId=buyOrder.operation.opId, operation__investor=investor['investor']))
                 logger.debug('checked if every investor has a buy order')
                 if allBuyOrdersSent == False:
@@ -297,7 +298,9 @@ class BuyOrderWebhookAV(BaseAV):
                         break
                     else:
                         buyOrdersSigned = True
+                        logger.debug(f'buy order code from buyOrdersList{buyOrder.code}')
                         buyOrderCodes.append(buyOrder.code)
+                        
                 logger.debug('checked if all the buy orders are signed - status 1')
                 if buyOrdersSigned == False:
                     return response({'error': False, 'message': 'ok - buy order'}, 200)
@@ -312,6 +315,7 @@ class BuyOrderWebhookAV(BaseAV):
                     if signature['message']['status'] == 'FINISH':
                         ordersSigned = True
                         # get the buy order from the document code
+                        logger.debug(f'get the buy order {buyOrderCode}')
                         buyOrderData = BuyOrder.objects.get(code=buyOrderCode)
                         downloadDocument = requests.get(signature['message']['url'])
                         logger.debug('111')
@@ -521,7 +525,7 @@ class BuyOrderWebhookAV(BaseAV):
                 logger.debug('# ❌ Faltaba manejar el caso cuando status != FINISH') 
                 return response({'error': False, 'message': 'Status not FINISH'}, 200)
         except Exception as e:
-            logger.debug('# ❌ todo falló') 
+            logger.debug('# ❌ algo falló') 
             IntegrationHistory.objects.create(
             id=gen_uuid(),
             integrationCode=None,
