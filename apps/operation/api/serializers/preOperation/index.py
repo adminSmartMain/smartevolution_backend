@@ -247,7 +247,7 @@ class PreOperationSignatureSerializer(serializers.ModelSerializer):
             return isSellOrderSent
         except:
             return False
-        g
+        
     def get_number_of_bills(self, obj):
         try:
             # get the complete operation

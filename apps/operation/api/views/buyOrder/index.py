@@ -249,6 +249,7 @@ class BuyOrderWebhookAV(BaseAV):
         try:
             environ.Env.read_env()
             env = environ.Env()
+            logger.debug(request.data)
             if request.data['status'] == 'FINISH':
                 # get the buy order from the document code
                 buyOrder = BuyOrder.objects.get(code=request.data['code'])
@@ -283,7 +284,15 @@ class BuyOrderWebhookAV(BaseAV):
                     else:
                         allBuyOrdersSent = True
                         buyOrders.append(BuyOrder.objects.get(operation__opId=buyOrder.operation.opId, operation__investor=investor['investor']))
+                
+                
+                
+                
                 logger.debug('checked if every investor has a buy order')
+                
+                
+                
+                
                 if allBuyOrdersSent == False:
                     return response({'error': False, 'message': 'ok'}, 200)
                 logger.debug('condicional allBuyOrdersSent')
@@ -299,9 +308,16 @@ class BuyOrderWebhookAV(BaseAV):
                         buyOrdersSigned = True
                         buyOrderCodes.append(buyOrder.code)
                 logger.debug('checked if all the buy orders are signed - status 1')
+                
+                
+                
                 if buyOrdersSigned == False:
                     return response({'error': False, 'message': 'ok - buy order'}, 200)
                 logger.debug('checked if buyOrdersSigned == False')
+                
+                
+                
+                
                 ordersSigned = False
                 ordersUrl    = []
 
@@ -309,6 +325,8 @@ class BuyOrderWebhookAV(BaseAV):
                     # Download the buy order
                     signature = getSignatureStatus(buyOrderCode)
                     logger.debug('obtener signature')
+                    logger.debug(buyOrderCode)
+                    logger.debug(f'signature file {signature}')
                     if signature['message']['status'] == 'FINISH':
                         ordersSigned = True
                         # get the buy order from the document code
@@ -335,8 +353,10 @@ class BuyOrderWebhookAV(BaseAV):
                     else:
                         ordersSigned = False
                         break
+                    
                 
                 logger.debug('checked if buyOrdersSigned == False')
+                
                 
                 if ordersSigned == False:
                     # remove the files
@@ -524,7 +544,7 @@ class BuyOrderWebhookAV(BaseAV):
             logger.debug('# ❌ todo falló') 
             IntegrationHistory.objects.create(
             id=gen_uuid(),
-            integrationCode=None,
+            integrationCode=opId,
             status='FAILED',
             message=str(e),
             response=None
