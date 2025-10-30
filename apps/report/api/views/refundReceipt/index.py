@@ -31,14 +31,14 @@ logger.addHandler(console_handler)
 class RefundReceiptAV(APIView):
     def post(self, request, pk):
         try:
-            logger.debug(f'Iniciando generación de recibo para reembolso ID: {pk}')
+         
             
             # Obtener el reembolso
             refund = Refund.objects.get(pk=pk)
             serializer = RefundReadOnlySerializer(refund)
             refund_data = serializer.data
             
-            logger.debug(f'Reembolso encontrado: {refund_data["rId"]}')
+            
             
             # Preparar datos para el template con manejo seguro
             client_data = refund_data.get('client', {})
@@ -60,12 +60,12 @@ class RefundReceiptAV(APIView):
                 'account': f"{account_type_data.get('description', '')}  -  {refund_data.get('accountNumber', '')}",
             }
             
-            logger.debug('Datos preparados para el template')
+           
             
             # Renderizar template
             template = get_template('refundReceipt.html')
             html_content = template.render(data)
-            logger.debug(f'Template renderizado, longitud HTML: {len(html_content)}')
+           
             
             # Convertir HTML a PDF
             parseBase64 = pdfToBase64(html_content)
@@ -73,7 +73,7 @@ class RefundReceiptAV(APIView):
             # Verificar que la respuesta tenga la estructura esperada
             if 'pdf' in parseBase64:
                 pdf_base64 = parseBase64['pdf']
-                logger.debug('PDF generado exitosamente')
+                
                 
                 return response({
                     'error': False, 

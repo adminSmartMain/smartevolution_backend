@@ -29,7 +29,7 @@ from rest_framework import status
 from django.conf import settings
 import uuid
 from apps.base.utils.index import gen_uuid, PDFBase64File, uploadFileBase64
-
+from apps.base.utils.s3logging import log_execution_to_s3
 # Configurar el logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -108,10 +108,11 @@ def is_uuid(val):
 class PreOperationAV(BaseAV):
     @transaction.atomic
     @checkRole(['admin'])
+    
     def post(self, request):
         try:
             # ==================== INITIAL SETUP ====================
-            logger.info(f"PreOperationAV request received from {request.user}")
+            
             
             # Parse and validate request data
             try:
@@ -128,7 +129,7 @@ class PreOperationAV(BaseAV):
                     status.HTTP_400_BAD_REQUEST
                 )
 
-            logger.debug(f"Processing {len(values_list)} operation(s)")
+            
 
             # ==================== SINGLE OPERATION ====================
             if len(values_list) == 1:
@@ -146,7 +147,7 @@ class PreOperationAV(BaseAV):
 
     def _handle_single_operation(self, request, operation_data):
         """Process single operation with atomic creation of bill if needed"""
-        logger.debug(f"Single operation data: {operation_data}")
+
         try:
             with transaction.atomic():
                 # Create bill if billCode exists and it's the first occurrence
@@ -213,7 +214,7 @@ class PreOperationAV(BaseAV):
     def _handle_bulk_operations(self, request, values_list):
         operations_created = []
         errors = []
-        logger.debug(f"Handling bulk operations: {len(values_list)} items")
+
         
         try:
             with transaction.atomic():
@@ -461,13 +462,13 @@ class PreOperationAV(BaseAV):
         try:
 
             if pk:
-                logger.debug(f"PreOperationAV pk")
+              
                 if len(request.query_params) > 0:
                     preOperation  = PreOperation.objects.get(pk=request.query_params.get('id'))
                     serializer    = PreOperationReadOnlySerializer(preOperation)
                     return response({'error': False, 'data': serializer.data}, 200)
                 else:
-                    logger.debug(f"PreOperationAV pk else")
+                    
                     preOperation  = PreOperation.objects.get(pk=pk)
                     serializer    = PreOperationReadOnlySerializer(preOperation)
                     receipts      = Receipt.objects.filter(operation=pk).order_by('-date')
@@ -483,16 +484,16 @@ class PreOperationAV(BaseAV):
                     return response({'error': False, 'data': serializer.data, 'receipts':calcs}, 200)
 
             if len(request.query_params) > 0:
-                logger.debug(f"PreOperationAV if 2")
+     
                 if (request.query_params.get('opId') != 'undefined') and (request.query_params.get('notifications') == 'electronicSignature'):
                     
                     # get the operation data
                     
                     preOperation = PreOperation.objects.filter(opId=request.query_params.get('opId'))
                     serializer   = PreOperationReadOnlySerializer(preOperation, many=True)
-                    logger.debug(f"  data de buscar por opID{ serializer.data}")
-                    for obj in preOperation:
-                       logger.debug(f"  preOperation filtro  de buscar por opID{vars(obj)}")
+                  
+                
+                     
                    
                     
                     pendingOperations  = []
@@ -506,32 +507,32 @@ class PreOperationAV(BaseAV):
                     n=1
                     for x in pendingOperations:
                         if x.investor not in [y.investor for y in filteredOperations]:
-                            logger.debug(f" if uno")
+                       
                             filteredOperations.append(x)
                         else:
-                            logger.debug(f" else uno")
+                          
                             for y in filteredOperations:
-                                logger.debug(f" entro al for")
+                                
                                 if x.investor == y.investor and x.opId == y.opId:
                                     y.payedAmount += x.payedAmount
                                     y.presentValueInvestor += x.presentValueInvestor
-                                    logger.debug(f" y.investorTax {y.investorTax}")
+                                   
                                     if x.investorTax !=0:
                                         y.investorTax =(x.investorTax+y.investorTax)
-                                        logger.debug(f" voy en el if de diferente de 0 este es el n {n}")
+                                        
                                         n=n+1
                                     else:
-                                        logger.debug(f" voy en el if de igual a de 0 este es el n {n}") 
+                                        
                                         y.investorTax =(x.investorTax+y.investorTax)
                                    
-                                    logger.debug(f" y.investorTax  de buscar por investor { y.investorTax}")
+                                    
                                     break
                                 elif x.investor == y.investor and x.opId != y.opId:
                                     filteredOperations.append(x)
                                     break
                                 
                                 
-                            logger.debug(f" y.investorTax {y.investorTax}")         
+                                  
                     
                    
                     if x.investorTax:
@@ -543,7 +544,6 @@ class PreOperationAV(BaseAV):
                         return self.get_paginated_response(serializer.data)
                    
                 elif  request.query_params.get('investor') and request.query_params.get('status'):
-                    logger.debug(f"investor y status están definidos")
                     
                     # Obtener los datos de la operación
                     preOperation = PreOperation.objects.filter(
@@ -555,7 +555,7 @@ class PreOperationAV(BaseAV):
                     return response({'error': False, 'data': serializer.data}, 200)
                 
                 elif (request.query_params.get('opId') != 'undefined'):
-                    logger.debug(f"request.query_params.get('opId') != 'undefined'")
+                   
                     data = generateSellOffer(request.query_params.get('opId'))
                     # get the operation data
                     
@@ -565,14 +565,14 @@ class PreOperationAV(BaseAV):
                     data['investor']['investorAccount'] = serializer.data[0]['clientAccount']
                     return response({'error': False, 'data': data}, 200)
                 elif request.query_params.get('opIdV') != 'undefined':
-                    logger.debug(f"request.query_params.get('opIdV') != 'undefined'")
+
                     #ACA SE TOMAN LOS DATOS AL MOMENTO DE PRESIONAR AL WHATSAPP
                     data = calcOperationDetail(request.query_params.get('opIdV'), request.query_params.get('investor')) 
                     return response({'error': False, 'data': data}, 200)
                 elif request.query_params.get('notifications') == 'electronicSignature' and request.query_params.get('nOpId') == 'undefined':
-                    logger.debug(f"request.query_params.get('notifications') == 'electronicSignature' and request.query_params.get('nOpId') == 'undefined'")
+                    
                     if 'investor' in request.query_params:
-                        logger.debug(f"  investir  de buscar por investor")
+                
                         preOperation = PreOperation.objects.filter(status=0).filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__first_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__social_reason__icontains=request.query_params.get('investor')) )
@@ -630,7 +630,7 @@ class PreOperationAV(BaseAV):
 
                 
             else:
-                logger.debug(f"else final")
+                
                 preOperations = PreOperation.objects.filter(state=1)
                 serializer    = PreOperationReadOnlySerializer(preOperations, many=True)
                 return response({'error': False, 'data': serializer.data}, 200)
@@ -643,7 +643,7 @@ class PreOperationAV(BaseAV):
     def patch(self, request, pk):
         try:
             if request.data['billCode'] != '':
-                logger.debug('a')
+              
                 emitter = Client.objects.get(pk=request.data['emitter'])
                 payer = Client.objects.get(pk=request.data['payer'])
                 typeBill = TypeBill.objects.get(pk='a7c70741-8c1a-4485-8ed4-5297e54a978a')
@@ -668,7 +668,7 @@ class PreOperationAV(BaseAV):
             
             # check if massive and massiveByInvestor are in the request data
             if 'massive' not in request.data and 'massiveByInvestor' not in request.data:
-                logger.debug('bbbbbbbbbbbbbb')
+                
                 preOperation = PreOperation.objects.get(pk=pk)
                 serializer   = PreOperationSerializer(preOperation, data=request.data, context={'request': request}, partial=True)
                 if serializer.is_valid():
@@ -678,7 +678,7 @@ class PreOperationAV(BaseAV):
                     return response({'error': True, 'message': serializer.errors}, 500)
             elif request.data['massive'] == True:
 
-                logger.debug('c')
+                
                 preOperation = PreOperation.objects.get(pk=pk)
                 if request.data['status'] == 2:
                     # get the operations with the same opId
@@ -696,7 +696,7 @@ class PreOperationAV(BaseAV):
                         operation.save()
                     return response({'error': False, 'message': 'Operaciones Actualizada'}, 200)
                 else:
-                    logger.debug('d')
+                    
                     # get the operations with the same opId
                     operations = PreOperation.objects.filter(opId=preOperation.opId, investor=preOperation.investor)
                     for operation in operations:
@@ -709,7 +709,7 @@ class PreOperationAV(BaseAV):
                             operation.save()
                     return response({'error': False, 'message': 'Operaciones Actualizada'}, 200)
             elif request.data['massiveByInvestor'] == True:
-                logger.debug('e')
+            
                 preOperation = PreOperation.objects.filter(opId=request.data['opId'], investor=request.data['investor'])
                 for operations in preOperation:
                     if request.data['status'] == 2:
@@ -736,7 +736,7 @@ class PreOperationAV(BaseAV):
                         return response({'error': False, 'message': 'Operaciones Actualizada'}, 200)
 
                 if request.data['status'] == 1:
-                    logger.debug('f')
+                    
                     # get the operations with the same opId
                     operations = PreOperation.objects.filter(opId=preOperation.opId)
                     for operation in operations:
@@ -748,11 +748,11 @@ class PreOperationAV(BaseAV):
                 return response({'error': False, 'message': 'Operaciones Actualizada'}, 200)
 
             else:
-                logger.debug('ag')
+             
                 preOperation = PreOperation.objects.get(pk=pk)
 
 
-                logger.debug('caso editar',preOperation,request.data)
+                
                 serializer   = PreOperationSerializer(preOperation, data=request.data, context={'request': request}, partial=True)
                 if serializer.is_valid():
                     serializer.save()
@@ -783,7 +783,7 @@ class PreOperationAV(BaseAV):
 
 class GetLastOperationAV(APIView):
     def get(self, request):
-        logger.debug(f" GetLastOperationAV")
+        
         try:
             preOperations = PreOperation.objects.all().order_by('-opId').first()
             serializer    = PreOperationSerializer(preOperations)
@@ -801,7 +801,7 @@ class GetLastOperationAV(APIView):
 
 class GetBillFractionAV(APIView):
     def get(self, request, pk):
-        logger.debug(f"GetBillFractionAV")
+        
         try:
             # detect if a bill in operation has previously been fractioned and get the last fraction using bill id
             preOperations = PreOperation.objects.filter(bill=pk).order_by('-opId').first()
@@ -842,7 +842,7 @@ class GetBillFractionAV(APIView):
 
 class GetOperationByEmitter(APIView):
     def get(self, request, pk):
-        logger.debug(f"GetOperationByEmitter")
+        
         try:
             preOperations = PreOperation.objects.filter(emitter=pk)
             serializer    = PreOperationSerializer(preOperations, many=True)
@@ -855,8 +855,7 @@ class GetOperationByEmitter(APIView):
 
 class GetOperationByParams(BaseAV):
     def get(self, request):
-        logger.debug(f"GetOperationByParams")
-        logger.debug(request.query_params)
+        
         try:
             if (request.query_params.get('opId') != '' and request.query_params.get('billId') != '' and request.query_params.get('investor') != ''):
                 preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'),  
@@ -874,7 +873,7 @@ class GetOperationByParams(BaseAV):
                                                             bill_id__billId__icontains=request.query_params.get('billId'),
                                                             status__in=[0, 2])
             elif (request.query_params.get('opId') != '' and request.query_params.get('investor') != '' and request.query_params.get('billId') == '' and request.query_params.get('mode') =='operations'):
-                logger.debug(f"caso opID e investor operations")
+                
                 preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'),
                                                             status__in=[1, 3, 4, 5] 
                                                             ).filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
@@ -885,7 +884,7 @@ class GetOperationByParams(BaseAV):
                                                             Q(emitter__social_reason__icontains=request.query_params.get('investor'))
             )
             elif (request.query_params.get('opId') != '' and request.query_params.get('investor') != '' and request.query_params.get('billId') == ''):
-                logger.debug(f"caso opID e investor preoperations")
+           
                 preOperations = PreOperation.objects.filter(
                 opId=request.query_params.get('opId'),
                  status__in=[0, 2]).filter(
@@ -909,20 +908,20 @@ class GetOperationByParams(BaseAV):
                                                              
 )          
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('mode') =='operations'and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('status') == ''):
-                logger.debug(f"modo operations sin mas parametros")
+            
                 preOperations = PreOperation.objects.filter(status__in=[1, 3, 4, 5])
 
             elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('mode') =='operations' and request.query_params.get('status') == ''):
-                logger.debug(f"a modo operations" )
+               
                 preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'), status__in=[1, 3, 4, 5])
 
 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('mode') =='operations' and request.query_params.get('status') == ''):                
-                logger.debug(f"b modo operations")
+             
                 preOperations = PreOperation.objects.filter(bill_id__billId__icontains=request.query_params.get('billId'), status__in=[1, 3, 4, 5])
 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('mode') =='operations' and request.query_params.get('status') == ''):
-                logger.debug(f"c modo operations")
+                
                 preOperations = PreOperation.objects.filter(status__in=[1, 3, 4, 5]).filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__first_name__icontains=request.query_params.get('investor')) |
                                                             Q(bill_id__billId__icontains=request.query_params.get('investor')) |
@@ -933,14 +932,14 @@ class GetOperationByParams(BaseAV):
                                                           )
             
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('mode') =='operations' and request.query_params.get('status') == ''):
-                logger.debug(f"a con fecha sin mas parametros modo operations")
+                
                 preOperations = PreOperation.objects.filter(
                     opDate__gte=request.query_params.get('startDate'),
                     opDate__lte=request.query_params.get('endDate'),
                     status__in=[1, 3, 4, 5]
                 )
             elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('mode') =='operations' and request.query_params.get('status') == ''):
-                logger.debug(f"a con fecha modo operations")
+                
                 preOperations = PreOperation.objects.filter(
                     opId=request.query_params.get('opId'),
                     status__in=[1, 3, 4, 5],
@@ -949,7 +948,7 @@ class GetOperationByParams(BaseAV):
                 )
             
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('mode') =='operations' and request.query_params.get('status') == ''):                
-                logger.debug(f"b con fecha modo operations")
+                
                 preOperations = PreOperation.objects.filter(
                      status__in=[1, 3, 4, 5],
                     bill_id__billId__icontains=request.query_params.get('billId'),
@@ -958,7 +957,7 @@ class GetOperationByParams(BaseAV):
                 )
 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('mode') =='operations' and request.query_params.get('status') == ''):
-                logger.debug(f"c fecha modo operations")
+                
                 preOperations = PreOperation.objects.filter(
                     Q(investor__last_name__icontains=request.query_params.get('investor')) |
                     Q(investor__first_name__icontains=request.query_params.get('investor')) |
@@ -971,11 +970,11 @@ class GetOperationByParams(BaseAV):
                      status__in=[1, 3, 4, 5],
                 )
             elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('mode') =='operations' and request.query_params.get('status') == ''):
-                logger.debug(f"a c0n mode operations")
+                
                 preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'),  status__in=[1, 3, 4, 5])
             
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('status') != '' and request.query_params.get('mode') =='operations'):
-                logger.debug(f"solo estatus c0n mode operations")
+                
                 
                 if request.query_params.get('status') == '5':
                     # Caso especial para status 5: operaciones expiradas (opExpiration < hoy) y status != 4
@@ -993,7 +992,7 @@ class GetOperationByParams(BaseAV):
                     )
                 
             elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') =='' and request.query_params.get('endDate') == '' and request.query_params.get('status') != '' and request.query_params.get('mode') =='operations'):
-                logger.debug(f"solo estatus y opId con mode operations")
+                
                 
                 if request.query_params.get('status') == '5':
                     # Caso especial para status 5: solo opExpiration < hoy y excluir status 4
@@ -1014,7 +1013,7 @@ class GetOperationByParams(BaseAV):
                     )
                 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('status') != '' and request.query_params.get('mode') =='operations'):
-                logger.debug(f"solo estatus fechas ")
+               
                 
                 if request.query_params.get('status') == '5':
                     # Caso especial para status 5 con fechas
@@ -1040,7 +1039,7 @@ class GetOperationByParams(BaseAV):
                     )
 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor')  !='' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('status') != '' and request.query_params.get('mode') =='operations'):
-                logger.debug(f"solo estatus fechas e investor")
+                
                 
                 if request.query_params.get('status') == '5':
                     # Caso especial para status 5 con fechas e investor
@@ -1084,7 +1083,7 @@ class GetOperationByParams(BaseAV):
                     )
 
             elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') !='' and request.query_params.get('endDate') != '' and request.query_params.get('status') != '' and request.query_params.get('mode') =='operations'):
-                logger.debug(f"solo estatus fechas y opId operations")
+                
                 
                 if request.query_params.get('status') == '5':
                     # Caso especial para status 5 con fechas y opId
@@ -1113,7 +1112,7 @@ class GetOperationByParams(BaseAV):
                     )
 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') !='' and request.query_params.get('endDate') != '' and request.query_params.get('status') != '' and request.query_params.get('mode') =='operations'):
-                logger.debug(f"solo estatus fechas y billId")
+                
                 
                 if request.query_params.get('status') == '5':
                     # Caso especial para status 5 con fechas y billId
@@ -1141,16 +1140,16 @@ class GetOperationByParams(BaseAV):
                         opDate__lte=request.query_params.get('endDate')
                     )
             elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('status') == '' ):
-                logger.debug(f"a")
+                
                 preOperations = PreOperation.objects.filter(opId=request.query_params.get('opId'),   status__in=[0, 2])
 
 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('status') == ''):                
-                logger.debug(f"b")
+                
                 preOperations = PreOperation.objects.filter(bill_id__billId__icontains=request.query_params.get('billId'),  status__in=[0, 2])
 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('status') == ''):
-                logger.debug(f"c")
+                
                 preOperations = PreOperation.objects.filter(Q(investor__last_name__icontains=request.query_params.get('investor')) |
                                                             Q(investor__first_name__icontains=request.query_params.get('investor')) |
                                                                Q(bill_id__billId__icontains=request.query_params.get('investor')) |
@@ -1160,13 +1159,13 @@ class GetOperationByParams(BaseAV):
                                                           Q(emitter__social_reason__icontains=request.query_params.get('investor')),  status__in=[0, 2])
             
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('status') == ''):
-                logger.debug(f"a con fecha sin mas parametros")
+                
                 preOperations = PreOperation.objects.filter(
                     opDate__gte=request.query_params.get('startDate'),
                     opDate__lte=request.query_params.get('endDate'),  status__in=[0, 2]
                 )
             elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('status') == ''):
-                logger.debug(f"a con fecha")
+                
                 preOperations = PreOperation.objects.filter(
                     opId=request.query_params.get('opId'),
                     status__lte=4,
@@ -1175,7 +1174,7 @@ class GetOperationByParams(BaseAV):
                 )
 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('status') == ''):                
-                logger.debug(f"b con fecha")
+                
                 preOperations = PreOperation.objects.filter(
                     bill_id__billId__icontains=request.query_params.get('billId'),
                     opDate__gte=request.query_params.get('startDate'),
@@ -1183,7 +1182,7 @@ class GetOperationByParams(BaseAV):
                 )
 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') != '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('status') == ''):
-                logger.debug(f"c fecha")
+                
                 preOperations = PreOperation.objects.filter(
                     
                     Q(investor__last_name__icontains=request.query_params.get('investor')) |
@@ -1197,14 +1196,14 @@ class GetOperationByParams(BaseAV):
                 )
                 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') == '' and request.query_params.get('endDate') == '' and request.query_params.get('status') != ''):
-                logger.debug(f"solo estatus")
+                
                 preOperations = PreOperation.objects.filter(
                     
                   status__icontains=request.query_params.get('status')
                 )
                 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('status') != ''):
-                logger.debug(f"solo estatus fechas ")
+                
                 preOperations = PreOperation.objects.filter(
                    opDate__gte=request.query_params.get('startDate'),
                     opDate__lte=request.query_params.get('endDate'), 
@@ -1212,7 +1211,7 @@ class GetOperationByParams(BaseAV):
                 )
                 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') == '' and request.query_params.get('investor')  !='' and request.query_params.get('startDate') != '' and request.query_params.get('endDate') != '' and request.query_params.get('status') != ''):
-                logger.debug(f"solo estatus fechas e investor")
+                
                 preOperations = PreOperation.objects.filter(
                      Q(investor__last_name__icontains=request.query_params.get('investor')) |
                     Q(investor__first_name__icontains=request.query_params.get('investor')) |
@@ -1225,14 +1224,14 @@ class GetOperationByParams(BaseAV):
                   status__icontains=request.query_params.get('status')
                 )
             elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') =='' and request.query_params.get('endDate') == '' and request.query_params.get('status') != ''):
-                logger.debug(f"solo estatus y opId")
+                
                 preOperations = PreOperation.objects.filter(
                   opId=request.query_params.get('opId'),  
                   status__icontains=request.query_params.get('status'),
               
                 )   
             elif (request.query_params.get('opId') != '' and request.query_params.get('billId') == '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') !='' and request.query_params.get('endDate') != '' and request.query_params.get('status') != ''):
-                logger.debug(f"solo estatus  fechas y opId")
+                
                 preOperations = PreOperation.objects.filter(
                   opId=request.query_params.get('opId'),  
                   status__icontains=request.query_params.get('status'),
@@ -1241,7 +1240,7 @@ class GetOperationByParams(BaseAV):
                 )
                 
             elif (request.query_params.get('opId') == '' and request.query_params.get('billId') != '' and request.query_params.get('investor') == '' and request.query_params.get('startDate') !='' and request.query_params.get('endDate') != '' and request.query_params.get('status') != ''):
-                logger.debug(f"solo estatus fechas y billId")
+                
                 preOperations = PreOperation.objects.filter(
                   bill_id__billId__icontains=request.query_params.get('billId'),
                   status__icontains=request.query_params.get('status'),
@@ -1249,15 +1248,15 @@ class GetOperationByParams(BaseAV):
                 opDate__lte=request.query_params.get('endDate')
                 )
             else:
-                logger.debug(f"d")
+                
                 preOperations = PreOperation.objects.filter(status__in=[0, 2])
 
             if (request.query_params.get('mode') != '' and request.query_params.get('mode') != None):
-                logger.debug(f"f")
+                
                 possibleStatus = [1, 3, 4, 5]
                 preOperations = list(filter(lambda x: x.status in possibleStatus, preOperations))
                 
-            logger.debug(f"g")
+            
             # calc data for table
             data = {
                 'commission': 0,
@@ -1272,20 +1271,20 @@ class GetOperationByParams(BaseAV):
                 'depositValue': 0,
             }
             if len(preOperations) == 0:
-                logger.debug(f"h")
+                
                 page = self.paginate_queryset(preOperations)
                 if page is not None:
-                    logger.debug(f"i")
+                   
                     serializer   = PreOperationByParamsSerializer(page, many=True)
                     return self.get_paginated_response(serializer.data)
             typeClient = preOperations[0].emitter.type_client.id
             try:
-                logger.debug(f"j")
+                
                 riskProfile = RiskProfile.objects.get(client = preOperations[0].emitter.id)
             except RiskProfile.DoesNotExist:
                 riskProfile = None
             # calc commission
-            logger.debug(f"k")
+            
             sum = 0
             presentValueInvestor = 0
             futureValue = 0
@@ -1330,9 +1329,9 @@ class GetOperationByParams(BaseAV):
             page = self.paginate_queryset(preOperations)
             if page is not None:
                 
-                logger.debug(f"l")
+                
                 serializer   = PreOperationByParamsSerializer(page, many=True)
-                logger.debug(f"m")
+                
                 serializer.data[0]['calcs'] = data
               
                 return self.get_paginated_response(serializer.data)
@@ -1345,7 +1344,7 @@ class GetOperationByParams(BaseAV):
 
 class OperationDetailAV(APIView):
     def get(self, request, pk):
-        logger.debug(f"OperationDetailAV")
+        
         try:
             operation  = PreOperation.objects.filter(opId=pk)
             serializer = PreOperationReadOnlySerializer(operation, many=True)

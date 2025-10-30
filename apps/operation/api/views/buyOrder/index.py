@@ -54,7 +54,7 @@ class BuyOrderAV(BaseAV):
             if not negotiationSummary:
                 return response({'error': True, 'message': 'No existe un resumen de negociación para esta operación'}, 400)
             #Get the operation
-            logger.debug(f" Check if an negotiation summary exists for this operation DONE")
+            
             operation = PreOperation.objects.filter(opId=request.data['opId'], investor=request.data['investorId']).first()
             requestId = f'ORDEN DE COMPRA OP {operation.opId} {operation.investor.first_name if operation.investor.first_name else operation.investor.social_reason}'
             sellOffer = generateSellOfferByInvestor(operation.opId,operation.investor.id)
@@ -62,13 +62,7 @@ class BuyOrderAV(BaseAV):
             template       = get_template('newBuyOrderSignatureTemplate.html')
             parsedTemplate = template.render(sellOffer)
             pdf            = pdfToBase64(parsedTemplate)
-            
-            logger.debug(  {
-                'name' : sellOffer['legalRepresentative'],
-                'email': sellOffer['legalRepresentativeEmail'],
-                'phone': sellOffer['legalRepresentativePhone'],
-                'label': True
-            })
+        
             # gen the electronic signature
             electronicSignature = genElectronicSignature(pdf, requestId, 'Orden de compra', requestId, [
             {
@@ -80,7 +74,7 @@ class BuyOrderAV(BaseAV):
 
             if electronicSignature['error'] == True:
                 return response({'error': True, 'message': electronicSignature['message']['message']}, 400)
-            logger.debug(f" CREATING  buyOrderData")
+        
             buyOrderData = {
                 'operation' : operation.id,
                 'code'      : electronicSignature['message']['document'],
@@ -90,7 +84,7 @@ class BuyOrderAV(BaseAV):
                 'status'    : 1,
                 'signStatus': 0,
             }
-            logger.debug(f" CREATING  buyOrderData done")
+            
             # serializer the buy order
             serializer = BuyOrderSerializer(data=buyOrderData, context={'request': request})
             if serializer.is_valid():
@@ -278,10 +272,13 @@ class BuyOrderWebhookAV(BaseAV):
 
                 # check if every investor has a buy order
                 for investor in investors:
+                    logger.debug('if for investors')
                     if not BuyOrder.objects.filter(operation__opId=buyOrder.operation.opId, operation__investor=investor['investor']).exists():
+                        logger.debug('no encontro la orden de compra')
                         allBuyOrdersSent = False
                         break
                     else:
+                        logger.debug('si encontro la orden de compra')
                         allBuyOrdersSent = True
                         buyOrders.append(BuyOrder.objects.get(operation__opId=buyOrder.operation.opId, operation__investor=investor['investor']))
                 
@@ -327,42 +324,42 @@ class BuyOrderWebhookAV(BaseAV):
                     logger.debug('obtener signature')
                     logger.debug(buyOrderCode)
                     logger.debug(f'signature file {signature}')
-                    if signature['message']['status'] == 'FINISH':
-                        ordersSigned = True
+                   # if signature['message']['status'] == 'FINISH':
+                     #   ordersSigned = True
                         # get the buy order from the document code
-                        buyOrderData = BuyOrder.objects.get(code=buyOrderCode)
-                        downloadDocument = requests.get(signature['message']['url'])
-                        logger.debug('111')
-                        if downloadDocument.status_code == 200:
-                            route = f'orden-de-compra-{gen_uuid()}.pdf'
-                            with open(route, 'wb') as archivo:
-                                archivo.write(downloadDocument.content)
-                                ordersUrl.append({
-                                    'route': route,
-                                    'investor':buyOrderData.operation.investor.first_name if buyOrderData.operation.investor.first_name else buyOrderData.operation.investor.social_reason
-                                })
-                        else:
-                                IntegrationHistory.objects.create(
-                                    id=gen_uuid(),
-                                    integrationCode=None,
-                                    status='FAILED',
-                                    message=f"Error al descargar el archivo: {downloadDocument.status_code}",
-                                    response=None
-                                )
-                                return response({'error': True, 'message': f"Error al descargar el archivo: {downloadDocument.status_code}"}, downloadDocument.status_code)
-                    else:
-                        ordersSigned = False
-                        break
+                     #   buyOrderData = BuyOrder.objects.get(code=buyOrderCode)
+                       # downloadDocument = requests.get(signature['message']['url'])
+                       # logger.debug('111')
+                        #if downloadDocument.status_code == 200:
+                       #     route = f'orden-de-compra-{gen_uuid()}.pdf'
+                           # with open(route, 'wb') as archivo:
+                          #      archivo.write(downloadDocument.content)
+                              #  ordersUrl.append({
+                            #        'route': route,
+                             #       'investor':buyOrderData.operation.investor.first_name if buyOrderData.operation.investor.first_name else buyOrderData.operation.investor.social_reason
+                             #   })
+                     #   else:
+                              #  IntegrationHistory.objects.create(
+                         #           id=gen_uuid(),
+                             #       integrationCode=None,
+                              #      status='FAILED',
+                             #       message=f"Error al descargar el archivo: {downloadDocument.status_code}",
+                             #       response=None
+                             #   )
+                               # return response({'error': True, 'message': f"Error al descargar el archivo: {downloadDocument.status_code}"}, downloadDocument.status_code)
+                   # else:
+                        #ordersSigned = False
+                       # break
                     
                 
                 logger.debug('checked if buyOrdersSigned == False')
                 
                 
-                if ordersSigned == False:
+                #if ordersSigned == False:
                     # remove the files
-                    for order in ordersUrl:
-                        os.remove(order['route'])
-                    return response({'error': False, 'message': 'ok'}, 200)
+                   # for order in ordersUrl:
+                   #     os.remove(order['route'])
+                    #return response({'error': False, 'message': 'ok'}, 200)
                 
                 logger.debug('checked ordersSigned == False')
                 # Gen the negotiation summary
@@ -544,7 +541,7 @@ class BuyOrderWebhookAV(BaseAV):
             logger.debug('# ❌ todo falló') 
             IntegrationHistory.objects.create(
             id=gen_uuid(),
-            integrationCode=opId,
+            integrationCode=None,
             status='FAILED',
             message=str(e),
             response=None

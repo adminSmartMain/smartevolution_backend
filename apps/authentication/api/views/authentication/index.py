@@ -209,11 +209,10 @@ class ResetPasswordAV(APIView):
             serializer = UpdatePasswordSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
               # Buscar el usuario por correo
-            logger.debug(f"request.data: {request.data}")
+            
             token=Token.objects.filter(key=request.data['token']).first() 
-            logger.debug(token.user_id)
+            
             user_token=User.objects.filter(id=token.user_id).first() 
-            logger.debug(f"Atributos completos del usuario: {vars(user_token)}")
             
             html_message = render_to_string('succesful_reset_password.html', {
                 'user': user_token,

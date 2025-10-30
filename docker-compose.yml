@@ -2,7 +2,7 @@ services:
   web:
     build:
       context: .
-    command: python manage.py runserver 0.0.0.0:${DJANGO_PORT:-8000}
+    command: gunicorn -c gunicorn.conf.py core.wsgi:application
     volumes:
       - .:/app
       - ./logs:/app/logs
@@ -12,7 +12,7 @@ services:
       - DJANGO_PORT=${DJANGO_PORT:-8000}
     env_file:
       - docker.env
-    container_name: backend_smart_evolution
+    container_name: backend_smart_evolution_dev
     logging:
       driver: "json-file"
       options:

@@ -61,6 +61,6 @@ def calcActivityEfficiency(indicators, index, period):
         indicators['activityEfficiency'][f'period_{index + 1}']['assetsRotation'] = 0
 
     
-    logger.debug(f"dataReport: {indicators}")
+   
 
     return indicators

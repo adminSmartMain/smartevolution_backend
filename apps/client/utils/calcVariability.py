@@ -132,5 +132,4 @@ def calcVariability(indicators, period1, period2=None, period3=None):
         except (KeyError, ZeroDivisionError, TypeError) as e:
             logger.error(f"Error calculating total_patrimony period_3: {e}")
 
-    logger.debug(f"'indicators calcVariability': {indicators}")
     return indicators

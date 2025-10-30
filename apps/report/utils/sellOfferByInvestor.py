@@ -54,13 +54,13 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
     operation = PreOperation.objects.filter(opId=pk, investor=investorId)
     
     
-    logger.debug(f"legal Representative")
+    
     
     # Get the legal representative of the investor
     legalRepresentative = LegalRepresentative.objects.get(client=investorId)
     
     # get operation emitter
-    logger.debug(f"emitter")
+   
     emitter = Client.objects.get(id=operation[0].emitter.id)
     # Get the operation payers
     for x in operation:
@@ -76,7 +76,7 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
     financialCentralEmitter = FinancialCentral.objects.filter(client=emitter.id)
     #get emitter overview
     overviewEmitter = Overview.objects.filter(client=emitter.id)
-    logger.debug(f"overviewEmitter")
+    
     # parse the emitter financial central
     for item in financialCentralEmitter:
         
@@ -86,16 +86,16 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
         'centralBalances': item.centralBalances,
         'rating': item.rating
         })
-    logger.debug(f"indicatorsEmitter")
+    
     # calc the emitter indicators
-    logger.debug(f"voy a hacer calcReportVariability")
+   
     indicatorsEmitter = calcReportVariability(emitter.id,"","") 
-    logger.debug(f" ya hice calcReportVariability")
-    logger.debug(f"'variability': {indicatorsEmitter['emitter']['variability']}")
+    
+    
     #Procesar y estructurar la información financiera de un "emitter" (emisor) usando datos provenientes de un conjunto de diccionarios anidados. 
     try:
     #capturar cualquier tipo de error inesperado que ocurra mientras se procesan los datos.
-        logger.debug(f"'variability': {indicatorsEmitter['emitter']['variability']}")
+        
         
         dataEmitter = {
             'id': emitter.id,
@@ -163,15 +163,15 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
         logger.error(f"Unexpected error while processing emitter data: {e}")
 
 
-    logger.debug(f"'dataEmitter': {dataEmitter}")
+    
     # payers data
    
     for x in setPayers:
         
-        logger.debug(f"x in set payers {x}" )
+        
         # get the payer
         payer = Client.objects.get(id=x)
-        logger.debug(f"FinancialCentralPayer")
+        
         # get the payer financial central
         financialCentralPayer = FinancialCentral.objects.filter(client=payer.id)
         
@@ -192,14 +192,13 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
         #get payer overview
         overviewPayer = Overview.objects.filter(client=payer.id)
        
-        logger.debug(f"calculaReporteVariabilidad en pagadores")
+       
         # calc the payer indicators
         indicatorsPayer = calcReportVariability("",x,None)
         
-        logger.debug(f"calculado ReporteVariabilidad en pagadores")
-        logger.debug(f"calculado ReporteVariabilidad en pagadores {indicatorsPayer}")
+    
         try:
-            logger.debug(f"entró al try")
+            
             dataPayer = {
             'name': f'{payer.first_name} {payer.last_name}' if payer.first_name else payer.social_reason,
             'documentNumber': payer.document_number,
@@ -253,9 +252,9 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
             'variability': indicatorsPayer['payer']['variability']
                 }
             
-            logger.debug(f"dataPayer dentro del try de pagadores {dataPayer}")
+            
         except:
-            logger.debug(f"Except")
+           
                 
             # check if indicators payer has the 3 periods(period_1 period_2 period_3) different to {} empty
             periods = 0
@@ -346,13 +345,13 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
                     'financialAnalisis': overviewPayer[0].financialAnalisis if overviewPayer else '',
                     }
                     
-        logger.debug(f"dataPayers.append(dataPayer)")
+       
         # append the payer data
         dataPayers.append(dataPayer)
-        logger.debug(f"payersName")
+     
       # Append the payer name to the payersName variable
         payersName = payersName + dataPayer['name'] + ', '
-        logger.debug(f"dataOperation")
+        
         dataOperation = {
                 'total': 0.0,
                 'averageTerm': 0.0,
@@ -368,7 +367,7 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
        
         
         
-        logger.debug(f"investor")
+        
         investor = {
             'opId': f'{prefix}{operation[0].opId}',
             #'investorValue': sum(operation[op].presentValueInvestor for op in range(0,len(operation))),
@@ -390,33 +389,30 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
         }
         
     # calc the operation details
-    logger.debug(f"averageTerm")
+    
     averageTerm = 0
-    logger.debug(f" for y in operation:")
+    
     for y in operation:
         
-        logger.debug(f" y {y }")
+        
         
         
                 
         
         findDuplicates = [x for x in bills if x['number'] == y.bill.billId]
         
-        logger.debug(f"findDuplicates ")
+        
         
         
         if len(findDuplicates) == 0:
             dataOperation['total'] = y.presentValueInvestor + dataOperation['total']
             
-            logger.debug(f" if len(findDuplicates) == 0:")
+            
             averageTerm += y.operationDays
-            logger.debug(f"  averageTerm +=")
+            
             # get the operation bills
             
-            logger.debug(f"  a {y.opDate.isoformat()}")
-            logger.debug(f"b  {y.probableDate.isoformat()}")
-            logger.debug(f"  c {y.bill.expirationDate}")
-            logger.debug(f"  c {y.opExpiration}")
+           
             bills.append({
                 'id': y.bill.id,
                 'dateOP': datetime.strptime(y.opDate.isoformat(), "%Y-%m-%d").strftime("%d/%m/%Y"),
@@ -433,14 +429,14 @@ def generateSellOfferByInvestor(pk, investorId, prefix = ''):
                 'VRFuture': round(y.payedAmount),
                 'totalGM': round(y.GM)
                 })
-            logger.debug(f" bills.append")
+           
     # calc the average term
     dataOperation['averageTerm'] = round(averageTerm / len(operation))
     dataOperation['total'] = round(dataOperation['total'])
-    logger.debug(f" dataOperation['total'] dataOperation['averageTerm'] ")
+    
     for x in bills:
             
-            logger.debug(f" for x in bills:")
+           
             totalBills['total'] += x['VRBuy']
             totalBills['gm'] += x['totalGM']
             # verify if the bill id is in the list

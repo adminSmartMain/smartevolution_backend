@@ -55,10 +55,7 @@ def calcOperationDetail(pk, investorId):
     operation  = PreOperation.objects.filter(opId=pk, investor=investorId).filter(Q(status=0) | Q(status=1))
     operation_sum  = PreOperation.objects.filter(opId=pk, investor=investorId).filter(Q(status=1))
     investorAccountBalancesperOperation= Account.objects.filter(client_id=investorId).filter(Q(state=1))
-    logger.debug(operation)
-    logger.debug(operation_sum)
-    logger.debug(investorAccountBalancesperOperation)
-    logger.debug([op.clientAccount.balance for op in  operation])
+
     # get operation emitter
     emitter = Client.objects.get(id=operation[0].emitter.id)
     # set the emitter data

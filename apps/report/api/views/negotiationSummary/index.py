@@ -42,11 +42,11 @@ class NegotiationSummaryAV(BaseAV):
     def get(self, request):
         try:
             query_params = request.query_params
-            logger.debug(f'Parámetros recibidos: {dict(query_params)}')
+           
             if 'opId' in request.query_params and request.query_params['opId'] != 'undefined' and len(request.query_params) == 1:
                 data = {}
                 operationId = []
-                logger.debug(f'a {request.query_params}')
+                
                 # get the operation
                 operation = PreOperation.objects.filter(opId=request.query_params['opId'])
                 # get the serializer
@@ -130,12 +130,12 @@ class NegotiationSummaryAV(BaseAV):
                 data['emitterDeposits'] = serializer.data
                 
             elif 'id' in request.query_params and request.query_params['id'] != 'undefined':
-                logger.debug(f'busqueda por id')
+                
                 try:
-                    logger.debug(f'busqueda por id')
+                    
                     data = NegotiationSummary.objects.get(id=request.query_params['id'])
                     serializer = NegotiationSummaryReadOnlySerializer(data)
-                    logger.debug(data)
+                    
                     return response({'error': False, 'data': serializer.data}, 200)
                 except NegotiationSummary.DoesNotExist:
                     # Handle case when NegotiationSummary is not found
@@ -144,8 +144,7 @@ class NegotiationSummaryAV(BaseAV):
             elif ('opId' in query_params and query_params['opId'] != 'undefined' and 'pdf' in query_params and query_params['pdf'] == 'undefined' and 
               'id' in query_params and query_params['id'] == 'undefined' and 
                 len(query_params) == 3):
-                logger.debug(f'Búsqueda por opId con solo: {query_params}')
-                logger.debug(f'{request.query_params}')
+                
                 data = NegotiationSummary.objects.get(opId = request.query_params['opId'])
                 serializer = NegotiationSummaryReadOnlySerializer(data)
                
@@ -157,7 +156,7 @@ class NegotiationSummaryAV(BaseAV):
                 try:
                     data = NegotiationSummary.objects.get(opId=int(request.query_params['opId']))
                     serializer = NegotiationSummaryReadOnlySerializer(data)
-                    logger.debug(data)
+                   
                     return response({'error': False, 'data': serializer.data}, 200)
                 except NegotiationSummary.DoesNotExist:
                     # Handle case when NegotiationSummary is not found
@@ -168,10 +167,10 @@ class NegotiationSummaryAV(BaseAV):
               query_params['mode'] == 'filter' and query_params['opId'] != 'undefined' and 
               query_params.get('emitter', '') == '' and len(query_params) == 3):
                 try:
-                    logger.debug(f'modo filtro solo id ',request.query_params['opId'])
+                    
                     data = NegotiationSummary.objects.get(opId=int(request.query_params['opId']))
                     serializer = NegotiationSummaryReadOnlySerializer(data)
-                    logger.debug(data)
+                    
                     return response({'error': False, 'data': serializer.data}, 200)
                 except NegotiationSummary.DoesNotExist:
                     # Handle case when NegotiationSummary is not found
@@ -180,14 +179,14 @@ class NegotiationSummaryAV(BaseAV):
               query_params['mode'] == 'filter' and 'startDate' not in query_params and 
               'endDate' not in query_params and query_params.get('opId', '') == '' and 
               query_params['emitter'] != ''):
-                    logger.debug('solo emisor')
+                    
                     try:
                         # Filtrar por el emisor de la solicitud
                         data = NegotiationSummary.objects.filter(
                             emitter__icontains=request.query_params['emitter'].upper(),
                             state=1
                         )
-                        logger.debug(f'd {request.query_params}')
+                       
                         # Contar resultados filtrados
                         total_count = data.count()
 
@@ -216,7 +215,7 @@ class NegotiationSummaryAV(BaseAV):
               query_params['mode'] == 'filter' and query_params.get('opId', '') == '' and 
               query_params.get('emitter', '') == '' and query_params['startDate'] != '' and 
               query_params['endDate'] != ''):
-                    logger.debug('solo fecha')
+                    
                     try:
                         # Inicializar el filtro básico por estado
                         filters = {'state': 1}
@@ -262,7 +261,7 @@ class NegotiationSummaryAV(BaseAV):
               'opId' in query_params and 'endDate' in query_params and 
               query_params['mode'] == 'filter' and query_params['opId'] != '' and 
               query_params.get('emitter', '') == ''):
-                logger.debug('filtro de opId y fecha')
+                
                 try:
                     # Filtro básico por estado
                     filters = {'state': 1}
@@ -311,7 +310,7 @@ class NegotiationSummaryAV(BaseAV):
               'startDate' in query_params and 'endDate' in query_params and 
               query_params['mode'] == 'filter' and query_params.get('opId', '') == '' and 
               query_params['emitter'] != ''):
-                logger.debug('filtro de emisor y fecha')
+                
                 try:
                     # Filtro básico por estado
                     filters = {'state': 1}
@@ -359,7 +358,7 @@ class NegotiationSummaryAV(BaseAV):
             #parametro para pdf
             elif 'pdf' in request.query_params and request.query_params['pdf'] != 'undefined':
                 
-                logger.debug(f'e {request.query_params}')
+                
                 # get the operation 
                 operation = PreOperation.objects.filter(opId=request.query_params['pdf'])
                 serializer   = PreOperationReadOnlySerializer(operation, many=True)
@@ -430,17 +429,15 @@ class NegotiationSummaryAV(BaseAV):
                 
                 
                 for x in serializer.data:
-                    logger.debug(f'fecha buscada:{x["bill"]}')
-                    # Buscar la PreOperation basada en bill_id
-                    logger.debug(f'bill_id: {x["bill"]["id"]}')
+                    
+                   
                     bill_id = x["bill"]["id"]
                   
                     operation_billid= PreOperation.objects.filter(bill_id= bill_id)
         
                     # Obtener el campo opExpiration
                     
-                    logger.debug(f'operation con el bill_id { operation_billid}')
-                    logger.debug(f"fechas {x['opExpiration']}")
+                    
                     data['sellReport']['bills']  += 1
                     data['sellReport']['sell']  += int(x['presentValueInvestor'])
                     data['sellReport']['nominal'] += int(x['payedAmount'])
@@ -484,16 +481,15 @@ class NegotiationSummaryAV(BaseAV):
                         'amount': x.amount,
                         'date': x.date,
                     })
-                logger.debug(f'aaaa')
+                
                 template = get_template('negotiationSummary.html')
-                logger.debug(f'bbbb')
+             
 
                 # Asegúrate de que 'data' esté bien formado y sea un diccionario
                 context = data if isinstance(data, dict) else {'data': data}
                 html_content = template.render(context)  # Usar context en lugar de data directamente
 
-                logger.debug(f'HTML content generated successfully')
-                logger.debug(f'cccc')
+                
 
                 try:
                     # Convertir HTML a PDF (asegúrate de que pdfToBase64 esté definida)
@@ -502,8 +498,7 @@ class NegotiationSummaryAV(BaseAV):
                     # Verificar que la respuesta tenga la estructura esperada
                     if 'pdf' in parseBase64:
                         pdf_base64 = parseBase64['pdf']
-                        logger.debug(f'PDF generated successfully')
-                        logger.debug(f'dddddd')
+                      
                         
                         return response({
                             'error': False, 
@@ -529,7 +524,7 @@ class NegotiationSummaryAV(BaseAV):
            
             else:
                 data = NegotiationSummary.objects.filter(state = 1)
-                logger.debug(f'g {request.query_params}')
+             
                 page = self.paginate_queryset(data)
                 if page is not None:
                     serializer = NegotiationSummaryReadOnlySerializer(page, many=True)

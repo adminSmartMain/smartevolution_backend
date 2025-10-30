@@ -83,7 +83,7 @@ class BillCreationSerializer(serializers.ModelSerializer):
         # Obtener el emitterId del contexto de los datos
         emitter_id = self.initial_data.get('emitterId')
         emitterName=self.initial_data.get('emitterName')
-        logger.debug(self.initial_data)
+      
         if not emitter_id:
             raise serializers.ValidationError("El campo emitterId es requerido para la validación")
         
