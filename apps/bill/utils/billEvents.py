@@ -1,93 +1,129 @@
 import requests
-from bs4 import BeautifulSoup
-import re
 from apps.base.exceptions import HttpException
+from apps.bill.api.models.bill.index import Bill
+from apps.bill.api.models.event.index import BillEvent
+from apps.misc.api.models.typeEvent.index import TypeEvent
+from apps.base.utils.index import gen_uuid
+import logging
 
+# Configurar el logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Crear un handler de consola y definir el nivel
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Crear un formato para los mensajes de log
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# Añadir el handler al logger
+logger.addHandler(console_handler)
 
 def billEvents(cufe, update=False):
     try:
-        attempts = 0
-        page = requests.get(f"https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey={cufe}")
-        while page.text.find('Service unavailable') != -1 and page.text.find('The web server failed to respond within the specified time.') != -1:
-            attempts = attempts + 1
-            if attempts == 1:
-                return {"type": 'a7c70741-8c1a-4485-8ed4-5297e54a978a', "events": [], 'currentOwner': "", 'bill':None}
-                break 
-            page = requests.get(f"https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey={cufe}")
-        soup = BeautifulSoup(page.content, "html.parser")
-        results = soup.find(class_="documents-table table table-striped table-hover align-middle margin-bottom-0")
-        getEvents = results.find_all("td", class_="text-center")
-        # get the second span with the class cufe-text
-        getBillOwner = soup.find_all("span", class_="cufe-text")[1].text
-        # get only the after :
-        getBillOwnerText = getBillOwner.split(':')[1]
-        events = []
-        dates  = []
-        parsed = []
+        # Tu token de autenticación para la API de Billy
+        token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpaWQiOiItTkJ0MnktbG8yaENyeFNEUFdZOSIsInNjcCI6eyJpbnYiOjB9LCJpYXQiOjE3NjI3ODQxODAsImV4cCI6MTc5NDMyMDE4MCwic3ViIjoiR0JXdWZHcWZSc1ZFNUp3ZmxiTXdtNTVKeWZIMyIsImp0aSI6Ii1PZGk2emJ3YjFSZU1hQ05oSlNSIn0.Io2W8NumwKrTosCq9S_RnzqyMYX8IOJF89VhAiihhts"
+        
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        
+        # Hacer la petición a la API de Billy
+        response = requests.get(
+            f"https://api.billy.com.co/v2/invoices?cufe={cufe}",
+            headers=headers
+        )
+        
+        # Verificar si la respuesta fue exitosa
+        if response.status_code != 200:
+            logger.error(f"Error en la API: {response.status_code} - {response.text}")
+            return {
+                "type": 'fdb5feb4-24e9-41fc-9689-31aff60b76c9', 
+                "events": [], 
+                'currentOwner': "", 
+                'bill': None
+            }
+        
+        data = response.json()
+
+        
+        # Extraer datos de la respuesta API
+        data_attributes = data.get('data', {}).get('attributes', {})
+        events_from_api = data_attributes.get('events', [])
+        
+        # Obtener currentOwner desde la API
+        current_owner = data_attributes.get('holderName', '')
+        
+        # Mapeo de códigos API a UUID de TypeEvent
+        event_code_to_uuid = {
+            '030': '07c61f28-83f8-4f91-b965-f685f86cf6bf',
+            '032': '141db270-23ec-49c1-87a7-352d5413d309',
+            '033': 'c508eeb3-e0e8-48e8-a26f-5295f95c1f1f',
+            '034': 'e76e9b7a-baeb-4972-b76e-3a8ce2d4fa30',
+            '036': 'b8d4f8d3-aded-4b1f-873e-46c89a2538ed',
+            '037': '3ea77762-7208-457a-b035-70069ee42b5e',
+            '038': '0e333b6b-27b1-4aaf-87ce-ad60af6e52e6',
+            '046': 'f5d475c0-4433-422f-b3d2-7964ea0aa5c4'
+        }
+        
+        # Procesar eventos desde la API
+        parsed_events = []
         valid = False
-        regex = re.compile(r"^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$")
-
-        for event in getEvents:
-
-            if event.text == '030' or event.text == '032' or event.text == '033' or event.text == '036' or event.text == '037' or event.text == '038' or event.text == '046':
-                events.append(event.text)
-
-            if re.match(regex, event.text):
-                dates.append(event.text)
-        for index, x in enumerate(events):
-            eventId = ""
-            description = ""
-            if x == '030':
-                valid = True
-                eventId = "07c61f28-83f8-4f91-b965-f685f86cf6bf"
-                description = "Acuse de recibo de la Factura Electrónica de Venta"
-            else:
-                valid = False
-            if x == '032':
-                valid = True
-                eventId = "141db270-23ec-49c1-87a7-352d5413d309"
-                description = "Recibo del bien o prestación del servicio"
-            else:
-                valid = False
-                
-            if x == '033':
-                valid = True
-                eventId = "c508eeb3-e0e8-48e8-a26f-5295f95c1f1f"
-                description = "Aceptación expresa de la Factura Electrónica de Venta" 
-            elif x == '034':
-                valid = True
-                eventId = "e76e9b7a-baeb-4972-b76e-3a8ce2d4fa30"
-                description = "Aceptación tácita de la Factura Electrónica de Venta"
-            else:
-                valid = False
-                
-                
-            if update == True:
-                if x == '036':
+        
+        for api_event in events_from_api:
+            event_code = api_event.get('code')
+            
+            # Solo procesar eventos válidos que están en el mapeo
+            if event_code in event_code_to_uuid:
+                # Verificar si es un evento que marca como válido
+                if event_code in ['030', '032', '033']:
                     valid = True
-                    eventId = "b8d4f8d3-aded-4b1f-873e-46c89a2538ed"
-                    description = "Primera inscripción de la Factura Electrónica de Venta como Título Valor en el RADIAN para negociación general"
-    
-                if x == '037':
-                    valid = True
-                    eventId = "3ea77762-7208-457a-b035-70069ee42b5e"
-                    description = "Endoso electrónico en propiedad con responsabilidad"
-    
-                if x == '038':
-                    valid = True
-                    eventId = '0e333b6b-27b1-4aaf-87ce-ad60af6e52e6'
-                    description = "Endoso en garantía"
                 
-                if x == '046':
-                    valid=True
-                    eventId = "f5d475c0-4433-422f-b3d2-7964ea0aa5c4"
-                    description = "Informe para el pago de la Factura Electrónica de Venta como Título Valor"
-            parsed.append({'event': eventId, 'description': description, 'date': dates[index]})
+                # Para eventos de update, solo incluir si update=True
+                if event_code in ['036', '037', '038', '046'] and not update:
+                    continue
+                    
+                event_uuid = event_code_to_uuid[event_code]
+                
+                # Buscar la fecha en los detalles
+                event_date = ""
+                details = api_event.get('details', [])
+                if details:
+                    first_detail = details[0]
+                    if 'timestamp' in first_detail:
+                        # Convertir timestamp a fecha (formato YYYY-MM-DD)
+                        from datetime import datetime
+                        timestamp = first_detail['timestamp']
+                        event_date = datetime.fromtimestamp(timestamp / 1000).strftime('%Y-%m-%d')
+                
+                # Solo crear eventos parseados sin guardar en BD (porque la factura no existe aún)
+                parsed_events.append({
+                    'event': event_uuid,
+                    'description': first_detail.get('description', '') if details else '',
+                    'date': event_date
+                })
+        
 
-        # delete the objects with the event ""
-        parsed = [x for x in parsed if x['event'] != ""]
-        return {"type": 'a7c70741-8c1a-4485-8ed4-5297e54a978a',
-                "events": parsed, 'currentOwner': getBillOwnerText, 'bill':page.content} if valid else {"type": 'fdb5feb4-24e9-41fc-9689-31aff60b76c9', "events": parsed,
-                                                                                   'currentOwner': getBillOwnerText, 'bill':page.content}
+        
+        # Determinar el tipo de respuesta
+        response_type = 'a7c70741-8c1a-4485-8ed4-5297e54a978a' if valid else 'fdb5feb4-24e9-41fc-9689-31aff60b76c9'
+        data1={
+            "type": response_type,
+            "events": parsed_events, 
+            'currentOwner': current_owner,
+            'bill': data
+        }
+        logger.debug(data1)
+        return {
+            "type": response_type,
+            "events": parsed_events, 
+            'currentOwner': current_owner,
+            'bill': data
+        }
+        
     except Exception as e:
-        raise(e)
+        logger.error(f"Error en billEvents: {str(e)}")
+        raise HttpException(str(e))

@@ -86,7 +86,7 @@ def parseBill(file):
 
                 # Almacenamos el CUFE de la factura
                 parsedXml['cufe'] = xml2.Invoice.cbc_UUID.cdata
-
+                logger.debug(f'parsedXML {parsedXml}')
                 # Verificamos si existe la fecha de vencimiento (expirationDate)
                 try:
                     parsedXml['expirationDate'] = xml2.Invoice.cbc_DueDate.cdata 
@@ -95,8 +95,9 @@ def parseBill(file):
 
                 # Obtener eventos relacionados con la factura
                 try:
+                    logger.debug(parsedXml['cufe'])
                     events = billEvents(parsedXml['cufe'], update=True)
-
+                    logger.debug(f'events de bill eventes tomados {events}')
                     # Validar si el tipo de evento es 'error'
                     if events['type'] == 'error':
                         raise Exception("Error type returned from billEvents")
@@ -106,7 +107,7 @@ def parseBill(file):
                     parsedXml['events'] = events['events']
                     parsedXml['file'] = file
                     events['currentOwner'] = events['currentOwner'].strip()
-
+                   
                     # Verificamos si el propietario actual es el mismo que el emisor
                     if parsedXml['emitterName'] == events['currentOwner']:
                         parsedXml['sameCurrentOwner'] = True
@@ -116,6 +117,7 @@ def parseBill(file):
                     # Obtenemos la información de los eventos actualizados
                     getEndorsed = updateBillEvents(events['bill'])
                     valid = False
+                    logger.debug(f'getEndorsed {getEndorsed}')
 
                     # Verificamos si los eventos de la factura contienen ciertos valores
                     for event in getEndorsed:
@@ -144,7 +146,7 @@ def parseBill(file):
                     parsedXml['events'] = []
                     try:
                         # Si ocurre un error, intentamos obtener el 'currentOwner' del evento
-                        parsedXml['currentOwner'] = events['emitterName']
+                        parsedXml['currentOwner'] = events['currentOwner']
                     except:
                         parsedXml['currentOwner'] = "No disponible"
                     
@@ -277,6 +279,8 @@ def parseBill(file):
                 try:
                     
                     events = billEvents(parsedXml['cufe'], update=True)
+                    logger.debug(parsedXml['cufe'])
+                    logger.debug(events)
                   
                     # Validar si el tipo de evento es 'error'
                     if events['type'] == 'error':

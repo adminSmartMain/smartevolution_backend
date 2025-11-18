@@ -12,7 +12,7 @@ services:
       - DJANGO_PORT=${DJANGO_PORT:-8000}
     env_file:
       - docker.env
-    container_name: backend_smart_evolution
+    container_name: backend_smart_evolution_dev
     logging:
       driver: "json-file"
       options:

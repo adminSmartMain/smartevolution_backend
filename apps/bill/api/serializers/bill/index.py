@@ -500,27 +500,24 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
         events = []
         try:
             if obj.cufe:
+                # Primero actualizar los eventos desde la API
                 checkEvents = billEvents(obj.cufe, True)
-                # check if the bill has the detected events
-                for x in checkEvents['events']:
-                    try:
-                        eventId = TypeEvent.objects.get(id=x['event'])
-                        event   = BillEvent.objects.get(bill=obj, event=eventId)
-                    except:
-                        eventId = TypeEvent.objects.get(id=x['event'])
-                        BillEvent.objects.create(id=gen_uuid(), bill=obj, event=eventId, date=x['date'])
-                # get the events of the bill
-                checkBillEvents = BillEvent.objects.filter(bill=obj)
-                for x in checkBillEvents:
+                
+                # Ahora obtener todos los eventos de la base de datos para esta factura
+                checkBillEvents = BillEvent.objects.filter(bill=obj).select_related('event')
+                
+                for bill_event in checkBillEvents:
                     events.append({
-                        'event': x.event.description,
-                        'date': x.date,
-                        'code': x.event.code
+                        'event': bill_event.event.description,
+                        'date': bill_event.date,
+                        'code': bill_event.event.code
                     })
+                
                 return events
             else:
                 return []
-        except:
+        except Exception as e:
+            print(f"Error en get_events: {str(e)}")
             return []
         
     

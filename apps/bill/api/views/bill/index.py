@@ -13,7 +13,7 @@ from apps.base.decorators.index import checkRole
 from base64 import b64decode
 import os
 import logging
-
+import requests
 import uuid
 
 import logging
@@ -33,7 +33,7 @@ console_handler.setFormatter(formatter)
 # Añadir el handler al logger
 logger.addHandler(console_handler)
 ##comentario2
-
+import environ
 class BillCreationManualAV(BaseAV):
     @checkRole(['admin','third'])
     def post(self, request):
@@ -120,6 +120,7 @@ class BillAV(BaseAV):
             else:
                 # Guardar facturas
                 for row in data:
+                    
                     # Verificar y registrar notas de crédito
                     credit_notes = row.get('creditNotes', [])
                     request.data['creditNotes'] = credit_notes
@@ -1052,11 +1053,14 @@ class BillAV(BaseAV):
                     
                     try:
                         bill = Bill.objects.get(id=params.get('billEvent'))
+                        
                         if bill.cufe:
                             
                             serializer = BillEventReadOnlySerializer(bill)
                             return response({'error': False, 'data': serializer.data}, 200)
-                        serializer =BillDetailSerializer(bill)
+                        else:
+                            
+                            serializer =BillDetailSerializer(bill)
                         return response({'error': False, 'data': serializer.data}, 200)
                     except Bill.DoesNotExist:
                         return response({'error': True, 'message': 'Factura no encontrada'}, 404)
@@ -1194,108 +1198,134 @@ class BillAV(BaseAV):
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
 
 
+from rest_framework.response import Response
+from rest_framework import status
+import requests
+import environ
+import os
+
+
 class readBillAV(BaseAV):
-    @checkRole(['admin','third'])
+    @checkRole(['admin', 'third'])
     def post(self, request):
         parsedBills = []
-        duplicatedBills = []
+        duplicatedLocalBills = []
+        duplicatedBillyBills = []
         failedBills = []
-        try:
-            for file in request.data['bills']:                      
-                # decode base 64 file
-                # if file has data:text/xml;base64, remove it
-                if file.startswith('data:text/xml;base64,'):
-                    
-                    file = file.replace('data:text/xml;base64,', '')
-                fileName = f'{gen_uuid()}.xml'
-               
-                
-                encoding_options = ['utf-8', 'utf-16', 'utf-32', 'utf-32-le']
 
-                # Intentar decodificar en cada formato hasta que uno funcione
-                xmlData = None  # Inicializar la variable donde almacenaremos el resultado
-                for f in encoding_options:
+        env = environ.Env()
+        fideicomiso = request.data.get('fideicomiso', False)
+
+        try:
+            for file in request.data['bills']:
+
+                # -------------------- DECODIFICAR XML --------------------
+                if file.startswith('data:text/xml;base64,'):
+                    file = file.replace('data:text/xml;base64,', '')
+
+                fileName = f"{gen_uuid()}.xml"
+
+                xmlData = None
+                for codec in ['utf-8', 'utf-16', 'utf-32', 'utf-32-le']:
                     try:
-                        # Intentamos decodificar con la opción actual
-                        xmlData = b64decode(file, validate=True).decode(f)
-                    
-                        break  # Salir del bucle si decodificación tiene éxito
-                    except Exception as e:
-                        
-                        logger.debug({'error': True, 'message': str(e)})
+                        xmlData = b64decode(file, validate=True).decode(codec)
+                        break
+                    except:
+                        pass
 
                 if xmlData is None:
-                    logger.error("No se pudo decodificar el archivo con ningún formato.")
-                    raise ValueError("El archivo no se pudo decodificar correctamente.")
+                    failedBills.append({
+                        "message": "No se pudo decodificar XML"
+                    })
+                    continue
 
-                # Procesar el XML decodificado
-
-                             
-               # try:
-                 #   xmlData = b64decode(file, validate=True).decode('utf-8')#aqui está el error
-                   # logger.debug(f" b64decode UTF-8 realizado")
-               # except:
-                   # try:
-                       # xml_bytes = b64decode(file, validate=True)
-                       # # Detectar codificación
-                       
-
-                        # Decodificar usando la codificación detectada
-                        
-                       # xmlData = xml_bytes.decode('utf-16')
-                       # logger.debug(f" b64decode UTF-16 realizado")
-                    #except UnicodeDecodeError:
-                      #  xmlData = xml_bytes.decode('utf-32')
-                       # logger.debug(f" b64decode UTF-32 realizado")    
-                    
-                
                 with open(fileName, 'w') as f:
                     f.write(xmlData)
-               
-                parseXml = parseBill(fileName)
-                
-                parseXml['file'] = file
-               
-                # add the data:text/xml;base64, to the file
-                parseXml['file'] = f'data:text/xml;base64,{file}'
-               
-                os.remove(fileName)
-               
 
-                
-              
-                # check if the bill has cufe
+                parseXml = parseBill(fileName)
+                os.remove(fileName)
+
+                parseXml['file'] = f"data:text/xml;base64,{file}"
+
+                # -------------------- VALIDAR CUFE --------------------
+                if not parseXml or parseXml['cufe'] == "":
+                    failedBills.append({
+                        "message": "Factura sin CUFE",
+                        "file": parseXml
+                    })
+                    continue
+
+                # -------------------- VALIDAR DUPLICADO LOCAL --------------------
+                billExists = Bill.objects.filter(cufe=parseXml['cufe']).exists()
+                if billExists:
+                    duplicatedLocalBills.append({
+                        "cufe": parseXml['cufe'],
+                        "message": "Factura ya existe en la base de datos"
+                    })
+                    continue
+
+                # Marcar para devolver
+                parseXml['fideicomiso'] = fideicomiso
+                parsedBills.append(parseXml)
+
+                # -------------------- TOKEN --------------------
+                token = env('PA_TOKEN') if fideicomiso else env('SMART_TOKEN')
+
+                headers = {
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json"
+                }
+                payload = {"cufe": parseXml["cufe"]}
+
+                # -------------------- PETICIÓN A BILLY --------------------
                 try:
-                  
-                    #se lavida si el archivo que se lee posee errores
-                    
-                   
-                    if  parseXml['cufe'] == "" or parseXml == None:
-                       
-                        failedBills.append(parseXml)
-                    else:
-                        
-                        # validate if the bill is duplicated
-                        bill = Bill.objects.filter(cufe=parseXml['cufe'])
-                       
-                        if len(bill) > 0:
-                            
-                            
-                            duplicatedBills.append(parseXml)
-                           
-                        else:
-                            
-                            parsedBills.append(parseXml)
-                            
-                        if len(failedBills):
-                            return response({'error': True, 'message': "hay problemas con una factura por favor intentelo nuevamente"}, 500)
+                    r = requests.post(
+                        "https://api.billy.com.co/v1/invoices/uploadByCufe",
+                        headers=headers,
+                        json=payload,
+                        timeout=30
+                    )
+
+                    # -------------- DUPLICADO EN BILLY (409) --------------
+                    if r.status_code == 409:
+                        duplicatedBillyBills.append({
+                            "cufe": parseXml["cufe"],
+                            "message": "Factura ya existía en Billy (409)"
+                        })
+                        continue
+
+                    # -------------- OTROS ERRORES -------------------------
+                    if r.status_code not in [200, 201]:
+                        failedBills.append({
+                            "cufe": parseXml["cufe"],
+                            "message": "Error al subir factura a Billy",
+                            "status": r.status_code,
+                            "details": r.text
+                        })
+                        continue
+
                 except Exception as e:
-                    return response({'error': True, 'message': str(e)}, 500)
-                
-            return response({'error': False, 'bills': parsedBills, 'duplicatedBills': duplicatedBills, 'failedBills':failedBills}, 200)    
+                    failedBills.append({
+                        "cufe": parseXml["cufe"],
+                        "message": f"Error al conectar con Billy: {str(e)}"
+                    })
+                    continue
+
+            # -------------------- RESPUESTA FINAL --------------------
+            return Response({
+                "error": False,
+                "bills": parsedBills,
+                "duplicatedLocalBills": duplicatedLocalBills,
+                "duplicatedBillyBills": duplicatedBillyBills,
+                "failedBills": failedBills
+            }, status=status.HTTP_200_OK)
+
         except Exception as e:
-            
-            return response({'error': True, 'message': str(e)}, 500)
+            return Response({
+                "error": True,
+                "message": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 class readCreditNoteAV(BaseAV):
