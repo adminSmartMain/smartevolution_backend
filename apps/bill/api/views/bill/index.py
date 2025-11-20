@@ -15,8 +15,16 @@ import os
 import logging
 import requests
 import uuid
-
+from apps.bill.utils.billEvents import billEvents
+from apps.bill.utils.updateBillEvents import updateBillEvents
 import logging
+from rest_framework.response import Response
+from rest_framework import status
+import requests
+import environ
+import os
+
+
 
 # Configurar el logger
 logger = logging.getLogger(__name__)
@@ -34,6 +42,8 @@ console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 ##comentario2
 import environ
+
+
 class BillCreationManualAV(BaseAV):
     @checkRole(['admin','third'])
     def post(self, request):
@@ -1055,6 +1065,7 @@ class BillAV(BaseAV):
                         bill = Bill.objects.get(id=params.get('billEvent'))
                         
                         if bill.cufe:
+                            logger.debug(bill.cufe)
                             
                             serializer = BillEventReadOnlySerializer(bill)
                             return response({'error': False, 'data': serializer.data}, 200)
@@ -1198,11 +1209,7 @@ class BillAV(BaseAV):
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
 
 
-from rest_framework.response import Response
-from rest_framework import status
-import requests
-import environ
-import os
+
 
 
 class readBillAV(BaseAV):
@@ -1224,8 +1231,8 @@ class readBillAV(BaseAV):
                     file = file.replace('data:text/xml;base64,', '')
 
                 fileName = f"{gen_uuid()}.xml"
-
                 xmlData = None
+
                 for codec in ['utf-8', 'utf-16', 'utf-32', 'utf-32-le']:
                     try:
                         xmlData = b64decode(file, validate=True).decode(codec)
@@ -1234,70 +1241,63 @@ class readBillAV(BaseAV):
                         pass
 
                 if xmlData is None:
-                    failedBills.append({
-                        "message": "No se pudo decodificar XML"
-                    })
+                    failedBills.append({"message": "No se pudo decodificar XML"})
                     continue
 
                 with open(fileName, 'w') as f:
                     f.write(xmlData)
 
-                parseXml = parseBill(fileName)
+                # -------------------- PARSEAR XML --------------------
+                parsed = parseBill(fileName)
                 os.remove(fileName)
 
-                parseXml['file'] = f"data:text/xml;base64,{file}"
+                parsed['file'] = f"data:text/xml;base64,{file}"
+                parsed['fideicomiso'] = fideicomiso
 
                 # -------------------- VALIDAR CUFE --------------------
-                if not parseXml or parseXml['cufe'] == "":
+                if not parsed or parsed.get('cufe', '') == "":
                     failedBills.append({
                         "message": "Factura sin CUFE",
-                        "file": parseXml
+                        "file": parsed
                     })
                     continue
 
                 # -------------------- VALIDAR DUPLICADO LOCAL --------------------
-                billExists = Bill.objects.filter(cufe=parseXml['cufe']).exists()
-                if billExists:
+                if Bill.objects.filter(cufe=parsed['cufe']).exists():
                     duplicatedLocalBills.append({
-                        "cufe": parseXml['cufe'],
+                        "cufe": parsed['cufe'],
                         "message": "Factura ya existe en la base de datos"
                     })
                     continue
 
-                # Marcar para devolver
-                parseXml['fideicomiso'] = fideicomiso
-                parsedBills.append(parseXml)
-
-                # -------------------- TOKEN --------------------
+                # -------------------- SUBIR A BILLY --------------------
                 token = env('PA_TOKEN') if fideicomiso else env('SMART_TOKEN')
 
                 headers = {
                     "Authorization": f"Bearer {token}",
                     "Content-Type": "application/json"
                 }
-                payload = {"cufe": parseXml["cufe"]}
 
-                # -------------------- PETICIÓN A BILLY --------------------
                 try:
                     r = requests.post(
                         "https://api.billy.com.co/v1/invoices/uploadByCufe",
                         headers=headers,
-                        json=payload,
+                        json={"cufe": parsed["cufe"]},
                         timeout=30
                     )
 
-                    # -------------- DUPLICADO EN BILLY (409) --------------
+                    # ---------- SI LA FACTURA YA ESTÁ (409) → CONTINUAR ----------
                     if r.status_code == 409:
                         duplicatedBillyBills.append({
-                            "cufe": parseXml["cufe"],
+                            "cufe": parsed["cufe"],
                             "message": "Factura ya existía en Billy (409)"
                         })
-                        continue
+                        # NO continue → CONTINUAMOS CON EL FLUJO NORMAL
 
-                    # -------------- OTROS ERRORES -------------------------
-                    if r.status_code not in [200, 201]:
+                    # ---------- SI ES OTRO ERROR → FALLA ----------
+                    elif r.status_code not in [200, 201]:
                         failedBills.append({
-                            "cufe": parseXml["cufe"],
+                            "cufe": parsed["cufe"],
                             "message": "Error al subir factura a Billy",
                             "status": r.status_code,
                             "details": r.text
@@ -1306,10 +1306,23 @@ class readBillAV(BaseAV):
 
                 except Exception as e:
                     failedBills.append({
-                        "cufe": parseXml["cufe"],
+                        "cufe": parsed["cufe"],
                         "message": f"Error al conectar con Billy: {str(e)}"
                     })
                     continue
+
+                # -------------------- OBTENER EVENTOS (SIEMPRE) --------------------
+                events = billEvents(parsed['cufe'], update=True)
+
+                parsed['events'] = events['events']
+                parsed['typeBill'] = events['type']
+                parsed['currentOwner'] = events['currentOwner']
+
+                # -------------------- PROCESAR ENDOSOS --------------------
+                endorsedEvents = updateBillEvents(events['bill'])
+                parsed['endorsed'] = len(endorsedEvents) > 0
+
+                parsedBills.append(parsed)
 
             # -------------------- RESPUESTA FINAL --------------------
             return Response({
@@ -1321,11 +1334,7 @@ class readBillAV(BaseAV):
             }, status=status.HTTP_200_OK)
 
         except Exception as e:
-            return Response({
-                "error": True,
-                "message": str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+            return Response({"error": True, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class readCreditNoteAV(BaseAV):
@@ -1335,4 +1344,3 @@ class readCreditNoteAV(BaseAV):
         for file in request.FILES.getlist('creditNotes'):
             parsedCreditNotes.append(parseCreditNote(file))
         return response({'error': False, 'data': parsedCreditNotes}, 200)
-

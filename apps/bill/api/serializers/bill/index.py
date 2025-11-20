@@ -497,27 +497,67 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
             return None
         
     def get_events(self, obj):
-        events = []
         try:
-            if obj.cufe:
-                # Primero actualizar los eventos desde la API
-                checkEvents = billEvents(obj.cufe, True)
-                
-                # Ahora obtener todos los eventos de la base de datos para esta factura
-                checkBillEvents = BillEvent.objects.filter(bill=obj).select_related('event')
-                
-                for bill_event in checkBillEvents:
-                    events.append({
-                        'event': bill_event.event.description,
-                        'date': bill_event.date,
-                        'code': bill_event.event.code
-                    })
-                
-                return events
-            else:
+            if not obj.cufe:
                 return []
+
+            # 1️⃣ Obtener eventos desde la API
+            api_resp = billEvents(obj.cufe, update=True)
+            api_events = api_resp.get("events", [])
+
+            logger.debug(f"API events for bill {obj.id}: {api_events}")
+
+            # 2️⃣ Sincronizar con BD
+            for ev in api_events:
+                event_uuid = ev.get('event')
+                event_date = ev.get('date')
+
+                if not event_uuid:
+                    logger.error(f"Evento sin UUID para bill {obj.id}: {ev}")
+                    continue
+
+                try:
+                    type_event = TypeEvent.objects.get(id=event_uuid)
+                except TypeEvent.DoesNotExist:
+                    logger.error(f"TypeEvent no existe en BD: {event_uuid}")
+                    continue
+
+                # Revisar si el evento ya existe en BD
+                bill_event = BillEvent.objects.filter(
+                    bill=obj,
+                    event=type_event
+                ).first()
+
+                if bill_event:
+                    # Si existe pero la fecha cambió → actualizar
+                    if bill_event.date != event_date:
+                        bill_event.date = event_date
+                        bill_event.save()
+                    continue
+
+                # Crear evento nuevo — SIEMPRE con gen_uuid()
+                BillEvent.objects.create(
+                    id=gen_uuid(),
+                    bill=obj,
+                    event=type_event,
+                    date=event_date
+                )
+
+            # 3️⃣ Traer eventos finales sincronizados
+            final_events = BillEvent.objects.filter(bill=obj).select_related("event")
+
+            return [
+                {
+                    "event": e.event.description,
+                    "date": e.date,
+                    "code": e.event.code
+                }
+                for e in final_events
+            ]
+
         except Exception as e:
-            print(f"Error en get_events: {str(e)}")
+            logger.error(f"Error en get_events para bill {obj.id}: {str(e)}")
             return []
+
         
     
