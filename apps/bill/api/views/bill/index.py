@@ -1083,7 +1083,7 @@ class BillAV(BaseAV):
                     
                     bill_id = params.get('bill_operation')
                     emitter_id = params.get('emitter')  # Nuevo parámetro opcional
-                    
+                    logger.debug(f'archivo index.py - bill_operation: {bill_id}, emitter: {emitter_id}')
                     try:
                         if emitter_id:
                             # Si se proporciona emitter_id, buscar por billId Y emitterId
@@ -1091,12 +1091,13 @@ class BillAV(BaseAV):
                                 # Obtener el document_number del emisor
                                 emitter_client = Client.objects.get(pk=emitter_id)
                                 emitter_doc_number = emitter_client.document_number
-                                
+                                logger.debug(f'Emisor document_number: {emitter_doc_number}')
                                 # Buscar factura por billId y emitterId
                                 bill = Bill.objects.get(
                                     billId=bill_id,
                                     emitterId=emitter_doc_number
                                 )
+                                logger.debug(f'archivo index.py - Factura encontrada: {bill.id}')
                             except Client.DoesNotExist:
                                 return response({
                                     'error': True, 
@@ -1118,10 +1119,10 @@ class BillAV(BaseAV):
                         # Factura encontrada, proceder con la serialización
                         if bill.cufe:
                             
-                            serializer = BillEventReadOnlySerializer(bill)
+                            serializer =BillReadOnlySerializer(bill)
                             return response({'error': False, 'data': serializer.data}, 200)
                         
-                        serializer = BillDetailSerializer(bill)
+                        serializer = BillReadOnlySerializer(bill)
                         return response({'error': False, 'data': serializer.data}, 200)
                         
                     except Bill.DoesNotExist:

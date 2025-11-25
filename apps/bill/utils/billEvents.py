@@ -17,13 +17,15 @@ console_handler.setLevel(logging.DEBUG)
 # Crear un formato para los mensajes de log
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 console_handler.setFormatter(formatter)
+import environ
+import os
 
 # Añadir el handler al logger
 logger.addHandler(console_handler)
-
+env = environ.Env()
 def billEvents(cufe, update=False):
     try:
-        token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpaWQiOiItTkJ0MnktbG8yaENyeFNEUFdZOSIsInNjcCI6eyJpbnYiOjB9LCJpYXQiOjE3NjI3ODQxODAsImV4cCI6MTc5NDMyMDE4MCwic3ViIjoiR0JXdWZHcWZSc1ZFNUp3ZmxiTXdtNTVKeWZIMyIsImp0aSI6Ii1PZGk2emJ3YjFSZU1hQ05oSlNSIn0.Io2W8NumwKrTosCq9S_RnzqyMYX8IOJF89VhAiihhts"
+        token = env('SMART_TOKEN')
 
         headers = {
             "Authorization": f"Bearer {token}",
