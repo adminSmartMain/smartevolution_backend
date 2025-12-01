@@ -1,5 +1,6 @@
 import requests
 from apps.base.exceptions import HttpException
+from datetime import datetime
 
 def updateBillEvents(bill_data):
     try:
@@ -8,6 +9,7 @@ def updateBillEvents(bill_data):
 
         events_from_api = bill_data.get('data', {}).get('attributes', {}).get('events', [])
 
+        # Solo eventos que se actualizan
         event_code_to_uuid = {
             '036': 'b8d4f8d3-aded-4b1f-873e-46c89a2538ed',
             '037': '3ea77762-7208-457a-b035-70069ee42b5e',
@@ -17,23 +19,22 @@ def updateBillEvents(bill_data):
 
         parsed_events = []
 
-        for api_event in events_from_api:
-            event_code = api_event.get('code')
+        for ev in events_from_api:
+            code = ev.get("code")
 
-            if event_code in event_code_to_uuid:
-                event_uuid = event_code_to_uuid[event_code]
-                event_date = ""
+            if code in event_code_to_uuid:
+                uuid = event_code_to_uuid[code]
+                date = ""
 
-                details = api_event.get('details', [])
-                if details and 'timestamp' in details[0]:
-                    from datetime import datetime
-                    timestamp = details[0]['timestamp']
-                    event_date = datetime.fromtimestamp(timestamp / 1000).strftime('%Y-%m-%d')
+                details = ev.get("details", [])
+                if details and "timestamp" in details[0]:
+                    ts = details[0]["timestamp"]
+                    date = datetime.fromtimestamp(ts / 1000).strftime('%Y-%m-%d')
 
                 parsed_events.append({
-                    'event': event_uuid,
-                    'date': event_date,
-                    'code': event_code
+                    "event": uuid,
+                    "date": date,
+                    "code": code
                 })
 
         return parsed_events

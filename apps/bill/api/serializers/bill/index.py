@@ -369,182 +369,139 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
     currentOwnerName     = serializers.SerializerMethodField(method_name='get_currentOwnerName')
     events               = serializers.SerializerMethodField(method_name='get_events')
     file_presigned_url   = serializers.SerializerMethodField(method_name='get_file_presigned_url')
-    file_access_error    = serializers.SerializerMethodField(method_name='get_file_access_error') 
-    
+    file_access_error    = serializers.SerializerMethodField(method_name='get_file_access_error')
+
     class Meta:
-        model        = Bill
-        fields       = '__all__'
-        extra_fields = ['creditNotes','file_presigned_url', 'file_access_error']
-        
-    
-        
+        model  = Bill
+        fields = '__all__'
+
+    # ============================================================
+    # 🔥 CACHE ÚNICO — UNA SOLA PETICIÓN POR FACTURA
+    # ============================================================
+    def _get_billEvents(self, obj):
+        if not hasattr(self, "_cache_events"):
+            self._cache_events = {}
+
+        if obj.cufe not in self._cache_events:
+            # update=True para obtener TODO
+            self._cache_events[obj.cufe] = billEvents(obj.cufe, update=True)
+
+        return self._cache_events[obj.cufe]
+
+    # ============================================================
+    # FILE URL
+    # ============================================================
     def get_file_presigned_url(self, obj):
         if not obj.file:
             return None
-            
+
         try:
-            # Extraer la clave S3 de la URL completa
             s3_url = obj.file
             key = s3_url.split('devsmartevolution.s3.amazonaws.com/')[-1]
-            
+
             s3_client = boto3.client(
                 's3',
                 aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
                 aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
                 region_name=settings.AWS_REGION
             )
-            
-            # Generar URL pre-firmada válida por 1 hora
-            presigned_url = s3_client.generate_presigned_url(
+
+            return s3_client.generate_presigned_url(
                 'get_object',
-                Params={
-                    'Bucket': settings.AWS_STORAGE_BUCKET_NAME,
-                    'Key': key
-                },
+                Params={'Bucket': settings.AWS_STORAGE_BUCKET_NAME, 'Key': key},
                 ExpiresIn=3600
             )
-            return presigned_url
         except Exception as e:
             logger.error(f"Error generating presigned URL for bill {obj.id}: {str(e)}")
             return None
 
     def get_file_access_error(self, obj):
-        if not obj.file:
-            return None
         try:
-            # Verificar si podemos generar la URL
             url = self.get_file_presigned_url(obj)
             return not bool(url)
         except:
             return True
-        
-        
-    def get_creditNotes(self, obj):
-        creditNotes = CreditNote.objects.filter(Bill=obj)
-        return CreditNoteSerializer(creditNotes, many=True).data
 
+    # ============================================================
+    # CREDIT NOTES
+    # ============================================================
+    def get_creditNotes(self, obj):
+        notes = CreditNote.objects.filter(Bill=obj)
+        return CreditNoteSerializer(notes, many=True).data
+
+    # ============================================================
+    # ASSOCIATED OP
+    # ============================================================
     def get_associatedBill(self, obj):
         try:
-            op = PreOperation.objects.filter(bill=obj).order_by('-created_at')
-            payedAmount = 0
-            for row in op:
-                payedAmount+=row.payedAmount
-                
-            return { 'opId': op[0].opId, 'payedAmount':payedAmount }
+            ops = PreOperation.objects.filter(bill=obj).order_by('-created_at')
+            payedAmount = sum(row.payedAmount for row in ops)
+            return {'opId': ops[0].opId, 'payedAmount': payedAmount}
         except:
             return None
-        
+
+    # ============================================================
+    # SAME CURRENT OWNER (optimizado)
+    # ============================================================
     def get_sameCurrentOwner(self, obj):
         try:
-            if obj.cufe is None:
+            if not obj.cufe:
                 return False
-            else:
-                parse = billEvents(obj.cufe)
-                # strip the current owner
-                parse['currentOwner'] = parse['currentOwner'].strip()
-                # check if the current owner is the same as the owner of the bill
-                if parse['currentOwner'] == obj.emitterName:
-                    return True
-                else:
-                    return False
-        except:
-            return False
-    
-    def get_endorsedBill(self, obj):
-        try:
-            if obj.cufe is None:
-                return False
-            else:
-                parse = updateBillEvents(obj.cufe)
-            # check if the bill has the event f5d475c0-4433-422f-b3d2-7964ea0aa5c4
-                valid = False
-                for event in parse:
-                    if event['eventId'] == '3ea77762-7208-457a-b035-70069ee42b5e':
-                        valid = True
-                        break
-                    if event['eventId'] == '3bb86c74-1d1c-4986-a905-a47624b09322':
-                        valid = True
-                        break
-                    if event['eventId'] == '0e333b6b-27b1-4aaf-87ce-ad60af6e52e6':
-                        valid = True
-                        break
-            for x in parse:
-                try:
-                    eventId = TypeEvent.objects.get(id=x['eventId'])
-                    event   = BillEvent.objects.get(bill=obj, event=eventId)
-                except:
-                    eventId = TypeEvent.objects.get(id=x['eventId'])
-                    BillEvent.objects.create(id=gen_uuid(), bill=obj, event=eventId, date=x['date'])
-                
-                if valid:
-                    return True
-                else:
-                    return False 
+
+            events = self._get_billEvents(obj)
+            owner = events.get("currentOwner", "").strip()
+            return owner == obj.emitterName
         except:
             return False
 
+    # ============================================================
+    # CURRENT OWNER NAME (optimizado)
+    # ============================================================
     def get_currentOwnerName(self, obj):
         try:
-            if obj.cufe is None:
+            if not obj.cufe:
                 return None
-            else:
-                parse = billEvents(obj.cufe)
-                # strip the current owner
-                parse['currentOwner'] = parse['currentOwner'].strip()
-                # check if the current owner is the same as the owner of the bill
-                return parse['currentOwner']
+
+            events = self._get_billEvents(obj)
+            return events.get("currentOwner", "").strip()
         except:
             return None
-        
+
+    # ============================================================
+    # EVENTS (sync + read)
+    # ============================================================
     def get_events(self, obj):
         try:
             if not obj.cufe:
                 return []
 
-            # 1️⃣ Obtener eventos desde la API
-            api_resp = billEvents(obj.cufe, update=True)
+            api_resp = self._get_billEvents(obj)
             api_events = api_resp.get("events", [])
 
-            logger.debug(f"API events for bill {obj.id}: {api_events}")
-
-            # 2️⃣ Sincronizar con BD
+            # Sync BD
             for ev in api_events:
-                event_uuid = ev.get('event')
-                event_date = ev.get('date')
+                uuid = ev.get('event')
+                date = ev.get('date')
 
-                if not event_uuid:
-                    logger.error(f"Evento sin UUID para bill {obj.id}: {ev}")
+                if not uuid:
                     continue
 
                 try:
-                    type_event = TypeEvent.objects.get(id=event_uuid)
+                    type_ev = TypeEvent.objects.get(id=uuid)
                 except TypeEvent.DoesNotExist:
-                    logger.error(f"TypeEvent no existe en BD: {event_uuid}")
                     continue
 
-                # Revisar si el evento ya existe en BD
-                bill_event = BillEvent.objects.filter(
+                bill_ev, created = BillEvent.objects.get_or_create(
                     bill=obj,
-                    event=type_event
-                ).first()
-
-                if bill_event:
-                    # Si existe pero la fecha cambió → actualizar
-                    if bill_event.date != event_date:
-                        bill_event.date = event_date
-                        bill_event.save()
-                    continue
-
-                # Crear evento nuevo — SIEMPRE con gen_uuid()
-                BillEvent.objects.create(
-                    id=gen_uuid(),
-                    bill=obj,
-                    event=type_event,
-                    date=event_date
+                    event=type_ev,
+                    defaults={'id': gen_uuid(), 'date': date}
                 )
 
-            # 3️⃣ Traer eventos finales sincronizados
-            final_events = BillEvent.objects.filter(bill=obj).select_related("event")
+                if not created and bill_ev.date != date:
+                    bill_ev.date = date
+                    bill_ev.save()
+
+            final = BillEvent.objects.filter(bill=obj).select_related("event")
 
             return [
                 {
@@ -552,12 +509,49 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
                     "date": e.date,
                     "code": e.event.code
                 }
-                for e in final_events
+                for e in final
             ]
-
         except Exception as e:
-            logger.error(f"Error en get_events para bill {obj.id}: {str(e)}")
+            logger.error(f"Error en get_events bill {obj.id}: {str(e)}")
             return []
 
-        
-    
+    # ============================================================
+    # ENDORSED BILL (optimizado)
+    # ============================================================
+    def get_endorsedBill(self, obj):
+        try:
+            if not obj.cufe:
+                return False
+
+            events = self._get_billEvents(obj)
+            api_events = events.get("events", [])
+
+            valid_ids = {
+                '3ea77762-7208-457a-b035-70069ee42b5e',
+                '3bb86c74-1d1c-4986-a905-a47624b09322',
+                '0e333b6b-27b1-4aaf-87ce-ad60af6e52e6'
+            }
+
+            has_valid = any(ev.get("event") in valid_ids for ev in api_events)
+
+            # Sync BD
+            for ev in api_events:
+                uuid = ev.get("event")
+                date = ev.get("date")
+
+                if not uuid:
+                    continue
+
+                try:
+                    type_ev = TypeEvent.objects.get(id=uuid)
+                    BillEvent.objects.get_or_create(
+                        bill=obj,
+                        event=type_ev,
+                        defaults={'id': gen_uuid(), 'date': date}
+                    )
+                except:
+                    continue
+
+            return has_valid
+        except:
+            return False

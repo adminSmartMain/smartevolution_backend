@@ -23,7 +23,7 @@ from rest_framework import status
 import requests
 import environ
 import os
-
+from apps.bill.utils.updateMassiveTypeBill import updateMassiveTypeBill
 
 
 # Configurar el logger
@@ -1135,8 +1135,12 @@ class BillAV(BaseAV):
                     
                     bills = Bill.objects.filter(state=1)
                 
+                
+                
+
                 # Paginación común para los casos que devuelven querysets
                 page = self.paginate_queryset(bills)
+                updateMassiveTypeBill(page,billEvents)
                 if page is not None:
                    
                     serializer = BillReadOnlySerializer(page, many=True)
