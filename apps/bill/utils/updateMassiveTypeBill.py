@@ -27,52 +27,98 @@ UUID_ENDOSADA = "29113618-6ab8-4633-aa8e-b3d6f242e8a4"
 
 
 
-def updateMassiveTypeBill(bills_queryset,billEvents):
+def updateMassiveTypeBill(bills_queryset, billEvents):
     """
-    Recalcula y actualiza el typeBill de cada factura del queryset
-    usando la lógica correcta basada en eventos DIAN.
+    Recalcula y actualiza el typeBill de las facturas PERMITIDAS.
+    Excluye:
+      - Facturas endosadas
+      - Facturas rechazadas
+      - Facturas con operaciones canceladas (status = 4)
     """
-    logger.error("⚠⚠⚠ EJECUTANDO updateMassiveTypeBill DESDE ESTE ARCHIVO ⚠⚠⚠")
+    logger.error("⚠⚠⚠ EJECUTANDO updateMassiveTypeBill ⚠⚠⚠")
     logger.error(f"ARCHIVO: {__file__}")
     updated = 0
     errors = []
-    
-    logger.debug(bills_queryset)
+
+    logger.debug(f"TOTAL FACTURAS RECIBIDAS PARA PROCESAR: {len(bills_queryset)}")
 
     for bill in bills_queryset:
+        logger.debug("--------------------------------------------------------")
+        logger.debug(f"➡ Procesando factura ID {bill.id} | billId {bill.billId} | typeBill actual {bill.typeBill_id}")
+
+        # 1) ❌ EXCLUIR ENDOSADAS
+        if bill.typeBill_id == UUID_ENDOSADA:
+            logger.warning(f"⛔ EXCLUIDA - Factura endosada (UUID_ENDOSADA). billId={bill.billId}")
+            continue
+
+        # 2) ❌ EXCLUIR RECHAZADAS
+        if bill.typeBill_id == UUID_RECHAZADA:
+            logger.warning(f"⛔ EXCLUIDA - Factura rechazada (UUID_RECHAZADA). billId={bill.billId}")
+            continue
+
+        # 3) ❌ EXCLUIR FACTURAS CON OPERACIÓN CANCELADA
+        try:
+            if hasattr(bill, "preoperation_set") and bill.preoperation_set.filter(status=4).exists():
+                logger.warning(f"⛔ EXCLUIDA - Operación cancelada (status 4). billId={bill.billId}")
+                continue
+        except Exception as e:
+            logger.error(f"❗ ERROR verificando operaciones canceladas para billId={bill.billId}: {str(e)}")
+
+        # ------------------------------------------------------------
+        # SI LLEGA AQUÍ → LA FACTURA **SÍ CUMPLE LAS REGLAS**
+        logger.info(f"✔ Factura PERMITIDA para actualización: billId={bill.billId}")
+        # ------------------------------------------------------------
 
         try:
-            # Si no hay CUFE no podemos consultar eventos → marcar como FV
+            # Si no hay CUFE → marcar como FV
             if not bill.cufe:
+                logger.info(f"ℹ Factura sin CUFE, asignando tipo UUID_FV. billId={bill.billId}")
+
                 if bill.typeBill != UUID_FV:
                     bill.typeBill = UUID_FV
                     bill.save(update_fields=["typeBill"])
                     updated += 1
+                    logger.info(f"   ✔ Actualizada → Nuevo typeBill UUID_FV. billId={bill.billId}")
+                else:
+                    logger.info("   (sin cambios)")
                 continue
 
-            # Obtener eventos desde tu función corregida
+            # Obtener eventos
+            logger.debug(f"Consultando eventos DIAN para CUFE={bill.cufe}")
             result = billEvents(bill.cufe, update=False)
-            logger.debug('SDASDFDSADSFDFSDGDFDSFGDSA')
-            logger.debug(result)
+
+            logger.debug(f"Respuesta eventos: {result}")
+
             new_type = result.get("type")
 
-            # Si hay diferencia, actualizamos
-            if new_type and new_type != bill.typeBill_id:  
+            if new_type and new_type != bill.typeBill_id:
+
+                logger.info(
+                    f"🔄 Actualizando typeBill billId={bill.billId} | {bill.typeBill_id} → {new_type}"
+                )
+
                 try:
                     type_obj = TypeBill.objects.get(id=new_type)
                 except TypeBill.DoesNotExist:
-                    logger.error(f"⚠ typeBill {new_type} NO EXISTE — NO SE ACTUALIZA")
+                    logger.error(f"❗ typeBill {new_type} NO EXISTE — no se actualiza billId={bill.billId}")
                     continue
-                
+
                 bill.typeBill = type_obj
                 bill.save(update_fields=["typeBill"])
                 updated += 1
 
+                logger.info(f"   ✔ Actualizada correctamente")
+            else:
+                logger.info("   (sin cambios)")
+
         except Exception as e:
-            errors.append({
-                "billId": bill.billId,
-                "error": str(e)
-            })
+            logger.error(f"❗ ERROR procesando billId={bill.billId}: {str(e)}")
+            errors.append({"billId": bill.billId, "error": str(e)})
+
+    logger.error("========================================================")
+    logger.error(f"   🔥 TOTAL FACTURAS ACTUALIZADAS: {updated}")
+    logger.error(f"   ❗ ERRORES: {len(errors)}")
+    logger.error("========================================================")
 
     return {
         "updated": updated,
