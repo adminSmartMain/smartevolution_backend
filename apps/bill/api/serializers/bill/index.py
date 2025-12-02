@@ -371,9 +371,12 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
     file_presigned_url   = serializers.SerializerMethodField(method_name='get_file_presigned_url')
     file_access_error    = serializers.SerializerMethodField(method_name='get_file_access_error')
 
+    # ⬅️ NUEVO: Campo "type" calculado desde billEvents()
+    type = serializers.SerializerMethodField(method_name='get_type')
+
     class Meta:
         model  = Bill
-        fields = '__all__'
+        fields = '__all__'   # Enviaremos typeBill, pero modificado
 
     # ============================================================
     # 🔥 CACHE ÚNICO — UNA SOLA PETICIÓN POR FACTURA
@@ -383,10 +386,37 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
             self._cache_events = {}
 
         if obj.cufe not in self._cache_events:
-            # update=True para obtener TODO
             self._cache_events[obj.cufe] = billEvents(obj.cufe, update=True)
 
         return self._cache_events[obj.cufe]
+
+    # ============================================================
+    # TIPO REAL DE LA FACTURA (ENDOSADA / FV-TV / FV / RECHAZADA)
+    # ============================================================
+    def get_type(self, obj):
+        try:
+            if not obj.cufe:
+                return None
+            events = self._get_billEvents(obj)
+            return events.get("type")   # UUID REAL según eventos
+        except:
+            return None
+
+    # ============================================================
+    # Sobrescribir JSON final del serializer
+    # Reemplaza typeBill por el tipo REAL
+    # ============================================================
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        # Sobrescribe typeBill con el valor REAL
+        events = self._get_billEvents(instance)
+        real_type = events.get("type")
+
+        if real_type:
+            data["typeBill"] = real_type  # <-- ahora SIEMPRE el valor correcto
+
+        return data
 
     # ============================================================
     # FILE URL
@@ -394,7 +424,6 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
     def get_file_presigned_url(self, obj):
         if not obj.file:
             return None
-
         try:
             s3_url = obj.file
             key = s3_url.split('devsmartevolution.s3.amazonaws.com/')[-1]
@@ -441,13 +470,12 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
             return None
 
     # ============================================================
-    # SAME CURRENT OWNER (optimizado)
+    # SAME CURRENT OWNER
     # ============================================================
     def get_sameCurrentOwner(self, obj):
         try:
             if not obj.cufe:
                 return False
-
             events = self._get_billEvents(obj)
             owner = events.get("currentOwner", "").strip()
             return owner == obj.emitterName
@@ -455,20 +483,19 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
             return False
 
     # ============================================================
-    # CURRENT OWNER NAME (optimizado)
+    # CURRENT OWNER NAME
     # ============================================================
     def get_currentOwnerName(self, obj):
         try:
             if not obj.cufe:
                 return None
-
             events = self._get_billEvents(obj)
             return events.get("currentOwner", "").strip()
         except:
             return None
 
     # ============================================================
-    # EVENTS (sync + read)
+    # EVENTS
     # ============================================================
     def get_events(self, obj):
         try:
@@ -482,10 +509,8 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
             for ev in api_events:
                 uuid = ev.get('event')
                 date = ev.get('date')
-
                 if not uuid:
                     continue
-
                 try:
                     type_ev = TypeEvent.objects.get(id=uuid)
                 except TypeEvent.DoesNotExist:
@@ -533,24 +558,6 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
             }
 
             has_valid = any(ev.get("event") in valid_ids for ev in api_events)
-
-            # Sync BD
-            for ev in api_events:
-                uuid = ev.get("event")
-                date = ev.get("date")
-
-                if not uuid:
-                    continue
-
-                try:
-                    type_ev = TypeEvent.objects.get(id=uuid)
-                    BillEvent.objects.get_or_create(
-                        bill=obj,
-                        event=type_ev,
-                        defaults={'id': gen_uuid(), 'date': date}
-                    )
-                except:
-                    continue
 
             return has_valid
         except:

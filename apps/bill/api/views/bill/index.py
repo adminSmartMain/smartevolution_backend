@@ -1137,18 +1137,30 @@ class BillAV(BaseAV):
                 
                 
                 
+                    page = self.paginate_queryset(bills)
 
-                # Paginación común para los casos que devuelven querysets
-                page = self.paginate_queryset(bills)
-                updateMassiveTypeBill(page,billEvents)
-                if page is not None:
-                   
-                    serializer = BillReadOnlySerializer(page, many=True)
-                    return self.get_paginated_response(serializer.data)
+                    if page is not None:
+
+                        page_ids = [obj.id for obj in page]  # recuperar ids REALES
+
+                        qs_page = Bill.objects.filter(id__in=page_ids)
+
+                        updateMassiveTypeBill(qs_page, billEvents)
+
+                        # refrescar los valores ya guardados
+                        qs_page = list(Bill.objects.filter(id__in=page_ids))
+                        logger.debug("REFRESCO")
+                        logger.debug(qs_page)
+                        # mantener orden original
+                        ordered_page = sorted(qs_page, key=lambda x: page_ids.index(x.id))
+
+                        serializer = BillReadOnlySerializer(ordered_page, many=True)
+                        return self.get_paginated_response(serializer.data)
+
             
-            # Caso cuando no hay parámetros válidos o todos están vacíos
+           # Caso cuando no hay parámetros válidos o todos están vacíos
             bills = Bill.objects.filter(state=1)
-            
+
             # Búsqueda por pk (ID de cliente o factura)
             if pk:
                 
@@ -1166,17 +1178,23 @@ class BillAV(BaseAV):
                     pass
                 except Exception as e:
                     return response({'error': True, 'message': str(e)}, 400)
-            
+
             page = self.paginate_queryset(bills)
+
+            # 🔥🔥🔥 AQUI SE APLICA TU FUNCTION updateMassiveTypeBill 🔥🔥🔥
             if page is not None:
+                logger.debug('sasaaaasdsfsdfsadfdffsd')
+                updateMassiveTypeBill(page, billEvents)   # <<--- AQUI VA
+
                 if params.get('billEvent') or request.method == 'GET' and 'billEvent' not in params:
                     # Usar serializador de lista para consultas generales
                     serializer = BillReadOnlySerializer(page, many=True)
                 else:
                     # Usar serializador de detalle para casos específicos
                     serializer = BillDetailSerializer(page, many=True)
+
                 return self.get_paginated_response(serializer.data)
-        
+
         except Exception as e:
             logger.error(f"Error en endpoint /api/bill/: {str(e)}", exc_info=True)
             return response({

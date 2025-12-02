@@ -15,6 +15,7 @@ UUID_FV_TV = "a7c70741-8c1a-4485-8ed4-5297e54a978a"
 UUID_RECHAZADA = "dcec6f03-5dc1-42ea-a525-afada28686da"
 UUID_ENDOSADA = "29113618-6ab8-4633-aa8e-b3d6f242e8a4"
 
+
 def billEvents(cufe, update=False):
     try:
         token = env('SMART_TOKEN')
@@ -55,34 +56,26 @@ def billEvents(cufe, update=False):
             '036': 'b8d4f8d3-aded-4b1f-873e-46c89a2538ed',
             '037': '3ea77762-7208-457a-b035-70069ee42b5e',
             '038': '0e333b6b-27b1-4aaf-87ce-ad60af6e52e6',
-            '046': 'f5d475c0-4433-422f-b3d2-7964ea0aa5c4'
+            '046': 'f5d475c0-4433-422f-b3d2-7964ea0aa5c4',
+            '047': '3bb86c74-1d1c-4986-a905-a47624b09322',
         }
 
         parsed_events = []
 
-        # Flags de estado
-        is_fv_tv = False
-        is_reject = False
-        is_endosada = False
+        # === FLAGS CORREGIDOS SEGÚN LA REGLA FINAL ===
+        codes = set(ev.get("code", "") for ev in events_api)
+
+        is_reject = "031" in codes
+        is_endosada = any(c in codes for c in ["037", "047", "046"])
+        is_fv_tv = ("030" in codes and "032" in codes and ("033" in codes or "034" in codes))
 
         for ev in events_api:
             code = ev.get("code", "")
 
-            # --- FLAGS ---
-            if code in ["030", "032", "033", "034"]:
-                is_fv_tv = True
-
-            if code == "031":
-                is_reject = True
-
-            if code in ["037", "046", "047"]:
-                is_endosada = True
-
-            # --- FILTRAR POR update ---
+            # Filtrar por update
             if code in ['036', '037', '038', '046'] and not update:
                 continue
 
-            # --- MAPEO DE EVENTO ---
             if code in event_code_to_uuid:
                 details = ev.get("details", [])
                 date = ""
@@ -97,13 +90,18 @@ def billEvents(cufe, update=False):
                     "description": details[0].get("description", "") if details else ""
                 })
 
-        # === DETERMINAR TIPO ===
+        # === LÓGICA FINAL: ORDEN JERÁRQUICO ===
         if is_reject:
             response_type = UUID_RECHAZADA
+
         elif is_endosada:
+            # ✔ FV-TV + Endoso = ENDOSADA
             response_type = UUID_ENDOSADA
+
         elif is_fv_tv:
             response_type = UUID_FV_TV
+
+
         else:
             response_type = UUID_FV
 
