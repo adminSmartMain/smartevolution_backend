@@ -477,8 +477,9 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
             if not obj.cufe:
                 return False
             events = self._get_billEvents(obj)
-            owner = events.get("currentOwner", "").strip()
-            return owner == obj.emitterName
+            owner = events.get("holderIdNumber", "").strip()
+            logger.debug(owner,obj.emitterId)
+            return owner == obj.emitterId
         except:
             return False
 

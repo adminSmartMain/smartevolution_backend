@@ -1340,6 +1340,10 @@ class readBillAV(BaseAV):
                 parsed['events'] = events['events']
                 parsed['typeBill'] = events['type']
                 parsed['currentOwner'] = events['currentOwner']
+                if parsed['emitterId'] == events['current_ownerId']:
+                    parsed['sameCurrentOwner'] = True
+                else:
+                    parsed['sameCurrentOwner'] = False
 
                 # -------------------- PROCESAR ENDOSOS --------------------
                 endorsedEvents = updateBillEvents(events['bill'])
