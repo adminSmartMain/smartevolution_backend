@@ -113,7 +113,8 @@ def billEvents(cufe, update=False):
                 return {
                     "type": UUID_FV,
                     "events": [],
-                    "currentOwner": "",
+                    "currentOwner":  "No disponible",
+                    "current_ownerId":"",
                     "bill": None
                 }
                 
@@ -124,6 +125,7 @@ def billEvents(cufe, update=False):
                 "type": UUID_FV,
                 "events": [],
                 "currentOwner": "No disponible",
+                "current_ownerId":"",
                 "bill": []
             }
             
@@ -134,6 +136,7 @@ def billEvents(cufe, update=False):
                 "type": UUID_FV,
                 "events": [],
                 "currentOwner": "No disponible",
+                "current_ownerId":"",
                 "bill": []
             }
 
