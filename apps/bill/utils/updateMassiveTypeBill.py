@@ -3,10 +3,21 @@ from apps.bill.models import Bill, BillEvent
 from apps.misc.api.models.typeEvent.index import TypeEvent
 from apps.misc.api.models.typeBill.index import TypeBill
 from django.utils import timezone
-
+import uuid
+# Configurar el logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+# Crear un handler de consola y definir el nivel
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Crear un formato para los mensajes de log
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# Añadir el handler al logger
+logger.addHandler(console_handler)
 # UUIDs finales
 UUID_FV = "fdb5feb4-24e9-41fc-9689-31aff60b76c9"
 UUID_FV_TV = "a7c70741-8c1a-4485-8ed4-5297e54a978a"
@@ -142,48 +153,37 @@ def updateMassiveTypeBill(bills_queryset, billEvents_function):
 
 
 def sync_bill_events(bill, api_events):
-    """
-    Sincroniza eventos de la API con la base de datos.
-    Similar a get_events del serializer pero optimizado para bulk.
-    """
     events_updated = 0
     
     for ev in api_events:
-        uuid = ev.get('event')
+        event_uuid = ev.get('event')  # <-- YA NO PISAMOS EL MÓDULO uuid
         date = ev.get('date')
         description = ev.get('description', '')
-        
-        if not uuid:
+      
+        if not event_uuid:
             continue
             
         try:
-            type_ev = TypeEvent.objects.get(id=uuid)
+            type_ev = TypeEvent.objects.get(id=event_uuid)
         except TypeEvent.DoesNotExist:
-            logger.warning(f"❗ Tipo de evento {uuid} no existe para bill {bill.billId}")
+            logger.warning(f"❗ Tipo de evento {event_uuid} no existe para bill {bill.billId}")
             continue
 
-        # Usar update_or_create para mayor eficiencia
         defaults = {
             'date': date, 
             'updated_at': timezone.now()
         }
-        
-        # Si la descripción es importante, guardarla también
+
         if description and hasattr(BillEvent, 'description'):
             defaults['description'] = description
-            
+
         bill_ev, created = BillEvent.objects.update_or_create(
+            id=str(uuid.uuid4()),
             bill=bill,
             event=type_ev,
             defaults=defaults
         )
-        
-        if created:
-            logger.debug(f"     + Evento creado: {type_ev.code} ({date})")
-        else:
-            logger.debug(f"     ✓ Evento actualizado: {type_ev.code} ({date})")
-            
+
         events_updated += 1
         
-            
     return events_updated
