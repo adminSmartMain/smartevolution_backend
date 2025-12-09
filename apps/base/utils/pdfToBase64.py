@@ -7,21 +7,22 @@ from apps.base.utils.index import sendEmail
 
 
 def pdfToBase64(html):
-    # run node script
-    process        = subprocess.Popen(['node', 'apps/base/scripts/pdf_parser/index.js',html], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-    # get the data
-    stdout, stderr = process.communicate()
-    #parse response
-    response       = json.loads(stdout.decode('utf-8'))
-    #sendEmail('recuperar contraseña', str(response) , 'ander.er985@gmail.com',)
-    # convert pdf to base64
-    pdfBytes       = base64.b64decode(response['pdf'])
-    # get number of pages
-    pdfFile        = BytesIO(pdfBytes)
-    pdfReader      = PyPDF2.PdfReader(pdfFile)
-    numPages       = len(pdfReader.pages)
-    return {
-        'pdf'  : response['pdf'],
-        'pages': numPages,
-    }
+    process = subprocess.Popen(
+        ['node', 'apps/base/scripts/pdf_parser/index.js'],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
 
+    stdout, stderr = process.communicate(input=html.encode('utf-8'))
+
+    response = json.loads(stdout.decode('utf-8'))
+
+    pdfBytes = base64.b64decode(response['pdf'])
+    pdfFile  = BytesIO(pdfBytes)
+    pdfReader = PyPDF2.PdfReader(pdfFile)
+
+    return {
+        'pdf': response['pdf'],
+        'pages': len(pdfReader.pages),
+    }
