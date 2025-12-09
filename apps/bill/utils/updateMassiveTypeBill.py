@@ -178,7 +178,7 @@ def sync_bill_events(bill, api_events):
             defaults['description'] = description
 
         bill_ev, created = BillEvent.objects.update_or_create(
-            id=str(uuid.uuid4()),
+          
             bill=bill,
             event=type_ev,
             defaults=defaults
