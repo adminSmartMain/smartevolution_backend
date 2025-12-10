@@ -367,6 +367,7 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
     sameCurrentOwner     = serializers.SerializerMethodField(method_name='get_sameCurrentOwner')
     endorsedBill         = serializers.SerializerMethodField(method_name='get_endorsedBill')
     currentOwnerName     = serializers.SerializerMethodField(method_name='get_currentOwnerName')
+    currentOwnerId       = serializers.SerializerMethodField(method_name='get_currentOwnerId')
     events               = serializers.SerializerMethodField(method_name='get_events')
     file_presigned_url   = serializers.SerializerMethodField(method_name='get_file_presigned_url')
     file_access_error    = serializers.SerializerMethodField(method_name='get_file_access_error')
@@ -492,6 +493,15 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
                 return None
             events = self._get_billEvents(obj)
             return events.get("currentOwner", "").strip()
+        except:
+            return None
+        
+    def get_currentOwnerId(self, obj):
+        try:
+            if not obj.cufe:
+                return None
+            events = self._get_billEvents(obj)
+            return events.get("current_ownerId", "").strip()
         except:
             return None
 
