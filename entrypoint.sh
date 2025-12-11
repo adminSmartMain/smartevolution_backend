@@ -14,5 +14,5 @@ service cron start
 echo "Crontabs configurados:"
 crontab -l || echo "No hay crontab configurados"
 # Ejecutar el servidor Django
-echo "Starting Django server..."
-exec python manage.py runserver 0.0.0.0:8000
+echo "Starting Django server with Gunicorn..."
+exec gunicorn -c gunicorn.conf.py core.wsgi:application
