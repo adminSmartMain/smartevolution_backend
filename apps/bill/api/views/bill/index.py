@@ -279,8 +279,8 @@ class BillAV(BaseAV):
                 # 📅 fechas
                 if params.get('startDate') and params.get('endDate'):
                     bills = bills.filter(
-                        dateBill__gte=params['startDate'],
-                        dateBill__lte=params['endDate']
+                        created_at__gte=params['startDate'],
+                        created_at__lte=params['endDate']
                     )
 
                 # 🔌 channel
