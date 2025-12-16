@@ -34,3 +34,5 @@ openpyxl
 pdfkit
 django-crontab
 django-import-export==4.1.1
+
+gevent
