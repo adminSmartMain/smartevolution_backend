@@ -225,10 +225,29 @@ class BillReadOnlySerializer(serializers.ModelSerializer):
     endorsedBill         = serializers.SerializerMethodField(method_name='get_endorsedBill')
     currentOwnerName     = serializers.SerializerMethodField(method_name='get_currentOwnerName')
     emitterIdOperation   = serializers.SerializerMethodField(method_name='get_emitter_id') 
+    
     class Meta:
         model        = Bill
         fields       = '__all__'
         extra_fields = ['creditNotes']
+
+    def to_representation(self, instance):
+        # Agregar logs de depuración
+        logger.debug(f"Serializando factura ID: {instance.id}")
+        logger.debug(f"Factura payerId: {instance.payerId}, tipo: {type(instance.payerId)}")
+        logger.debug(f"Factura emitterId: {instance.emitterId}, tipo: {type(instance.emitterId)}")
+        
+        data = super().to_representation(instance)
+        
+        # Agregar info de depuración al JSON
+        data['_debug'] = {
+            'payerId_value': instance.payerId,
+            'payerId_type': str(type(instance.payerId)),
+            'emitterId_value': instance.emitterId,
+            'emitterId_type': str(type(instance.emitterId)),
+        }
+        
+        return data
 
     def get_creditNotes(self, obj):
         creditNotes = CreditNote.objects.filter(Bill=obj)
@@ -268,7 +287,6 @@ class BillReadOnlySerializer(serializers.ModelSerializer):
             return Client.objects.get(document_number=obj.emitterId).id
         except:
             return None
-        
 class BillDetailSerializer(BillReadOnlySerializer):
     file_content = serializers.SerializerMethodField(method_name='get_file_content')
     file_content_type = serializers.SerializerMethodField(method_name='get_file_content_type')

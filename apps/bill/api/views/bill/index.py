@@ -219,14 +219,6 @@ class BillAV(BaseAV):
                 for k, v in request.query_params.items()
             }
 
-            # page NO cuenta como filtro
-            filter_params = {
-                k: v for k, v in params.items()
-                if k not in ('page',)
-            }
-
-            has_filters = any(v is not None for v in filter_params.values())
-
             # -----------------------------
             # 2. Casos ESPECIALES (salida directa)
             # -----------------------------
@@ -322,7 +314,7 @@ class BillAV(BaseAV):
                 bills = Bill.objects.filter(id__in=ops.values_list('bill_id', flat=True))
 
             # -----------------------------
-            # 6. PK (cliente)
+            # 6. PK (cliente) - CASO ESPECIAL SIN PAGINACIÓN Y SIN updateMassiveTypeBill
             # -----------------------------
             if pk:
                 try:
@@ -331,18 +323,44 @@ class BillAV(BaseAV):
                         Q(emitterId=pk) |
                         Q(emitterId=client.document_number)
                     )
+                    
+                    # ✅ OPCIÓN 1: Filtrar directamente en la consulta (RECOMENDADO)
+                    # Filtramos solo facturas con currentBalance > 0 para optimizar
+                    bills_with_balance = bills.filter(currentBalance__gt=0)
+                    
+                    # Serializar SOLO las facturas con saldo positivo
+                    serializer = BillReadOnlySerializer(bills_with_balance, many=True)
+                    
+                    return response({
+                        'error': False,
+                        'data': serializer.data,
+                        'count': bills_with_balance.count(),
+                        'all_results': True,
+                        'optimized_for_payer_filter': True  # Indicador adicional
+                    }, 200)
+                    
+                    # ✅ OPCIÓN 2: Si necesitas TODAS las facturas pero sin updateMassiveTypeBill
+                    # serializer = BillReadOnlySerializer(bills, many=True)
+                    # return response({
+                    #     'error': False,
+                    #     'data': serializer.data,
+                    #     'count': bills.count(),
+                    #     'all_results': True,
+                    #     'skip_typebill_update': True  # Para debug
+                    # }, 200)
+                    
                 except Client.DoesNotExist:
-                    pass
+                    return response({'error': False, 'data': []}, 200)
 
             # -----------------------------
-            # 7. PAGINACIÓN
+            # 7. CASO GENERAL CON PAGINACIÓN (sin pk)
             # -----------------------------
             page = self.paginate_queryset(bills)
             if page is None:
                 return response({'error': False, 'data': []}, 200)
 
             # -----------------------------
-            # 8. updateMassiveTypeBill (SIEMPRE)
+            # 8. updateMassiveTypeBill SOLO PARA CASO GENERAL
             # -----------------------------
             page_ids = [obj.id for obj in page]
 
@@ -366,7 +384,6 @@ class BillAV(BaseAV):
                 'message': 'Error interno del servidor',
                 'detail': str(e)
             }, 500)
-
 
     @checkRole(['admin'])
     def patch(self, request, pk):
