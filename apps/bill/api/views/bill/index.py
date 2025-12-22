@@ -246,6 +246,25 @@ class BillAV(BaseAV):
                 return response({'error': False, 'data': serializer.data}, 200)
 
             # -----------------------------
+            # NUEVO CASO: bill_operation
+            # -----------------------------
+            if params.get('bill_operation') is not None:
+                logger.debug('Caso: obtener factura para comprobar antes de crear operacion')
+                try:
+                    bill = Bill.objects.get(billId=params.get('bill_operation'))
+                    if bill.cufe:
+                        logger.debug('Caso 43: con cufe')
+                        serializer = BillEventReadOnlySerializer(bill)
+                        return response({'error': False, 'data': serializer.data}, 200)
+                    serializer = BillDetailSerializer(bill)
+                    return response({'error': False, 'data': serializer.data}, 200)
+                except Bill.DoesNotExist:
+                    return response({'error': True, 'message': 'Factura no encontrada'}, 404)
+                except Exception as e:
+                    logger.error(f"Error buscando por bill_operation: {str(e)}")
+                    return response({'error': True, 'message': str(e)}, 400)
+
+            # -----------------------------
             # 3. Queryset BASE
             # -----------------------------
             bills = Bill.objects.filter(state=1)
@@ -254,7 +273,6 @@ class BillAV(BaseAV):
             # 4. Filtros normales (DINÁMICOS)
             # -----------------------------
             if params.get('mode') == 'intelligent_query':
-
                 # 🔍 Búsqueda inteligente
                 if params.get('emitter_or_payer_or_billId'):
                     search = params['emitter_or_payer_or_billId']
@@ -336,18 +354,8 @@ class BillAV(BaseAV):
                         'data': serializer.data,
                         'count': bills_with_balance.count(),
                         'all_results': True,
-                        'optimized_for_payer_filter': True  # Indicador adicional
+                        'optimized_for_payer_filter': True
                     }, 200)
-                    
-                    # ✅ OPCIÓN 2: Si necesitas TODAS las facturas pero sin updateMassiveTypeBill
-                    # serializer = BillReadOnlySerializer(bills, many=True)
-                    # return response({
-                    #     'error': False,
-                    #     'data': serializer.data,
-                    #     'count': bills.count(),
-                    #     'all_results': True,
-                    #     'skip_typebill_update': True  # Para debug
-                    # }, 200)
                     
                 except Client.DoesNotExist:
                     return response({'error': False, 'data': []}, 200)
@@ -384,7 +392,6 @@ class BillAV(BaseAV):
                 'message': 'Error interno del servidor',
                 'detail': str(e)
             }, 500)
-
     @checkRole(['admin'])
     def patch(self, request, pk):
         try:
