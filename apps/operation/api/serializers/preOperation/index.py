@@ -60,10 +60,10 @@ class PreOperationSerializer(serializers.ModelSerializer):
     def validate(self, data):
         # Si viene billCode, lo convertimos a bill (ID)
         if 'billCode' in data and data['billCode']:
-            logger.debug(f"Validando billCode: {data['billCode']}")
+         
             try:
                 bill = Bill.objects.get(billId=data['billCode'])
-                logger.debug(f"Factura encontrada: {bill.id}")
+              
                 data['bill'] = bill.id
             except Bill.DoesNotExist:
                 raise serializers.ValidationError({
@@ -71,12 +71,12 @@ class PreOperationSerializer(serializers.ModelSerializer):
                 })
         # Si viene bill como string (billId), lo convertimos a ID
         elif 'bill' in data and isinstance(data['bill'], str) and not is_uuid(data['bill']):
-            logger.debug(f"Validando billId: {data['bill']}")
+         
             try:
                 bill = Bill.objects.get(billId=data['bill'])
-                logger.debug(f"Factura encontrada: {bill.id}")
+          
                 data['bill'] = bill.id
-                logger.debug(f"Factura convertida a ID: {data['bill']}")
+              
             except Bill.DoesNotExist:
                 raise serializers.ValidationError({
                     'bill': f"La factura {data['bill']} no existe"
@@ -86,7 +86,7 @@ class PreOperationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         logger.info("Iniciando creación de PreOperation")
-        logger.debug(f"Datos validados: {validated_data}")
+      
         
         try:
             validated_data['id'] = gen_uuid()
@@ -95,16 +95,16 @@ class PreOperationSerializer(serializers.ModelSerializer):
 
             if validated_data.get('bill'):
                 bill = validated_data['bill']
-                logger.debug(f"Procesando factura asociada: {bill.billId}")
+                
                 
                 client_account = validated_data.get('clientAccount')
                 if client_account:
                     total_operation = validated_data['payedAmount'] + validated_data.get('GM', 0)
                     validated_data['insufficientAccountBalance'] = client_account.balance < total_operation
-                    logger.debug(f"Validación de saldo: {validated_data['insufficientAccountBalance']}")
+
 
                 if bill.currentBalance != 0:
-                    logger.debug(f"Ajustando balance de factura: {bill.currentBalance} -> {bill.currentBalance - validated_data['amount']}")
+                    
                     bill.currentBalance -= validated_data['amount']
                     bill.save()
 
@@ -113,7 +113,7 @@ class PreOperationSerializer(serializers.ModelSerializer):
                 validated_data['opPendingAmount'] = validated_data['payedAmount']
             
             instance = super().create(validated_data)
-            logger.info(f"PreOperation creada exitosamente: {instance.id}")
+       
             return instance
 
         except Exception as e:
@@ -247,7 +247,7 @@ class PreOperationSignatureSerializer(serializers.ModelSerializer):
             return isSellOrderSent
         except:
             return False
-        g
+        
     def get_number_of_bills(self, obj):
         try:
             # get the complete operation
@@ -322,7 +322,7 @@ class PreOperationByParamsSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_bill_data(self, obj):
-        logger.debug(obj)
+       
         return obj.bill.billId
     
     def get_emitter_name(self, obj):

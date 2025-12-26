@@ -35,7 +35,6 @@ class BucketS3():
         return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{relative_url}"
 
 
-
 def uploadFileBase64(files_bse64=None, file_path=None):
     """
     Funcion que carga el archivo en base 64 a S3

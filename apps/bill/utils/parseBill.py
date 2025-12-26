@@ -1,6 +1,5 @@
 import untangle
-from .billEvents import billEvents
-from .updateBillEvents import billEvents as updateBillEvents
+
 import logging
 
 # Configurar el logger
@@ -19,338 +18,143 @@ console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
 def parseBill(file):
-    # Diccionario para almacenar los datos procesados
     parsedXml = {}
-    
+
     try:
-        # Parseamos el archivo XML con la librería untangle
         xml = untangle.parse(file)
 
-        # Verificar si el XML contiene el nodo 'AttachedDocument'
+        # ---------------------------------------------------------
+        # CASO 1 → El XML viene dentro de AttachedDocument
+        # ---------------------------------------------------------
         if hasattr(xml, 'AttachedDocument') and hasattr(xml.AttachedDocument, 'cac_Attachment'):
-            logger.debug(xml)
-            logger.debug('caso attacht')
-            
+
             try:
-                logger.debug(xml.AttachedDocument.cac_Attachment.cac_ExternalReference.cbc_Description.cdata)
-                # Si existe, parseamos el XML dentro del 'AttachedDocument' para obtener más información
                 xml2 = untangle.parse(
                     xml.AttachedDocument.cac_Attachment.cac_ExternalReference.cbc_Description.cdata
                 )
-                
-                # Inicializamos una variable para acumular los valores de 'cbc:TaxAmount'
-                total_tax_amount = 0
 
-                # Verificamos si el nodo 'Invoice' tiene el nodo 'cac_TaxTotal'
+                # -------------------- IVA --------------------
+                total_tax_amount = 0
                 if hasattr(xml2.Invoice, 'cac_TaxTotal'):
                     tax_totals = xml2.Invoice.cac_TaxTotal
-                    
-                    # Si hay múltiples nodos 'cac_TaxTotal', los procesamos en una lista
+
                     if isinstance(tax_totals, list):
-                        for tax_total in tax_totals:
-                            # Sumamos el valor de 'cbc:TaxAmount' a 'total_tax_amount'
-                            tax_amount = float(tax_total.cbc_TaxAmount.cdata)
-                            total_tax_amount += tax_amount
-                    else:  # Si solo hay un nodo 'cac_TaxTotal'
+                        for t in tax_totals:
+                            total_tax_amount += float(t.cbc_TaxAmount.cdata)
+                    else:
                         total_tax_amount = float(tax_totals.cbc_TaxAmount.cdata)
 
-                    # Almacenamos el valor acumulado en 'parsedXml['iva']'
-                    parsedXml['iva'] = total_tax_amount
-                else:
-                    # Si no se encuentra 'cac_TaxTotal', se asigna 0
-                    parsedXml['iva'] = 0
+                parsedXml['iva'] = total_tax_amount
 
-                # Resto de los datos del XML que necesitamos extraer
+                # -------------------- CAMPOS BÁSICOS --------------------
                 parsedXml['billId'] = xml2.Invoice.cbc_ID.cdata
                 parsedXml['emitterName'] = xml2.Invoice.cac_AccountingSupplierParty.cac_Party.cac_PartyTaxScheme.cbc_RegistrationName.cdata
                 parsedXml['emitterId'] = xml2.Invoice.cac_AccountingSupplierParty.cac_Party.cac_PartyTaxScheme.cbc_CompanyID.cdata
                 parsedXml['payerName'] = xml2.Invoice.cac_AccountingCustomerParty.cac_Party.cac_PartyTaxScheme.cbc_RegistrationName.cdata
                 parsedXml['payerId'] = xml2.Invoice.cac_AccountingCustomerParty.cac_Party.cac_PartyTaxScheme.cbc_CompanyID.cdata
+
                 parsedXml['billValue'] = float(xml2.Invoice.cac_LegalMonetaryTotal.cbc_LineExtensionAmount.cdata)
-
-                # Tratamos de obtener el IVA (si existe), sino, lo asignamos como 0
-                try:
-                    parsedXml['iva'] = float(xml2.Invoice.cac_TaxTotal.cbc_TaxAmount.cdata)
-                except:
-                    parsedXml['iva'] = 0
-
-                # Calculamos el subTotal y el total de la factura
                 parsedXml['subTotal'] = parsedXml['billValue'] + parsedXml['iva']
                 parsedXml['total'] = parsedXml['subTotal']
 
-                # Obtenemos las fechas de la factura
                 parsedXml['dateBill'] = xml2.Invoice.cbc_IssueDate.cdata
+
                 try:
                     parsedXml['datePayment'] = xml2.Invoice.cac_PaymentMeans.cbc_PaymentDueDate.cdata
                 except:
-                    parsedXml['datePayment'] = None 
+                    parsedXml['datePayment'] = None
 
-                # Almacenamos el CUFE de la factura
                 parsedXml['cufe'] = xml2.Invoice.cbc_UUID.cdata
 
-                # Verificamos si existe la fecha de vencimiento (expirationDate)
                 try:
-                    parsedXml['expirationDate'] = xml2.Invoice.cbc_DueDate.cdata 
+                    parsedXml['expirationDate'] = xml2.Invoice.cbc_DueDate.cdata
                 except:
-                    pass
-
-                # Obtener eventos relacionados con la factura
-                try:
-                    events = billEvents(parsedXml['cufe'], update=True)
-
-                    # Validar si el tipo de evento es 'error'
-                    if events['type'] == 'error':
-                        raise Exception("Error type returned from billEvents")
-                    
-                    # Almacenamos los eventos y el tipo de factura
-                    parsedXml['typeBill'] = events['type']
-                    parsedXml['events'] = events['events']
-                    parsedXml['file'] = file
-                    events['currentOwner'] = events['currentOwner'].strip()
-
-                    # Verificamos si el propietario actual es el mismo que el emisor
-                    if parsedXml['emitterName'] == events['currentOwner']:
-                        parsedXml['sameCurrentOwner'] = True
-                    else:
-                        parsedXml['sameCurrentOwner'] = False
-
-                    # Obtenemos la información de los eventos actualizados
-                    getEndorsed = updateBillEvents(events['bill'])
-                    valid = False
-
-                    # Verificamos si los eventos de la factura contienen ciertos valores
-                    for event in getEndorsed:
-                        if event['event'] == '3ea77762-7208-457a-b035-70069ee42b5e':
-                            valid = True
-                            parsedXml['typeBill'] = '29113618-6ab8-4633-aa8e-b3d6f242e8a4'
-                            break
-                        if event['event'] == '3bb86c74-1d1c-4986-a905-a47624b09322':
-                            valid = True
-                            parsedXml['typeBill'] = '29113618-6ab8-4633-aa8e-b3d6f242e8a4'
-                            break
-                        if event['event'] == '0e333b6b-27b1-4aaf-87ce-ad60af6e52e6':
-                            valid = True
-                            parsedXml['typeBill'] = '29113618-6ab8-4633-aa8e-b3d6f242e8a4'
-                            break
-
-                    # Marcamos la factura como 'endorsed' si es válida
-                    if valid:
-                        parsedXml['endorsed'] = True
-                    else:
-                        parsedXml['endorsed'] = False  
-
-                    parsedXml['currentOwner'] = events['currentOwner']
-                except Exception as e:
-                    parsedXml['endorsed'] = False
-                    parsedXml['events'] = []
-                    try:
-                        # Si ocurre un error, intentamos obtener el 'currentOwner' del evento
-                        parsedXml['currentOwner'] = events['emitterName']
-                    except:
-                        parsedXml['currentOwner'] = "No disponible"
-                    
-                    # Si no hay eventos, marcamos el tipo de factura como 'error'
-                    parsedXml['typeBill'] = 'fdb5feb4-24e9-41fc-9689-31aff60b76c9'
+                    parsedXml['expirationDate'] = None
 
                 return parsedXml
+
             except Exception as e:
-                # En caso de error al procesar 'AttachedDocument', retornamos el error
                 return {'error': True, 'message': f"Error processing AttachedDocument: {str(e)}"}
+
+        # ---------------------------------------------------------
+        # CASO 2 → El XML viene directamente como Invoice
+        # ---------------------------------------------------------
         elif hasattr(xml, 'Invoice'):
-            xml = untangle.parse(file)
 
             try:
-                logger.debug('caso invoice')
-                # Si existe, parseamos el XML dentro del 'AttachedDocument' para obtener más información
-              
                 xml2 = xml
-                logger.debug('a')
-                # Inicializamos una variable para acumular los valores de 'cbc:TaxAmount'
-                total_tax_amount = 0
 
-                # Verificamos si el nodo 'Invoice' tiene el nodo 'cac_TaxTotal'
+                # -------------------- IVA --------------------
+                total_tax_amount = 0
                 if hasattr(xml2.Invoice, 'cac_TaxTotal'):
-                    logger.debug('a')
                     tax_totals = xml2.Invoice.cac_TaxTotal
-                    logger.debug('b')
-                    # Si hay múltiples nodos 'cac_TaxTotal', los procesamos en una lista
+
                     if isinstance(tax_totals, list):
-                        logger.debug('c')
-                        for tax_total in tax_totals:
-                            # Sumamos el valor de 'cbc:TaxAmount' a 'total_tax_amount'
-                            tax_amount = float(tax_total.cbc_TaxAmount.cdata)
-                            total_tax_amount += tax_amount
-                    else:  # Si solo hay un nodo 'cac_TaxTotal'
-                        logger.debug('d')
+                        for t in tax_totals:
+                            total_tax_amount += float(t.cbc_TaxAmount.cdata)
+                    else:
                         total_tax_amount = float(tax_totals.cbc_TaxAmount.cdata)
-                        logger.debug('e')
-                    # Almacenamos el valor acumulado en 'parsedXml['iva']'
-                    logger.debug('f')
-                    parsedXml['iva'] = total_tax_amount
-                    logger.debug('g')
-                else:
-                    # Si no se encuentra 'cac_TaxTotal', se asigna 0
-                    logger.debug('h')
-                    parsedXml['iva'] = 0
-                    logger.debug('i')
-                # Resto de los datos del XML que necesitamos extraer
-                logger.debug('j')
-                logger.debug(xml2.Invoice.cbc_ID)
-               # Iterar sobre todas las extensiones UBLExtension
-                for extension in xml2.Invoice.ext_UBLExtensions.ext_UBLExtension:
-                    try:
-                        # Verificar si tiene contenido dentro de ext:ExtensionContent
+
+                parsedXml['iva'] = total_tax_amount
+
+                # -------------------- EXTRAER EXTENSIONES UBL --------------------
+                try:
+                    for extension in xml2.Invoice.ext_UBLExtensions.ext_UBLExtension:
                         if hasattr(extension, "ext_ExtensionContent"):
                             content = extension.ext_ExtensionContent
 
-                            # Buscar sts:DianExtensions dentro de ExtensionContent
                             if hasattr(content, "sts_DianExtensions"):
-                                dian_extensions = content.sts_DianExtensions
+                                dian_ext = content.sts_DianExtensions
 
-                                # Buscar sts:InvoiceControl dentro de DianExtensions
-                                if hasattr(dian_extensions, "sts_InvoiceControl"):
-                                    invoice_control = dian_extensions.sts_InvoiceControl
+                                if hasattr(dian_ext, "sts_InvoiceControl") and hasattr(dian_ext.sts_InvoiceControl, "sts_AuthorizedInvoices"):
+                                    authorized = dian_ext.sts_InvoiceControl.sts_AuthorizedInvoices
 
-                                    # Buscar sts:AuthorizedInvoices dentro de InvoiceControl
-                                    if hasattr(invoice_control, "sts_AuthorizedInvoices"):
-                                        authorized_invoices = invoice_control.sts_AuthorizedInvoices
+                                    prefix = authorized.sts_Prefix.cdata if hasattr(authorized, "sts_Prefix") else None
+                                    from_value = authorized.sts_From.cdata if hasattr(authorized, "sts_From") else None
 
-                                        # Extraer valores de Prefix y From si existen
-                                        prefix = authorized_invoices.sts_Prefix.cdata if hasattr(authorized_invoices, "sts_Prefix") else None
-                                        from_value = authorized_invoices.sts_From.cdata if hasattr(authorized_invoices, "sts_From") else None
+                                    parsedXml['prefix'] = prefix
+                                    parsedXml['fromAuthorized'] = from_value
 
-                                        # Registrar los resultados
-                                        logger.debug(f"Prefix: {prefix}, From: {from_value}")
-                    except Exception as e:
-                        logger.debug(f"Error procesando una extensión: {e}")
-                
-               
+                except Exception as e:
+                    logger.debug(f"Error procesando UBLExtensions: {e}")
+
+                # -------------------- CAMPOS BÁSICOS --------------------
                 parsedXml['billId'] = xml2.Invoice.cbc_ID.cdata
-                logger.debug('k')
                 parsedXml['emitterName'] = xml2.Invoice.cac_AccountingSupplierParty.cac_Party.cac_PartyTaxScheme.cbc_RegistrationName.cdata
-                logger.debug('l')
                 parsedXml['emitterId'] = xml2.Invoice.cac_AccountingSupplierParty.cac_Party.cac_PartyTaxScheme.cbc_CompanyID.cdata
-                logger.debug('m')
+
                 parsedXml['payerName'] = xml2.Invoice.cac_AccountingCustomerParty.cac_Party.cac_PartyTaxScheme.cbc_RegistrationName.cdata
-                logger.debug('n')
                 parsedXml['payerId'] = xml2.Invoice.cac_AccountingCustomerParty.cac_Party.cac_PartyTaxScheme.cbc_CompanyID.cdata
-                logger.debug('o')
+
                 parsedXml['billValue'] = float(xml2.Invoice.cac_LegalMonetaryTotal.cbc_LineExtensionAmount.cdata)
-                logger.debug('p')
-                # Tratamos de obtener el IVA (si existe), sino, lo asignamos como 0
-                try:
-                    logger.debug('q')
-                    parsedXml['iva'] = float(xml2.Invoice.cac_TaxTotal.cbc_TaxAmount.cdata)
-                    logger.debug('r')
-                except:
-                    logger.debug('s')
-                    parsedXml['iva'] = 0
-                logger.debug('t')
-                # Calculamos el subTotal y el total de la factura
                 parsedXml['subTotal'] = parsedXml['billValue'] + parsedXml['iva']
-                logger.debug('u')
                 parsedXml['total'] = parsedXml['subTotal']
-                logger.debug('v')
-                # Obtenemos las fechas de la factura
+
                 parsedXml['dateBill'] = xml2.Invoice.cbc_IssueDate.cdata
-                logger.debug('w')
+
                 try:
                     parsedXml['datePayment'] = xml2.Invoice.cac_PaymentMeans.cbc_PaymentDueDate.cdata
-                    logger.debug('x')
                 except:
-                    logger.debug('y')
-                    parsedXml['datePayment'] = None 
-                    logger.debug('z')
+                    parsedXml['datePayment'] = None
 
-                # Almacenamos el CUFE de la factura
-                logger.debug('aa')
                 parsedXml['cufe'] = xml2.Invoice.cbc_UUID.cdata
-                logger.debug('bb')
-                # Verificamos si existe la fecha de vencimiento (expirationDate)
+
                 try:
-                    logger.debug('cc')
-                    parsedXml['expirationDate'] = xml2.Invoice.cbc_DueDate.cdata 
-                    logger.debug('dd')
+                    parsedXml['expirationDate'] = xml2.Invoice.cbc_DueDate.cdata
                 except:
-                    pass
+                    parsedXml['expirationDate'] = None
 
-                # Obtener eventos relacionados con la factura
-                try:
-                    logger.debug('ee')
-                    events = billEvents(parsedXml['cufe'], update=True)
-                    logger.debug('ff')
-                    # Validar si el tipo de evento es 'error'
-                    if events['type'] == 'error':
-                        raise Exception("Error type returned from billEvents")
-                    
-                    # Almacenamos los eventos y el tipo de factura
-                    logger.debug('gg')
-                    parsedXml['typeBill'] = events['type']
-                    logger.debug('hh')
-                    parsedXml['events'] = events['events']
-                    logger.debug('ii')
-                    parsedXml['file'] = file
-                    logger.debug('jj')
-                    events['currentOwner'] = events['currentOwner'].strip()
-                    logger.debug('kk')
-                    # Verificamos si el propietario actual es el mismo que el emisor
-                    if parsedXml['emitterName'] == events['currentOwner']:
-                        logger.debug('ll')
-                        parsedXml['sameCurrentOwner'] = True
-                        logger.debug('mm')
-                    else:
-                        parsedXml['sameCurrentOwner'] = False
-
-                    # Obtenemos la información de los eventos actualizados
-                    logger.debug('oo')
-                    getEndorsed = updateBillEvents(events['bill'])
-                    logger.debug('pp')
-                    valid = False
-                    logger.debug('qq')
-                    # Verificamos si los eventos de la factura contienen ciertos valores
-                    for event in getEndorsed:
-                        if event['event'] == '3ea77762-7208-457a-b035-70069ee42b5e':
-                            valid = True
-                            parsedXml['typeBill'] = '29113618-6ab8-4633-aa8e-b3d6f242e8a4'
-                            break
-                        if event['event'] == '3bb86c74-1d1c-4986-a905-a47624b09322':
-                            valid = True
-                            parsedXml['typeBill'] = '29113618-6ab8-4633-aa8e-b3d6f242e8a4'
-                            break
-                        if event['event'] == '0e333b6b-27b1-4aaf-87ce-ad60af6e52e6':
-                            valid = True
-                            parsedXml['typeBill'] = '29113618-6ab8-4633-aa8e-b3d6f242e8a4'
-                            break
-                    logger.debug('yy')
-                    # Marcamos la factura como 'endorsed' si es válida
-                    if valid:
-                        parsedXml['endorsed'] = True
-                    else:
-                        parsedXml['endorsed'] = False  
-
-                    parsedXml['currentOwner'] = events['currentOwner']
-                except Exception as e:
-                    parsedXml['endorsed'] = False
-                    parsedXml['events'] = []
-                    try:
-                        # Si ocurre un error, intentamos obtener el 'currentOwner' del evento
-                        parsedXml['currentOwner'] = events['emitterName']
-                        logger.debug('tt')
-                    except:
-                        parsedXml['currentOwner'] = "No disponible"
-                    
-                    # Si no hay eventos, marcamos el tipo de factura como 'error'
-                    parsedXml['typeBill'] = 'fdb5feb4-24e9-41fc-9689-31aff60b76c9'
-                    logger.debug('rr')
                 return parsedXml
+
             except Exception as e:
-                # En caso de error al procesar 'AttachedDocument', retornamos el error
-                return {'error': True, 'message': f"Error processing AttachedDocument: {str(e)}"}
-            
+                return {'error': True, 'message': f"Error processing Invoice: {str(e)}"}
+
+        # ---------------------------------------------------------
+        # SIN AttachedDocument NI Invoice
+        # ---------------------------------------------------------
         else:
-            # Si no se encuentra 'AttachedDocument', se retorna un error
-            return {'error': True, 'message': 'AttachedDocument or cac_Attachment not found or Invoice'}
+            return {'error': True, 'message': 'AttachedDocument o Invoice no encontrados'}
 
     except Exception as e:
-        # Capturamos cualquier otro error durante el parseo del XML
         return {'error': True, 'message': f"Error parsing XML: {str(e)}"}
+

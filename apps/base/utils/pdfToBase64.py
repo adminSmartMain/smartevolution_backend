@@ -26,5 +26,3 @@ def pdfToBase64(html):
         'pdf': response['pdf'],
         'pages': len(pdfReader.pages),
     }
-
-

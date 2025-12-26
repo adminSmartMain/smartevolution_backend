@@ -1,47 +1,51 @@
 import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
-from bs4 import BeautifulSoup
-import re
 from apps.base.exceptions import HttpException
+from datetime import datetime
 
-
-
-def billEvents(bill):
+def updateBillEvents(bill_data):
     try:
-        if bill == None:
-            return None
-        soup = BeautifulSoup(bill, "html.parser")
-        results = soup.find(
-            class_="documents-table table table-striped table-hover align-middle margin-bottom-0")
-        getEvents = results.find_all("td", class_="text-center")
-        events = []
-        dates  = []
-        parsed = []
-        regex = re.compile(
-            r"^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$")
+        if bill_data is None:
+            return []
 
-        for event in getEvents:
-            if event.text == '036' or event.text == '037' or event.text == '038' or event.text == '046':
-                events.append(event.text)
+        events_from_api = bill_data.get('data', {}).get('attributes', {}).get('events', [])
 
-            if re.match(regex, event.text):
-                dates.append(event.text)
+        # Solo eventos que se actualizan
+        event_code_to_uuid = {
+            '030': '07c61f28-83f8-4f91-b965-f685f86cf6bf',
+            '031': '3d376019-618b-40eb-ae80-9cb143db54a4',
+            '032': '141db270-23ec-49c1-87a7-352d5413d309',
+            '033': 'c508eeb3-e0e8-48e8-a26f-5297f95c1f1f',
+            '034': 'e76e9b7a-baeb-4972-b76e-3a8ce2d4fa30',
+            '036': 'b8d4f8d3-aded-4b1f-873e-46c89a2538ed',
+            '037': '3ea77762-7208-457a-b035-70069ee42b5e',
+            '038': '0e333b6b-27b1-4aaf-87ce-ad60af6e52e6',
+            '046': 'f5d475c0-4433-422f-b3d2-7964ea0aa5c4',
+            '047': '3bb86c74-1d1c-4986-a905-a47624b09322',
+        }
 
-        for index, x in enumerate(events):
-            eventId = ""
-            if x == '036':
-                eventId = "b8d4f8d3-aded-4b1f-873e-46c89a2538ed"
-            if x == '037':
-                eventId = "3ea77762-7208-457a-b035-70069ee42b5e"
-            if x == '038':
-                eventId = '0e333b6b-27b1-4aaf-87ce-ad60af6e52e6'
-            if x == '046':
-                eventId = "f5d475c0-4433-422f-b3d2-7964ea0aa5c4"
+        parsed_events = []
 
-            parsed.append(
-                {'event': eventId, 'date': dates[index], 'code':x})
-        return parsed
+        for ev in events_from_api:
+            code = ev.get("code")
+
+            if code in event_code_to_uuid:
+                uuid = event_code_to_uuid[code]
+                date = ""
+
+                details = ev.get("details", [])
+                if details and "timestamp" in details[0]:
+                    ts = details[0]["timestamp"]
+                    date = datetime.fromtimestamp(ts / 1000).strftime('%Y-%m-%d')
+
+                parsed_events.append({
+                    "event": uuid,
+                    "date": date,
+                    "code": code
+                })
+
+        return parsed_events
 
     except Exception as e:
-        pass
+        print(f"Error en updateBillEvents: {str(e)}")
+        return []
+
