@@ -141,14 +141,17 @@ class NegotiationSummaryAV(BaseAV):
                     # Handle case when NegotiationSummary is not found
                     return response({'error': True, 'message': 'NegotiationSummary matching query does not exist.'}, 404)
             #parametro para buscar por opId
-            elif ('opId' in query_params and query_params['opId'] != 'undefined' and 'pdf' in query_params and query_params['pdf'] == 'undefined' and 
-              'id' in query_params and query_params['id'] == 'undefined' and 
+            elif ('opId' in query_params and query_params['opId'] != 'undefined' and 
+                'pdf' in query_params and query_params['pdf'] == 'undefined' and 
+                'id' in query_params and query_params['id'] == 'undefined' and 
                 len(query_params) == 3):
                 
-                data = NegotiationSummary.objects.get(opId = request.query_params['opId'])
-                serializer = NegotiationSummaryReadOnlySerializer(data)
-               
-                return response({'error': False, 'data': serializer.data}, 200)
+                try:
+                    data = NegotiationSummary.objects.get(opId=request.query_params['opId'])
+                    serializer = NegotiationSummaryReadOnlySerializer(data)
+                    return response({'error': False, 'data': serializer.data}, 200)
+                except NegotiationSummary.DoesNotExist:
+                    return response({'error': True, 'message': 'No se encontró el registro'}, 404)
             
             elif ('mode' in query_params and query_params['mode'] == 'query' and 
               'opId' in query_params and query_params['opId'] != 'undefined' and 
