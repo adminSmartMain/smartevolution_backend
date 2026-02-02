@@ -1,5 +1,7 @@
 import logging
 import uuid
+import re
+from django.db import transaction
 from django.utils import timezone
 
 from apps.bill.models import Bill, BillEvent
@@ -16,7 +18,7 @@ console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.DEBUG)
 
 formatter = logging.Formatter(
-    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 console_handler.setFormatter(formatter)
 
@@ -31,33 +33,59 @@ UUID_FV_TV = "a7c70741-8c1a-4485-8ed4-5297e54a978a"
 UUID_RECHAZADA = "dcec6f03-5dc1-42ea-a525-afada28686da"
 UUID_ENDOSADA = "29113618-6ab8-4633-aa8e-b3d6f242e8a4"
 
+
 # ============================================================
-# MAPEO EVENTOS DIAN → UUID INTERNO
+# HELPERS
 # ============================================================
-event_code_to_uuid = {
-    '030': '07c61f28-83f8-4f91-b965-f685f86cf6bf',
-    '031': '3d376019-618b-40eb-ae80-9cb143db54a4',
-    '032': '141db270-23ec-49c1-87a7-352d5413d309',
-    '033': 'c508eeb3-e0e8-48e8-a26f-5297f95c1f1f',
-    '034': 'e76e9b7a-baeb-4972-b76e-3a8ce2d4fa30',
-    '036': 'b8d4f8d3-aded-4b1f-873e-46c89a2538ed',
-    '037': '3ea77762-7208-457a-b035-70069ee42b5e',
-    '038': '0e333b6b-27b1-4aaf-87ce-ad60af6e52e6',
-    '046': 'f5d475c0-4433-422f-b3d2-7964ea0aa5c4',
-    '047': '3bb86c74-1d1c-4986-a905-a47624b09322',
-}
+def normalize_description(text: str) -> str:
+    if not text:
+        return ""
+    text = text.strip().lower()
+    text = re.sub(r"\s+", " ", text)
+    return text
+
+
+def is_valid_uuid(val: str) -> bool:
+    try:
+        uuid.UUID(str(val))
+        return True
+    except Exception:
+        return False
+
 
 # ============================================================
 # FUNCIÓN PRINCIPAL
 # ============================================================
+@transaction.atomic
 def updateMassiveTypeBill(bills_queryset, billEvents_function):
+    """
+    Recalcula typeBill y sincroniza BillEvents.
+
+    billEvents_function(cufe, update=True) DEBE devolver:
+    {
+        "type": "<uuid_type_bill>",
+        "events": [
+            {"code": "036", "description": "...", "date": "YYYY-MM-DD", ...},
+            ...
+        ],
+        "currentOwner": "...",
+        ...
+    }
+    """
     logger.debug("⚠⚠⚠ EJECUTANDO updateMassiveTypeBill ⚠⚠⚠")
     logger.debug(f"ARCHIVO: {__file__}")
 
     updated = 0
     errors = []
 
-    logger.debug(f"TOTAL FACTURAS RECIBIDAS PARA PROCESAR: {len(bills_queryset)}")
+    # bills_queryset puede ser QuerySet: len() dispara evaluación; ok si ya está en memoria,
+    # si no, mejor usar count()
+    try:
+        total = bills_queryset.count()
+    except Exception:
+        total = len(bills_queryset)
+
+    logger.debug(f"TOTAL FACTURAS RECIBIDAS PARA PROCESAR: {total}")
 
     for bill in bills_queryset:
         logger.debug("--------------------------------------------------------")
@@ -66,12 +94,12 @@ def updateMassiveTypeBill(bills_queryset, billEvents_function):
         )
 
         # ❌ EXCLUIR ENDOSADAS
-        if bill.typeBill_id == UUID_ENDOSADA:
+        if str(bill.typeBill_id) == UUID_ENDOSADA:
             logger.warning(f"⛔ EXCLUIDA - Factura endosada. billId={bill.billId}")
             continue
 
         # ❌ EXCLUIR RECHAZADAS
-        if bill.typeBill_id == UUID_RECHAZADA:
+        if str(bill.typeBill_id) == UUID_RECHAZADA:
             logger.warning(f"⛔ EXCLUIDA - Factura rechazada. billId={bill.billId}")
             continue
 
@@ -90,57 +118,73 @@ def updateMassiveTypeBill(bills_queryset, billEvents_function):
             # FACTURA SIN CUFE → FV
             # ----------------------------------------------------
             if not bill.cufe:
-                logger.info(f"ℹ Factura sin CUFE, asignando UUID_FV")
+                logger.info("ℹ Factura sin CUFE, asignando UUID_FV")
 
-                if bill.typeBill_id != UUID_FV:
-                    bill.typeBill_id = UUID_FV
-                    bill.save(update_fields=["typeBill"])
-                    updated += 1
+                if str(bill.typeBill_id) != UUID_FV:
+                    # valida que exista TypeBill
+                    try:
+                        TypeBill.objects.get(id=UUID_FV)
+                        bill.typeBill_id = UUID_FV
+                        bill.save(update_fields=["typeBill"])
+                        updated += 1
+                    except TypeBill.DoesNotExist:
+                        logger.error("❗ UUID_FV no existe en TypeBill")
                 continue
 
             # ----------------------------------------------------
-            # CONSULTAR EVENTOS DIAN
+            # CONSULTAR EVENTOS (BILLY/DIAN)
             # ----------------------------------------------------
-            logger.debug(f"Consultando eventos DIAN para CUFE={bill.cufe}")
+            logger.debug(f"Consultando eventos para CUFE={bill.cufe}")
             result = billEvents_function(bill.cufe, update=True)
+            
+            
 
             new_type = result.get("type")
-            api_events = result.get("events", [])
-            logger.debug('dddd')
-            logger.debug(api_events)
-            current_owner = result.get("currentOwner", "").strip()
+            api_events = result.get("events", []) or []
+            current_owner = (result.get("currentOwner") or "").strip()
 
             fields_to_update = []
 
             # ----------------------------------------------------
-            # ACTUALIZAR currentOwner
+            # ACTUALIZAR currentOwner (persistir directo en DB)
             # ----------------------------------------------------
-            if hasattr(bill, "currentOwner"):
-                if current_owner and current_owner != bill.currentOwner:
-                    logger.info(
-                        f"📝 Actualizando currentOwner: '{bill.currentOwner}' → '{current_owner}'"
-                    )
+            current_owner = (result.get("currentOwner") or "").strip()
+
+            if current_owner:
+                # Si quieres comparar contra el valor actual en memoria
+                prev_owner = (getattr(bill, "currentOwner", None) or "").strip()
+
+                if current_owner != prev_owner:
+                    logger.info(f"📝 currentOwner: '{prev_owner}' → '{current_owner}'")
+
+                    # 1) Actualiza DB (tabla Bills) de forma directa
+                    Bill.objects.filter(id=bill.id).update(currentOwner=current_owner)
+
+                    # 2) Mantén el objeto en memoria coherente (opcional pero recomendado)
                     bill.currentOwner = current_owner
-                    fields_to_update.append("currentOwner")
+
 
             # ----------------------------------------------------
-            # SINCRONIZAR EVENTOS (🔥 CLAVE 🔥)
+            # SINCRONIZAR EVENTOS (NUEVO POR code+description)
             # ----------------------------------------------------
             if api_events:
-                synced = sync_bill_events(bill, api_events)
-                logger.info(f"📅 Eventos sincronizados: {synced}")
+                synced = sync_bill_events_v2(bill, api_events)
+                logger.info(f"📅 Eventos sincronizados/creados: {synced}")
 
             # ----------------------------------------------------
             # ACTUALIZAR typeBill
             # ----------------------------------------------------
-            if new_type and new_type != bill.typeBill_id:
-                try:
-                    TypeBill.objects.get(id=new_type)
-                    bill.typeBill_id = new_type
-                    fields_to_update.append("typeBill")
-                    updated += 1
-                except TypeBill.DoesNotExist:
-                    logger.error(f"❗ typeBill {new_type} no existe")
+            if new_type and str(new_type) != str(bill.typeBill_id):
+                if is_valid_uuid(new_type):
+                    try:
+                        TypeBill.objects.get(id=new_type)
+                        bill.typeBill_id = new_type
+                        fields_to_update.append("typeBill")
+                        updated += 1
+                    except TypeBill.DoesNotExist:
+                        logger.error(f"❗ typeBill {new_type} no existe en TypeBill")
+                else:
+                    logger.error(f"❗ typeBill inválido: {new_type}")
 
             if fields_to_update:
                 bill.save(update_fields=fields_to_update)
@@ -156,90 +200,93 @@ def updateMassiveTypeBill(bills_queryset, billEvents_function):
 
     return {"updated": updated, "errors": errors}
 
-# ============================================================
-# SINCRONIZACIÓN DE EVENTOS (NO DUPLICA, NO ROMPE PK)
-# ============================================================
-def sync_bill_events(bill, api_events):
-    """
-    Sincroniza eventos DIAN:
-    - Acepta event como CODE ('030') o UUID
-    - NO duplica eventos
-    - Usa (bill_id + event_id) como llave lógica
-    """
-    events_updated = 0
 
-    # Eventos ya existentes en BD
-    existing_events = {
-        str(be.event_id): be
-        for be in BillEvent.objects.filter(bill=bill)
-    }
+# ============================================================
+# SINCRONIZACIÓN DE EVENTOS V2 (code + description)
+# ============================================================
+def sync_bill_events_v2(bill, api_events):
+    """
+    Ahora el evento lógico es (code + description).
+    Por cada item de api_events debe venir:
+      - code: "036"
+      - description: "Primera inscripción ..."
+      - date: "YYYY-MM-DD"
+
+    Estrategia:
+    1) Resolver TypeEvent por (code + description_norm). Si no existe -> crear.
+    2) Evitar duplicar BillEvent:
+       - por (bill_id, type_event_id, date) si date existe.
+       - si date viene vacío, evita duplicar por (bill_id, type_event_id).
+    """
+    created = 0
+
+    # Trae eventos existentes de ese bill para chequear duplicados
+    existing_qs = BillEvent.objects.filter(bill=bill).select_related("event")
+    existing_triplets = set()   # (event_id, date)
+    existing_pairs = set()      # (event_id)
+
+    for be in existing_qs:
+        eid = str(be.event_id)
+        existing_pairs.add(eid)
+        existing_triplets.add((eid, str(be.date)))
 
     for ev in api_events:
-        raw_event = ev.get("event") or ev.get("code")
-        date = ev.get("date")
-   
+        code = (ev.get("code") or "").strip()
+        desc = (ev.get("description") or ev.get("supplierDescription") or "").strip()
+        
+        date = ev.get("date")  # string 'YYYY-MM-DD' o date (según te llegue)
 
-        if not raw_event:
+        if not code or not desc:
             continue
 
-        # --------------------------------------------------
-        # 1️⃣ Determinar UUID REAL del evento
-        # --------------------------------------------------
-        if raw_event in event_code_to_uuid:
-            # viene como código DIAN (030, 032, etc)
-            event_uuid = event_code_to_uuid[raw_event]
+        desc_norm = normalize_description(desc)
+
+        # 1) Resolver/crear TypeEvent
+        type_event = None
+
+        # Filtra por code y compara por descripción normalizada (porque en BD no tienes campo norm)
+        candidates = TypeEvent.objects.filter(code=code)
+        for t in candidates:
+            if normalize_description(t.supplierDescription) == desc_norm:
+                type_event = t
+                break
+
+        if not type_event:
+            type_event = TypeEvent.objects.create(
+                id=uuid.uuid4(),
+                code=code,
+                supplierDescription=desc,   # <-- aquí
+                dianDescription="",         # <-- opcional
+                created_at=timezone.now(),
+                updated_at=timezone.now(),
+            )
+            logger.info(f"🆕 TypeEvent creado: code={code} desc='{desc[:60]}...' id={type_event.id}")
+
+        eid = str(type_event.id)
+
+        # 2) Evitar duplicados
+        if date:
+            key = (eid, str(date))
+            if key in existing_triplets:
+                continue
         else:
-            # puede venir ya como UUID
-            event_uuid = raw_event
+            if eid in existing_pairs:
+                continue
 
-        # --------------------------------------------------
-        # 2️⃣ Validar UUID
-        # --------------------------------------------------
-        try:
-            uuid.UUID(event_uuid)
-        except ValueError:
-            logger.warning(f"⚠ Evento DIAN inválido: {raw_event}")
-            continue
-
-        # --------------------------------------------------
-        # 3️⃣ Si ya existe → actualizar
-        # --------------------------------------------------
-        if event_uuid in existing_events:
-            be = existing_events[event_uuid]
-            fields = []
-
-            if date and be.date != date:
-                be.date = date
-                fields.append("date")
-
-            
-
-            if fields:
-                be.updated_at = timezone.now()
-                fields.append("updated_at")
-                be.save(update_fields=fields)
-
-            continue
-
-        # --------------------------------------------------
-        # 4️⃣ Crear nuevo evento
-        # --------------------------------------------------
-        try:
-            type_event = TypeEvent.objects.get(id=event_uuid)
-        except TypeEvent.DoesNotExist:
-            logger.warning(f"⚠ TypeEvent {event_uuid} no existe en catálogo")
-            continue
-
+        # 3) Crear BillEvent
         BillEvent.objects.create(
             id=uuid.uuid4(),
             bill=bill,
             event=type_event,
             date=date,
-            
             created_at=timezone.now(),
             updated_at=timezone.now(),
         )
 
-        events_updated += 1
+        if date:
+            existing_triplets.add((eid, str(date)))
+        existing_pairs.add(eid)
 
-    return events_updated
+        created += 1
+
+    return created

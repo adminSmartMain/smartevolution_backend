@@ -392,6 +392,7 @@ class BillAV(BaseAV):
                 'message': 'Error interno del servidor',
                 'detail': str(e)
             }, 500)
+            
     @checkRole(['admin'])
     def patch(self, request, pk):
         try:
@@ -505,7 +506,8 @@ class readBillAV(BaseAV):
                             "message": "Factura ya existía en Billy (409)"
                         })
                         # NO continue → CONTINUAMOS CON EL FLUJO NORMAL
-
+                    
+                        
                     # ---------- SI ES OTRO ERROR → FALLA ----------
                     elif r.status_code not in [200, 201]:
                         failedBills.append({
@@ -525,7 +527,7 @@ class readBillAV(BaseAV):
 
                 # -------------------- OBTENER EVENTOS (SIEMPRE) --------------------
                 events = billEvents(parsed['cufe'], update=True)
-
+                logger.debug(f'Eventos obtenidos de Billy para CUFE {parsed["cufe"]}: {events}')
                 parsed['events'] = events['events']
                 parsed['typeBill'] = events['type']
                 parsed['currentOwner'] = events['currentOwner']

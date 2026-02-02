@@ -225,10 +225,15 @@ class TypeOperationAdmin(ImportExportModelAdmin):
 @admin.register(TypeEvent)
 class TypeEventAdmin(ImportExportModelAdmin):
     resource_class = TypeEventResource
+
     list_display = ('id', 'code', 'description')
-    search_fields = ('code', 'description',)
-    list_filter = ('code', 'description',)
+    search_fields = ('code', 'supplierDescription', 'dianDescription')
+    list_filter = ('code',)  # <-- quitar description
     list_per_page = LIST_PER_PAGE
+
+    @admin.display(description="Description")
+    def description(self, obj):
+        return obj.supplierDescription or obj.dianDescription or ""
 
 @admin.register(TypeReceipt)
 class TypeReceiptAdmin(ImportExportModelAdmin):
