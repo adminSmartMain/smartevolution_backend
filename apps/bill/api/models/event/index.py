@@ -7,7 +7,7 @@ from apps.misc.models import TypeEvent
 class BillEvent(BaseModel):
     bill        = models.ForeignKey(Bill, on_delete=models.CASCADE)
     event       = models.ForeignKey(TypeEvent, on_delete=models.CASCADE)
-    date        = models.DateField()
+    date = models.DateTimeField() 
 
 
     class Meta:

@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
 def normalize_description(text: str) -> str:
     """
@@ -14,12 +14,8 @@ def normalize_description(text: str) -> str:
     text = re.sub(r"\s+", " ", text)
     return text
 
-def ts_to_date_str(ts_ms):
-    """
-    Convierte timestamp en ms a 'YYYY-MM-DD'. Si no puede, retorna ''.
-    """
-    try:
-        ts_ms = int(ts_ms)
-        return datetime.fromtimestamp(ts_ms / 1000).strftime("%Y-%m-%d")
-    except Exception:
-        return ""
+def ts_to_datetime_str(ts_ms: int, tz=timezone.utc) -> str:
+    if ts_ms is None:
+        return None
+    dt = datetime.fromtimestamp(int(ts_ms) / 1000, tz=tz)
+    return dt.strftime("%Y-%m-%d %H:%M:%S")

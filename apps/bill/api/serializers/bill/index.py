@@ -175,7 +175,7 @@ class BillSerializer(serializers.ModelSerializer):
             if raw_events:
                 for ev in raw_events:
                     code = (ev.get("code") or "").strip()
-                    desc = (ev.get("supplierDescription") or "").strip()
+                    desc = (ev.get("description") or "").strip()
                     date = ev.get("date")
 
                     if not code:
