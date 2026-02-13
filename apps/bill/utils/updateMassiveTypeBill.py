@@ -247,7 +247,7 @@ def sync_bill_events_v2(bill, api_events):
         # Filtra por code y compara por descripción normalizada (porque en BD no tienes campo norm)
         candidates = TypeEvent.objects.filter(code=code)
         for t in candidates:
-            if normalize_description(t.supplierDescription) == desc_norm:
+            if normalize_description(t.description) == desc_norm:
                 type_event = t
                 break
 

@@ -51,6 +51,9 @@ def billEvents(cufe, update=False):
                 is_endosada = any(c in codes for c in ["037", "047", "046"])
                 is_fv_tv = ("030" in codes and "032" in codes and ("033" in codes or "034" in codes))
 
+
+
+
                 # Aplanar eventos:
                 # - si ev trae details (lista), cada detail => un evento individual
                 parsed_events = []

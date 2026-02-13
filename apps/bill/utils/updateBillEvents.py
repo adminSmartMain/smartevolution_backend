@@ -24,7 +24,7 @@ def updateBillEvents(bill_data):
                 continue
 
             for d in details:
-                desc = d.get("supplierDescription", "") or ""
+                desc = d.get("description", "") or ""
                 date = ts_to_datetime_str(d.get("timestamp"))
 
                 parsed_events.append({
