@@ -4,7 +4,7 @@ import environ
 import logging
 from datetime import datetime
 
-from .events import normalize_description, ts_to_datetime_str # ajusta el import a donde lo pongas
+from .events import normalize_description,  ts_to_datetime # ajusta el import a donde lo pongas
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -75,8 +75,8 @@ def billEvents(cufe, update=False):
                     for d in details:
                         desc = d.get("description", "") or ""
 
-                        date = ts_to_datetime_str(d.get("timestamp"))
-
+                        date =  ts_to_datetime(d.get("timestamp"))
+                        logger.debug(date)
                         parsed_events.append({
                             "code": code,
                             "description": desc,

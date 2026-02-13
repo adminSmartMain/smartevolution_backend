@@ -1,5 +1,5 @@
 from datetime import datetime
-from .events import normalize_description, ts_to_datetime_str  # ajusta el import
+from .events import normalize_description, ts_to_datetime  # ajusta el import
 
 def updateBillEvents(bill_data):
     try:
@@ -25,7 +25,7 @@ def updateBillEvents(bill_data):
 
             for d in details:
                 desc = d.get("description", "") or ""
-                date = ts_to_datetime_str(d.get("timestamp"))
+                date = ts_to_datetime(d.get("timestamp"))
 
                 parsed_events.append({
                     "code": code,
