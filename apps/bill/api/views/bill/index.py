@@ -245,23 +245,56 @@ class BillAV(BaseAV):
                 serializer = PreOperationReadOnlySerializer(op)
                 return response({'error': False, 'data': serializer.data}, 200)
 
-            # -----------------------------
-            # NUEVO CASO: bill_operation
-            # -----------------------------
             if params.get('bill_operation') is not None:
                 logger.debug('Caso: obtener factura para comprobar antes de crear operacion')
+
+                bill_number = params.get('bill_operation')   # Ej: FE1113
+                emitter_client_id = params.get('emitter')    # UUID del Client (viene del front)
+
                 try:
-                    bill = Bill.objects.get(billId=params.get('bill_operation'))
+                    # Validaciones mínimas
+                    if not bill_number:
+                        return response({'error': True, 'message': 'bill_operation es requerido'}, 400)
+
+                    if not emitter_client_id:
+                        return response({'error': True, 'message': 'emitter es requerido para buscar por número de factura'}, 400)
+
+                    # Convertir UUID del emisor -> document_number (que es lo que guarda Bill.emitterId)
+                    emitter_client = Client.objects.filter(document_number=emitter_client_id).only('document_number').first()
+                    if not emitter_client or not emitter_client.document_number:
+                        return response({'error': True, 'message': f'Emisor con ID {emitter_client_id} no encontrado'}, 404)
+
+                    emitter_doc = emitter_client.document_number
+
+                    # Buscar por combinación (billId + emitterId)
+                    qs = Bill.objects.filter(billId=bill_number, emitterId=emitter_doc)
+
+                    count = qs.count()
+                    if count == 0:
+                        return response({'error': True, 'message': 'Factura no encontrada'}, 404)
+
+                    # Si por data sucia hay más de una, responde claro (en vez de reventar con get())
+                    if count > 1:
+                        logger.error(f"Ambigüedad: existen {count} facturas con billId={bill_number} y emitterId={emitter_doc}")
+                        return response({
+                            'error': True,
+                            'message': 'Hay más de una factura con el mismo número para este emisor (data inconsistente).',
+                            'detail': f'billId={bill_number}, emitterId={emitter_doc}, count={count}'
+                        }, 409)
+
+                    bill = qs.first()
+
+                    # Serializar según CUFE
                     if bill.cufe:
                         logger.debug('Caso 43: con cufe')
                         serializer = BillEventReadOnlySerializer(bill)
                         return response({'error': False, 'data': serializer.data}, 200)
+
                     serializer = BillDetailSerializer(bill)
                     return response({'error': False, 'data': serializer.data}, 200)
-                except Bill.DoesNotExist:
-                    return response({'error': True, 'message': 'Factura no encontrada'}, 404)
+
                 except Exception as e:
-                    logger.error(f"Error buscando por bill_operation: {str(e)}")
+                    logger.error(f"Error buscando por bill_operation: {str(e)}", exc_info=True)
                     return response({'error': True, 'message': str(e)}, 400)
 
             # -----------------------------
