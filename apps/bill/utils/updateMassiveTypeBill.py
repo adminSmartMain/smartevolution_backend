@@ -8,9 +8,6 @@ from apps.bill.models import Bill, BillEvent
 from apps.misc.api.models.typeEvent.index import TypeEvent
 from apps.misc.api.models.typeBill.index import TypeBill
 
-# ============================================================
-# LOGGER
-# ============================================================
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -23,25 +20,17 @@ console_handler.setFormatter(formatter)
 if not logger.handlers:
     logger.addHandler(console_handler)
 
-# ============================================================
-# UUIDs FINALES
-# ============================================================
 UUID_FV = "fdb5feb4-24e9-41fc-9689-31aff60b76c9"
 UUID_FV_TV = "a7c70741-8c1a-4485-8ed4-5297e54a978a"
 UUID_RECHAZADA = "dcec6f03-5dc1-42ea-a525-afada28686da"
 UUID_ENDOSADA = "29113618-6ab8-4633-aa8e-b3d6f242e8a4"
 
-# ============================================================
-# CÓDIGOS DE EVENTOS PARA CLASIFICACIÓN RADIAN
-# ============================================================
-RECHAZO_CODES = {"031"}          # reclamo
-ENDOSO_CODES = {"037", "047"}    # endoso electrónico (ajusta si manejas otros)
-TV_REQUIRED = {"030", "032"}     # recibido + bien/servicio
-TV_ACCEPT = {"033", "034"}       # aceptación expresa (o 034)
+RECHAZO_CODES = {"031"}
+ENDOSO_CODES = {"037", "047"}
+TV_REQUIRED = {"030", "032"}
+TV_ACCEPT = {"033", "034"}
 
-# ============================================================
-# HELPERS
-# ============================================================
+
 def normalize_description(text: str) -> str:
     if not text:
         return ""
@@ -59,58 +48,26 @@ def is_valid_uuid(val: str) -> bool:
 
 
 def compute_type_bill_from_events(api_events):
-    """
-    Reglas:
-    - Rechazada: si tiene 031
-    - Endosada: si tiene 037 o 047
-    - FV-TV: si tiene 030 y 032 y (033 o 034)
-    - FV: en otro caso
-    """
     codes = {(e.get("code") or "").strip() for e in (api_events or [])}
     codes.discard("")
 
     if codes & RECHAZO_CODES:
         return UUID_RECHAZADA
-
     if codes & ENDOSO_CODES:
         return UUID_ENDOSADA
-
     if (TV_REQUIRED <= codes) and (codes & TV_ACCEPT):
         return UUID_FV_TV
-
     return UUID_FV
 
 
-# ============================================================
-# FUNCIÓN PRINCIPAL
-# ============================================================
 @transaction.atomic
 def updateMassiveTypeBill(bills_queryset, billEvents_function):
-    """
-    Recalcula typeBill y sincroniza BillEvents.
-
-    billEvents_function(cufe, update=True) DEBE devolver:
-    {
-        "events": [
-            {
-              "code": "036",
-              "dianDescription": "...",   # ideal
-              "description": "...",       # opcional
-              "supplierDescription": "...",
-              "date": "YYYY-MM-DDTHH:mm:ss" o "YYYY-MM-DD",
-              ...
-            },
-            ...
-        ],
-        "currentOwner": "...",
-        ...
-    }
-    """
     logger.debug("⚠⚠⚠ EJECUTANDO updateMassiveTypeBill ⚠⚠⚠")
     logger.debug(f"ARCHIVO: {__file__}")
 
     updated = 0
     errors = []
+    warnings = []  # ✅ para frontend
 
     try:
         total = bills_queryset.count()
@@ -121,14 +78,9 @@ def updateMassiveTypeBill(bills_queryset, billEvents_function):
 
     for bill in bills_queryset:
         logger.debug("--------------------------------------------------------")
-        logger.debug(
-            f"➡ Procesando factura ID {bill.id} | billId {bill.billId} | typeBill actual {bill.typeBill_id}"
-        )
+        logger.debug(f"➡ Procesando factura ID {bill.id} | billId {bill.billId} | typeBill actual {bill.typeBill_id}")
 
-        # OJO: ya NO excluimos endosadas/rechazadas aquí,
-        # porque justamente hay casos donde están mal en BD y hay que corregirlos.
-
-        # ❌ EXCLUIR OPERACIONES CANCELADAS
+        # Excluir operaciones canceladas
         try:
             if hasattr(bill, "preoperation_set") and bill.preoperation_set.filter(status=4).exists():
                 logger.warning(f"⛔ EXCLUIDA - Operación cancelada. billId={bill.billId}")
@@ -139,9 +91,7 @@ def updateMassiveTypeBill(bills_queryset, billEvents_function):
         logger.info(f"✔ Factura PERMITIDA para actualización: billId={bill.billId}")
 
         try:
-            # ----------------------------------------------------
-            # FACTURA SIN CUFE → FV
-            # ----------------------------------------------------
+            # Factura sin CUFE -> FV (regla local, no depende de Billy)
             if not bill.cufe:
                 logger.info("ℹ Factura sin CUFE, asignando UUID_FV")
 
@@ -156,19 +106,31 @@ def updateMassiveTypeBill(bills_queryset, billEvents_function):
                 continue
 
             # ----------------------------------------------------
-            # CONSULTAR EVENTOS (BILLY/DIAN)
+            # CONSULTAR EVENTOS (BILLY)
             # ----------------------------------------------------
             logger.debug(f"Consultando eventos para CUFE={bill.cufe}")
             result = billEvents_function(bill.cufe, update=True)
+
+            # ✅ Si Billy falla: NO tocar nada de esta factura
+            if not result or result.get("ok") is False:
+                warn_msg = (result or {}).get("warning") or "Billy no disponible"
+                err_code = (result or {}).get("error") or "billy_unknown"
+
+                logger.warning(f"⚠ Billy falló ({err_code}) billId={bill.billId} cufe={bill.cufe}. No se actualiza nada.")
+                warnings.append({
+                    "billId": bill.billId,
+                    "bill_uuid": str(bill.id),
+                    "code": err_code,
+                    "message": warn_msg
+                })
+                continue
 
             api_events = result.get("events", []) or []
             current_owner = (result.get("currentOwner") or "").strip()
 
             fields_to_update = []
 
-            # ----------------------------------------------------
-            # ACTUALIZAR currentOwner (persistir directo en DB)
-            # ----------------------------------------------------
+            # Actualizar currentOwner
             if current_owner:
                 prev_owner = (getattr(bill, "currentOwner", None) or "").strip()
                 if current_owner != prev_owner:
@@ -176,16 +138,12 @@ def updateMassiveTypeBill(bills_queryset, billEvents_function):
                     Bill.objects.filter(id=bill.id).update(currentOwner=current_owner)
                     bill.currentOwner = current_owner
 
-            # ----------------------------------------------------
-            # SINCRONIZAR EVENTOS
-            # ----------------------------------------------------
+            # Sincronizar eventos
             if api_events:
                 synced = sync_bill_events_v2(bill, api_events)
                 logger.info(f"📅 Eventos sincronizados/creados: {synced}")
 
-            # ----------------------------------------------------
-            # RECALCULAR typeBill POR CÓDIGOS (NO confiar en result['type'])
-            # ----------------------------------------------------
+            # Recalcular typeBill
             new_type = compute_type_bill_from_events(api_events)
 
             if new_type and str(new_type) != str(bill.typeBill_id):
@@ -211,24 +169,13 @@ def updateMassiveTypeBill(bills_queryset, billEvents_function):
     logger.error("========================================================")
     logger.error(f"🔥 TOTAL FACTURAS ACTUALIZADAS: {updated}")
     logger.error(f"❗ ERRORES: {len(errors)}")
+    logger.error(f"⚠ WARNINGS (Billy): {len(warnings)}")
     logger.error("========================================================")
 
-    return {"updated": updated, "errors": errors}
+    return {"updated": updated, "errors": errors, "warnings": warnings}
 
 
-# ============================================================
-# SINCRONIZACIÓN DE EVENTOS V2 (code + DIAN description)
-# ============================================================
 def sync_bill_events_v2(bill, api_events):
-    """
-    Evento lógico: (code + dianDescription normalizada)
-
-    Estrategia:
-    1) Resolver TypeEvent por (code + dianDescription_norm). Si no existe -> crear.
-    2) Evitar duplicar BillEvent:
-       - por (bill_id, type_event_id, date) si date existe.
-       - si date viene vacío, evita duplicar por (bill_id, type_event_id).
-    """
     created = 0
 
     existing_qs = BillEvent.objects.filter(bill=bill).select_related("event")
@@ -242,26 +189,17 @@ def sync_bill_events_v2(bill, api_events):
 
     for ev in api_events:
         code = (ev.get("code") or "").strip()
-
-        # ✅ SOLO DIAN. Si viene vacío, se ignora (y por diseño en front se verá vacío
-        # solo si el front construye desde el payload; en DB no creamos TypeEvent “inventado”)
-        desc = (ev.get("dianDescription") or "").strip()
-
-        # Si tu proveedor pone la DIAN en otra clave, usa esto:
-        # desc = (ev.get("dianDescription") or ev.get("description") or "").strip()
-
-        date = ev.get("date")  # string 'YYYY-MM-DD...' o date (según te llegue)
+        desc = (ev.get("dianDescription") or "").strip()  # si no tienes dianDescription, cámbialo a ev.get("description")
+        date = ev.get("date")
 
         if not code or not desc:
             continue
 
         desc_norm = normalize_description(desc)
 
-        # 1) Resolver/crear TypeEvent por code + dianDescription (normalizada)
         type_event = None
         candidates = TypeEvent.objects.filter(code=code)
         for t in candidates:
-            # OJO: aquí se compara contra dianDescription en BD
             if normalize_description(getattr(t, "dianDescription", "") or "") == desc_norm:
                 type_event = t
                 break
@@ -270,8 +208,8 @@ def sync_bill_events_v2(bill, api_events):
             type_event = TypeEvent.objects.create(
                 id=uuid.uuid4(),
                 code=code,
-                supplierDescription="",      # intencionalmente vacío
-                dianDescription=desc,        # SOLO DIAN
+                supplierDescription="",
+                dianDescription=desc,
                 created_at=timezone.now(),
                 updated_at=timezone.now(),
             )
@@ -279,7 +217,6 @@ def sync_bill_events_v2(bill, api_events):
 
         eid = str(type_event.id)
 
-        # 2) Evitar duplicados
         if date:
             key = (eid, str(date))
             if key in existing_triplets:
@@ -288,7 +225,6 @@ def sync_bill_events_v2(bill, api_events):
             if eid in existing_pairs:
                 continue
 
-        # 3) Crear BillEvent
         BillEvent.objects.create(
             id=uuid.uuid4(),
             bill=bill,

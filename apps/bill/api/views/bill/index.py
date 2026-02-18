@@ -245,6 +245,9 @@ class BillAV(BaseAV):
                 serializer = PreOperationReadOnlySerializer(op)
                 return response({'error': False, 'data': serializer.data}, 200)
 
+            # -----------------------------
+            # NUEVO CASO: bill_operation
+            # -----------------------------
             if params.get('bill_operation') is not None:
                 logger.debug('Caso: obtener factura para comprobar antes de crear operacion')
 
@@ -406,7 +409,10 @@ class BillAV(BaseAV):
             page_ids = [obj.id for obj in page]
 
             qs_page = Bill.objects.filter(id__in=page_ids)
-            updateMassiveTypeBill(qs_page, billEvents)
+
+            # ✅ Ejecutar actualización masiva y capturar warnings de Billy
+            update_result = updateMassiveTypeBill(qs_page, billEvents)
+            billy_warnings = (update_result or {}).get("warnings", [])
 
             # refrescar manteniendo orden
             refreshed = list(Bill.objects.filter(id__in=page_ids))
@@ -416,7 +422,24 @@ class BillAV(BaseAV):
             # 9. SERIALIZACIÓN
             # -----------------------------
             serializer = BillReadOnlySerializer(ordered_page, many=True)
-            return self.get_paginated_response(serializer.data)
+
+            # ✅ Response paginado normal
+            resp = self.get_paginated_response(serializer.data)
+
+            # ✅ Agregar mensaje de advertencia para el frontend si Billy falló
+            if billy_warnings:
+                resp.data["billy_warning"] = True
+                resp.data["billy_warning_message"] = (
+                    f"Billy está lento o no respondió correctamente. "
+                    f"{len(billy_warnings)} facturas no pudieron actualizar eventos. "
+                    "No se realizaron cambios sobre esas facturas."
+                )
+                resp.data["warnings"] = billy_warnings
+            else:
+                resp.data["billy_warning"] = False
+
+            return resp
+
 
         except Exception as e:
             logger.error("Error en /api/bill/", exc_info=True)
