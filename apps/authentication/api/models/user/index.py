@@ -41,9 +41,9 @@ class User(AbstractUser):
     password    = models.CharField(max_length=255, verbose_name='password')
     phone_number = models.CharField(max_length=255, blank=True, null=True, unique=False)
     code        = models.CharField(max_length=255, blank=True, null=True)
-
+    
     objects = UserManager()
-
+    
     USERNAME_FIELD  = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
 

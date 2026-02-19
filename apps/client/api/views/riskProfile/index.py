@@ -8,7 +8,9 @@ from apps.client.api.serializers.index import RiskProfileSerializer, RiskProfile
 from apps.base.utils.index import response
 # Decorators
 from apps.base.decorators.index import checkRole
-
+from apps.client.api.models.riskProfile.index import LevelRisk
+from apps.client.api.serializers.riskProfile.index import LevelRiskSerializer
+from rest_framework import viewsets
 
 class RiskProfileAV(APIView):
     
@@ -69,3 +71,28 @@ class RiskProfileByClientAV(APIView):
                 'msg': 'No se ha encontrado un perfil de riesgo para el cliente',
                 'client': client.social_reason if client.social_reason else client.first_name + ' ' + client.last_name
             }}, 400)
+            
+
+class LevelRiskViewSet(APIView):
+    
+    
+    @checkRole(['admin'])
+    def get(self, request, pk=None):
+        if pk:
+            riskProfile = LevelRisk.objects.get(pk=pk)
+            serializer  = LevelRiskSerializer(riskProfile)
+            return response({'error': False, 'data': serializer.data}, 200)
+        else:
+            riskProfile = LevelRisk.objects.filter(state=1)
+            serializer  = LevelRiskSerializer(riskProfile, many=True)
+            return response({'error': False, 'data': serializer.data}, 200)
+
+    @checkRole(['admin'])
+    def post(self, request):
+        serializer =LevelRiskSerializer(data=request.data, context={'request':request})
+        if serializer.is_valid():
+            serializer.save()
+            return response({'error': False, 'data': serializer.data}, 200)
+        else:
+            return response({'error': True, 'message': serializer.errors}, 400)
+    

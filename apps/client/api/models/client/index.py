@@ -26,9 +26,47 @@ class Client(BaseModel):
     income          = models.SmallIntegerField(default=0)
     entered_by      = models.ForeignKey('authentication.User', on_delete=models.CASCADE, related_name='entered_by')
     status          = models.IntegerField(default=0)
+    profile_image   =   models.CharField(max_length=255, null=True, blank=True)
+    riesgo = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'clients'
         verbose_name = 'clients'
         verbose_name_plural = 'clients'
         ordering = ['-created_at']
+
+
+class ClientRole(BaseModel):
+    state = models.IntegerField(default=1)
+    code = models.IntegerField(default=0)
+    name = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = "clientRoles"
+        verbose_name = "clientRole"
+        verbose_name_plural = "clientRoles"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+
+class ClientRoleAssignment(BaseModel):
+    client = models.ForeignKey( Client, on_delete=models.CASCADE, db_column="clients_id", related_name="role_assignments")
+    role = models.ForeignKey(ClientRole, on_delete=models.CASCADE, db_column="clientroles_id", related_name="client_assignments")
+
+   
+    notes = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = "client_role_assignments"
+        verbose_name = "client_role_assignment"
+        verbose_name_plural = "client_role_assignments"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["client", "role"], name="uniq_client_role_assignment")
+        ]
+
+    def __str__(self):
+        return f"{self.client_id} -> {self.role_id}"
