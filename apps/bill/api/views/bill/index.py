@@ -250,18 +250,54 @@ class BillAV(BaseAV):
             # -----------------------------
             if params.get('bill_operation') is not None:
                 logger.debug('Caso: obtener factura para comprobar antes de crear operacion')
+
+                bill_number = params.get('bill_operation')   # Ej: FE1113
+                emitter_client_id = params.get('emitter')    # UUID del Client (viene del front)
+
                 try:
-                    bill = Bill.objects.get(billId=params.get('bill_operation'))
+                    # Validaciones mínimas
+                    if not bill_number:
+                        return response({'error': True, 'message': 'bill_operation es requerido'}, 400)
+
+                    if not emitter_client_id:
+                        return response({'error': True, 'message': 'emitter es requerido para buscar por número de factura'}, 400)
+
+                    # Convertir UUID del emisor -> document_number (que es lo que guarda Bill.emitterId)
+                    emitter_client = Client.objects.filter(document_number=emitter_client_id).only('document_number').first()
+                    if not emitter_client or not emitter_client.document_number:
+                        return response({'error': True, 'message': f'Emisor con ID {emitter_client_id} no encontrado'}, 404)
+
+                    emitter_doc = emitter_client.document_number
+
+                    # Buscar por combinación (billId + emitterId)
+                    qs = Bill.objects.filter(billId=bill_number, emitterId=emitter_doc)
+
+                    count = qs.count()
+                    if count == 0:
+                        return response({'error': True, 'message': 'Factura no encontrada'}, 404)
+
+                    # Si por data sucia hay más de una, responde claro (en vez de reventar con get())
+                    if count > 1:
+                        logger.error(f"Ambigüedad: existen {count} facturas con billId={bill_number} y emitterId={emitter_doc}")
+                        return response({
+                            'error': True,
+                            'message': 'Hay más de una factura con el mismo número para este emisor (data inconsistente).',
+                            'detail': f'billId={bill_number}, emitterId={emitter_doc}, count={count}'
+                        }, 409)
+
+                    bill = qs.first()
+
+                    # Serializar según CUFE
                     if bill.cufe:
                         logger.debug('Caso 43: con cufe')
                         serializer = BillEventReadOnlySerializer(bill)
                         return response({'error': False, 'data': serializer.data}, 200)
+
                     serializer = BillDetailSerializer(bill)
                     return response({'error': False, 'data': serializer.data}, 200)
-                except Bill.DoesNotExist:
-                    return response({'error': True, 'message': 'Factura no encontrada'}, 404)
+
                 except Exception as e:
-                    logger.error(f"Error buscando por bill_operation: {str(e)}")
+                    logger.error(f"Error buscando por bill_operation: {str(e)}", exc_info=True)
                     return response({'error': True, 'message': str(e)}, 400)
 
             # -----------------------------
@@ -373,7 +409,10 @@ class BillAV(BaseAV):
             page_ids = [obj.id for obj in page]
 
             qs_page = Bill.objects.filter(id__in=page_ids)
-            updateMassiveTypeBill(qs_page, billEvents)
+
+            # ✅ Ejecutar actualización masiva y capturar warnings de Billy
+            update_result = updateMassiveTypeBill(qs_page, billEvents)
+            billy_warnings = (update_result or {}).get("warnings", [])
 
             # refrescar manteniendo orden
             refreshed = list(Bill.objects.filter(id__in=page_ids))
@@ -383,7 +422,24 @@ class BillAV(BaseAV):
             # 9. SERIALIZACIÓN
             # -----------------------------
             serializer = BillReadOnlySerializer(ordered_page, many=True)
-            return self.get_paginated_response(serializer.data)
+
+            # ✅ Response paginado normal
+            resp = self.get_paginated_response(serializer.data)
+
+            # ✅ Agregar mensaje de advertencia para el frontend si Billy falló
+            if billy_warnings:
+                resp.data["billy_warning"] = True
+                resp.data["billy_warning_message"] = (
+                    f"Billy está lento o no respondió correctamente. "
+                    f"{len(billy_warnings)} facturas no pudieron actualizar eventos. "
+                    "No se realizaron cambios sobre esas facturas."
+                )
+                resp.data["warnings"] = billy_warnings
+            else:
+                resp.data["billy_warning"] = False
+
+            return resp
+
 
         except Exception as e:
             logger.error("Error en /api/bill/", exc_info=True)
@@ -392,6 +448,7 @@ class BillAV(BaseAV):
                 'message': 'Error interno del servidor',
                 'detail': str(e)
             }, 500)
+            
     @checkRole(['admin'])
     def patch(self, request, pk):
         try:
@@ -505,7 +562,8 @@ class readBillAV(BaseAV):
                             "message": "Factura ya existía en Billy (409)"
                         })
                         # NO continue → CONTINUAMOS CON EL FLUJO NORMAL
-
+                    
+                        
                     # ---------- SI ES OTRO ERROR → FALLA ----------
                     elif r.status_code not in [200, 201]:
                         failedBills.append({
@@ -525,7 +583,7 @@ class readBillAV(BaseAV):
 
                 # -------------------- OBTENER EVENTOS (SIEMPRE) --------------------
                 events = billEvents(parsed['cufe'], update=True)
-
+                logger.debug(f'Eventos obtenidos de Billy para CUFE {parsed["cufe"]}: {events}')
                 parsed['events'] = events['events']
                 parsed['typeBill'] = events['type']
                 parsed['currentOwner'] = events['currentOwner']

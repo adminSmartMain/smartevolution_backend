@@ -28,7 +28,15 @@ from rest_framework.exceptions import ValidationError
 # Configurar el logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+from django.db import transaction
+from django.core.exceptions import ValidationError
 
+from apps.base.exceptions import HttpException
+from apps.bill.api.models.bill.index import Bill
+from apps.bill.api.models.event.index import BillEvent
+from apps.misc.api.models.typeEvent.index import TypeEvent# ajusta imports
+
+from apps.bill.utils.events import normalize_description  # ajusta a tu ruta
 
 def delete_old_file_from_s3(file_url):
     """
@@ -132,46 +140,95 @@ class BillSerializer(serializers.ModelSerializer):
         model = Bill
         fields = '__all__'
         extra_kwargs = {
-            'id': {
-                'required': False,
-                'read_only': False  # Permitir asignación manual
-            }
+            'id': {'required': False, 'read_only': False}
         }
 
+    @transaction.atomic
     def create(self, validated_data):
         try:
             validated_data['id'] = gen_uuid()
             validated_data['user_created_at'] = self.context['request'].user
-            validated_data['currentBalance']  = validated_data['total']
-            
+            validated_data['currentBalance'] = validated_data['total']
+
             # upload the bill to s3
             if 'file' in validated_data:
                 fileUrl = validated_data.get('file', None)
                 if fileUrl:
-                    fileUrl = uploadFileBase64(files_bse64=[fileUrl], file_path=f'bill/{validated_data["id"]}')
+                    fileUrl = uploadFileBase64(
+                        files_bse64=[fileUrl],
+                        file_path=f'bill/{validated_data["id"]}'
+                    )
                     validated_data['file'] = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{fileUrl}"
-            # save the bill
+
             bill = Bill.objects.create(**validated_data)
-            # save the credit notes
+
+            # credit notes
             if 'creditNotes' in self.context['request'].data:
                 for creditNote in self.context['request'].data['creditNotes']:
                     creditNote['id'] = gen_uuid()
                     creditNote['user_created_at'] = self.context['request'].user
                     creditNote['Bill'] = bill
                     CreditNote.objects.create(**creditNote)
-            # save the events
-            if 'events' in self.context['request'].data:
-                for event in self.context['request'].data['events']:
-                    event['user_created_at'] = self.context['request'].user
-                    event['Bill'] = bill
+
+            # events (NUEVO)
+            raw_events = self.context['request'].data.get('events', [])
+            if raw_events:
+                for ev in raw_events:
+                    code = (ev.get("code") or "").strip()
+                    desc = (ev.get("description") or "").strip()
+                    date = ev.get("date")
+
+                    if not code:
+                        # Si quieres ser estricto:
+                        # raise ValidationError("Evento sin code")
+                        continue
+
+                    # normaliza descripción para comparar
+                    desc_norm = normalize_description(desc)
+
+                    # buscar TypeEvent existente por code y description (normalizada)
+                    # Como en BD guardas description "original", la comparación la hacemos por igualdad normalizada.
+                    # Opción simple: comparar por code exacto y description exacta.
+                    # Mejor: guardar description normalizada también (pero ahora NO tienes ese campo).
+                    #
+                    # Solución sin tocar modelo:
+                    candidates = TypeEvent.objects.filter(code=code)
+                    found = None
+                    
+                    for t in candidates:
+                        if normalize_description(t.supplierDescription) == desc_norm:
+                            found = t
+                            break
+
+                    if not found:
+                        found = TypeEvent.objects.create(
+                            id=gen_uuid(),
+                            user_created_at=self.context['request'].user,
+                            code=code,
+                            supplierDescription=desc,   # <-- aquí
+                            dianDescription=""          # <-- opcional
+                        )
+                    # evitar duplicar BillEvent mismo bill + typeevent + date (opcional)
+                    # Si tu negocio permite duplicados, quítalo.
+                    if date:
+                        exists = BillEvent.objects.filter(
+                            bill=bill,
+                            event=found,
+                            date=date
+                        ).exists()
+                        if exists:
+                            continue
+
                     BillEvent.objects.create(
-                        id = gen_uuid(),
-                        user_created_at = self.context['request'].user,
-                        bill     = bill,
-                        event_id = event['event'],
-                        date=event['date']
+                        id=gen_uuid(),
+                        user_created_at=self.context['request'].user,
+                        bill=bill,
+                        event=found,
+                        date=date
                     )
-            return validated_data
+
+            return bill
+
         except Exception as e:
             raise HttpException(500, e)
 
@@ -497,7 +554,7 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
                 return False
             events = self._get_billEvents(obj)
             owner = events.get("holderIdNumber", "").strip()
-            logger.debug(owner,obj.emitterId)
+           
             return owner == obj.emitterId
         except:
             return False
@@ -532,42 +589,88 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
                 return []
 
             api_resp = self._get_billEvents(obj)
-            api_events = api_resp.get("events", [])
+            api_events = api_resp.get("events", []) or []
 
-            # Sync BD
             for ev in api_events:
-                uuid = ev.get('event')
-                date = ev.get('date')
-                if not uuid:
-                    continue
-                try:
-                    type_ev = TypeEvent.objects.get(id=uuid)
-                except TypeEvent.DoesNotExist:
+                code = (ev.get("code") or "").strip()
+                supplier_desc = (ev.get("description") or "").strip()
+                date = ev.get("date") or None
+
+                if not code:
                     continue
 
-                bill_ev, created = BillEvent.objects.get_or_create(
-                    bill=obj,
-                    event=type_ev,
-                    defaults={'id': gen_uuid(), 'date': date}
-                )
+                type_ev = None
 
-                if not created and bill_ev.date != date:
-                    bill_ev.date = date
-                    bill_ev.save()
+                # 1) Si viene description, busca por code + supplierDescription(normalizada)
+                if supplier_desc:
+                    desc_norm = normalize_description(supplier_desc)
+                    candidates = TypeEvent.objects.filter(code=code)
+                    for t in candidates:
+                        if normalize_description(t.supplierDescription) == desc_norm:
+                            type_ev = t
+                            break
 
-            final = BillEvent.objects.filter(bill=obj).select_related("event")
+                    # si no existe en catálogo, lo creas
+                    if not type_ev:
+                        type_ev = TypeEvent.objects.create(
+                            id=gen_uuid(),
+                            code=code,
+                            supplierDescription=supplier_desc,
+                            dianDescription="",
+                        )
+
+                # 2) Si NO viene description, usa catálogo por code
+                else:
+                    # Prioriza uno con dianDescription lleno, si existe
+                    type_ev = (
+                        TypeEvent.objects
+                        .filter(code=code)
+                        .exclude(dianDescription__isnull=True)
+                        .exclude(dianDescription__exact="")
+                        .first()
+                    ) or TypeEvent.objects.filter(code=code).first()
+
+                    # Si ni siquiera existe por code, ahí sí toca crearlo vacío
+                    if not type_ev:
+                        type_ev = TypeEvent.objects.create(
+                            id=gen_uuid(),
+                            code=code,
+                            supplierDescription="",
+                            dianDescription="",
+                        )
+
+                # 3) Persistir BillEvent
+                if date:
+                    BillEvent.objects.get_or_create(
+                        bill=obj,
+                        event=type_ev,
+                        date=date,
+                        defaults={'id': gen_uuid()}
+                    )
+                else:
+                    BillEvent.objects.get_or_create(
+                        bill=obj,
+                        event=type_ev,
+                        defaults={'id': gen_uuid(), 'date': None}
+                    )
+
+            final = BillEvent.objects.filter(bill=obj).select_related("event").order_by("date")
 
             return [
                 {
-                    "event": e.event.description,
+                    "code": e.event.code,
+                    "supplierDescription": e.event.supplierDescription or "",
+                    "dianDescription": e.event.dianDescription or "",
+                    "description": (e.event.dianDescription or e.event.supplierDescription or ""),
                     "date": e.date,
-                    "code": e.event.code
                 }
                 for e in final
             ]
+
         except Exception as e:
-            logger.error(f"Error en get_events bill {obj.id}: {str(e)}")
+            logger.error(f"Error en get_events bill {obj.id}: {str(e)}", exc_info=True)
             return []
+
 
     # ============================================================
     # ENDORSED BILL (optimizado)
