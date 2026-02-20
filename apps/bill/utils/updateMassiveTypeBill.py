@@ -1,3 +1,4 @@
+# apps/bill/utils/updateMassiveTypeBill.py
 import logging
 import uuid
 import re
@@ -65,7 +66,8 @@ def updateMassiveTypeBill(bills_queryset, billEvents_function):
     logger.debug("⚠⚠⚠ EJECUTANDO updateMassiveTypeBill ⚠⚠⚠")
     logger.debug(f"ARCHIVO: {__file__}")
 
-    updated = 0
+    updated = 0               # cambios en bill.typeBill
+    events_created_total = 0  # ✅ total eventos creados en DB
     errors = []
     warnings = []  # ✅ para frontend
 
@@ -138,9 +140,10 @@ def updateMassiveTypeBill(bills_queryset, billEvents_function):
                     Bill.objects.filter(id=bill.id).update(currentOwner=current_owner)
                     bill.currentOwner = current_owner
 
-            # Sincronizar eventos
+            # ✅ Sincronizar eventos
             if api_events:
                 synced = sync_bill_events_v2(bill, api_events)
+                events_created_total += synced
                 logger.info(f"📅 Eventos sincronizados/creados: {synced}")
 
             # Recalcular typeBill
@@ -167,36 +170,60 @@ def updateMassiveTypeBill(bills_queryset, billEvents_function):
             errors.append({"billId": bill.billId, "error": str(e)})
 
     logger.error("========================================================")
-    logger.error(f"🔥 TOTAL FACTURAS ACTUALIZADAS: {updated}")
+    logger.error(f"🔥 TOTAL FACTURAS ACTUALIZADAS (typeBill): {updated}")
+    logger.error(f"📌 TOTAL EVENTOS CREADOS: {events_created_total}")
     logger.error(f"❗ ERRORES: {len(errors)}")
     logger.error(f"⚠ WARNINGS (Billy): {len(warnings)}")
     logger.error("========================================================")
 
-    return {"updated": updated, "errors": errors, "warnings": warnings}
+    return {
+        "updated": updated,
+        "events_created": events_created_total,
+        "errors": errors,
+        "warnings": warnings
+    }
 
 
 def sync_bill_events_v2(bill, api_events):
+    """
+    FIXES IMPORTANTES:
+    1) Billy manda "description" (no "dianDescription") en tu parsed_events.
+       -> usamos dianDescription OR description
+    2) Normalizamos microsegundos a 0 para deduplicación estable.
+    """
     created = 0
 
     existing_qs = BillEvent.objects.filter(bill=bill).select_related("event")
-    existing_triplets = set()  # (event_id, date)
+    existing_triplets = set()  # (event_id, date_str)
     existing_pairs = set()     # (event_id)
 
     for be in existing_qs:
         eid = str(be.event_id)
         existing_pairs.add(eid)
-        existing_triplets.add((eid, str(be.date)))
+        dt = be.date.replace(microsecond=0) if be.date else None
+        existing_triplets.add((eid, str(dt)))
 
     for ev in api_events:
         code = (ev.get("code") or "").strip()
-        desc = (ev.get("dianDescription") or "").strip()  # si no tienes dianDescription, cámbialo a ev.get("description")
+
+        # ✅ FIX: tu billEvents() construye "description"
+        desc = (ev.get("dianDescription") or ev.get("description") or "").strip()
+
         date = ev.get("date")
+
+        # ✅ Normalizar microsegundos si date es datetime
+        try:
+            if date is not None:
+                date = date.replace(microsecond=0)
+        except Exception:
+            pass
 
         if not code or not desc:
             continue
 
         desc_norm = normalize_description(desc)
 
+        # Buscar TypeEvent por code + dianDescription normalizada
         type_event = None
         candidates = TypeEvent.objects.filter(code=code)
         for t in candidates:
@@ -209,7 +236,7 @@ def sync_bill_events_v2(bill, api_events):
                 id=uuid.uuid4(),
                 code=code,
                 supplierDescription="",
-                dianDescription=desc,
+                dianDescription=desc,  # guardamos el texto que llega de Billy
                 created_at=timezone.now(),
                 updated_at=timezone.now(),
             )
@@ -217,6 +244,7 @@ def sync_bill_events_v2(bill, api_events):
 
         eid = str(type_event.id)
 
+        # Deduplicación por (evento, fecha) si hay fecha
         if date:
             key = (eid, str(date))
             if key in existing_triplets:

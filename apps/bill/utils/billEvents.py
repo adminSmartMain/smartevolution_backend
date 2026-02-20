@@ -38,7 +38,7 @@ def billEvents(cufe, update=False):
             resp = requests.get(
                 f"https://api.billy.com.co/v2/invoices?cufe={cufe}",
                 headers=headers,
-                timeout=3
+                timeout=5
             )
 
             if resp.status_code == 200:
