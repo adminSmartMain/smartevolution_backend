@@ -235,8 +235,8 @@ def sync_bill_events_v2(bill, api_events):
             type_event = TypeEvent.objects.create(
                 id=uuid.uuid4(),
                 code=code,
-                supplierDescription="",
-                dianDescription=desc,  # guardamos el texto que llega de Billy
+                supplierDescription=desc,
+                dianDescription="",  # guardamos el texto que llega de Billy
                 created_at=timezone.now(),
                 updated_at=timezone.now(),
             )
