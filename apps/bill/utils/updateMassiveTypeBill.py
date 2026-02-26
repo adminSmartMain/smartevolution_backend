@@ -227,7 +227,7 @@ def sync_bill_events_v2(bill, api_events):
         type_event = None
         candidates = TypeEvent.objects.filter(code=code)
         for t in candidates:
-            if normalize_description(getattr(t, "dianDescription", "") or "") == desc_norm:
+            if normalize_description(getattr(t, "supplierDescription", "") or "") == desc_norm:
                 type_event = t
                 break
 
@@ -235,8 +235,8 @@ def sync_bill_events_v2(bill, api_events):
             type_event = TypeEvent.objects.create(
                 id=uuid.uuid4(),
                 code=code,
-                supplierDescription="",
-                dianDescription=desc,  # guardamos el texto que llega de Billy
+                 dianDescription="",
+               supplierDescription=desc,  # guardamos el texto que llega de Billy
                 created_at=timezone.now(),
                 updated_at=timezone.now(),
             )
