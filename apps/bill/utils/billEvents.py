@@ -3,7 +3,7 @@ from apps.base.exceptions import HttpException
 import environ
 import logging
 
-from .events import normalize_description, ts_to_datetime  # ajusta el import a donde lo pongas
+from .events import normalize_description, ts_to_datetime  # ajusta el import
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -14,6 +14,7 @@ UUID_FV = "fdb5feb4-24e9-41fc-9689-31aff60b76c9"
 UUID_FV_TV = "a7c70741-8c1a-4485-8ed4-5297e54a978a"
 UUID_RECHAZADA = "dcec6f03-5dc1-42ea-a525-afada28686da"
 UUID_ENDOSADA = "29113618-6ab8-4633-aa8e-b3d6f242e8a4"
+UUID_PAGADA = "e079bea4-401e-41f2-8ccc-e4ac42217728"  # ✅ NUEVO
 
 
 def billEvents(cufe, update=False):
@@ -38,7 +39,7 @@ def billEvents(cufe, update=False):
             resp = requests.get(
                 f"https://api.billy.com.co/v2/invoices?cufe={cufe}",
                 headers=headers,
-                timeout=3
+                timeout=5
             )
 
             if resp.status_code == 200:
@@ -49,16 +50,17 @@ def billEvents(cufe, update=False):
                 current_owner = attributes.get("holderName", "") or ""
                 current_ownerId = attributes.get("holderIdNumber", "") or ""
 
-                codes = set(ev.get("code", "") for ev in events_api)
+                codes = set((ev.get("code", "") or "").strip() for ev in events_api)
 
                 is_reject = "031" in codes
+                is_pagada = any(c in codes for c in ["045", "051"])  # ✅ NUEVO
                 is_endosada = any(c in codes for c in ["037", "047", "046"])
                 is_fv_tv = ("030" in codes and "032" in codes and ("033" in codes or "034" in codes))
 
                 parsed_events = []
 
                 for ev in events_api:
-                    code = ev.get("code", "") or ""
+                    code = (ev.get("code", "") or "").strip()
 
                     # Filtrar por update (tu regla original)
                     if code in ['036', '037', '038', '046'] and not update:
@@ -77,12 +79,13 @@ def billEvents(cufe, update=False):
                             "description": desc,
                             "description_norm": normalize_description(desc),
                             "date": date,
-                            # si más adelante quieres DIAN:
-                            # "dianDescription": d.get("dianDescription", "") o lo que corresponda
                         })
 
+                # ✅ Prioridad recomendada: RECHAZADA > PAGADA > ENDOSADA > FV_TV > FV
                 if is_reject:
                     response_type = UUID_RECHAZADA
+                elif is_pagada:
+                    response_type = UUID_PAGADA
                 elif is_endosada:
                     response_type = UUID_ENDOSADA
                 elif is_fv_tv:
