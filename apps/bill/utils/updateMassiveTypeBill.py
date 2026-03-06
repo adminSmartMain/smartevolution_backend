@@ -25,8 +25,10 @@ UUID_FV = "fdb5feb4-24e9-41fc-9689-31aff60b76c9"
 UUID_FV_TV = "a7c70741-8c1a-4485-8ed4-5297e54a978a"
 UUID_RECHAZADA = "dcec6f03-5dc1-42ea-a525-afada28686da"
 UUID_ENDOSADA = "29113618-6ab8-4633-aa8e-b3d6f242e8a4"
+UUID_PAGADA = "e079bea4-401e-41f2-8ccc-e4ac42217728"  # ✅ NUEVO
 
 RECHAZO_CODES = {"031"}
+PAGO_CODES = {"045", "051"}  # ✅ NUEVO: pago parcial/total (factura o derechos económicos)
 ENDOSO_CODES = {"037", "047"}
 TV_REQUIRED = {"030", "032"}
 TV_ACCEPT = {"033", "034"}
@@ -49,15 +51,30 @@ def is_valid_uuid(val: str) -> bool:
 
 
 def compute_type_bill_from_events(api_events):
+    """
+    Prioridad:
+      1) RECHAZADA (031)
+      2) PAGADA (045/051)
+      3) ENDOSADA (037/047)
+      4) FV_TV (030,032 y 033/034)
+      5) FV default
+    """
     codes = {(e.get("code") or "").strip() for e in (api_events or [])}
     codes.discard("")
 
     if codes & RECHAZO_CODES:
         return UUID_RECHAZADA
+
+    # ✅ Si hay evento de pago en RADIAN -> PAGADA (aunque esté endosada)
+    if codes & PAGO_CODES:
+        return UUID_PAGADA
+
     if codes & ENDOSO_CODES:
         return UUID_ENDOSADA
+
     if (TV_REQUIRED <= codes) and (codes & TV_ACCEPT):
         return UUID_FV_TV
+
     return UUID_FV
 
 
@@ -146,7 +163,7 @@ def updateMassiveTypeBill(bills_queryset, billEvents_function):
                 events_created_total += synced
                 logger.info(f"📅 Eventos sincronizados/creados: {synced}")
 
-            # Recalcular typeBill
+            # ✅ Recalcular typeBill (ahora incluye PAGADA)
             new_type = compute_type_bill_from_events(api_events)
 
             if new_type and str(new_type) != str(bill.typeBill_id):
@@ -223,7 +240,7 @@ def sync_bill_events_v2(bill, api_events):
 
         desc_norm = normalize_description(desc)
 
-        # Buscar TypeEvent por code + dianDescription normalizada
+        # Buscar TypeEvent por code + supplierDescription normalizada
         type_event = None
         candidates = TypeEvent.objects.filter(code=code)
         for t in candidates:
@@ -235,8 +252,8 @@ def sync_bill_events_v2(bill, api_events):
             type_event = TypeEvent.objects.create(
                 id=uuid.uuid4(),
                 code=code,
-                 dianDescription="",
-               supplierDescription=desc,  # guardamos el texto que llega de Billy
+                dianDescription="",
+                supplierDescription=desc,  # guardamos el texto que llega de Billy
                 created_at=timezone.now(),
                 updated_at=timezone.now(),
             )
