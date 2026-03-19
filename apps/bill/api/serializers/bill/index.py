@@ -105,33 +105,31 @@ class BillCreationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         try:
-            # Usar el usuario del request
             validated_data['id'] = gen_uuid()
             validated_data['user_created_at'] = self.context['request'].user
-            
-            # Subir el archivo a S3
+
             if 'file' in validated_data:
                 fileUrl = validated_data.get('file', None)
                 if fileUrl:
                     fileUrl = uploadFileBase64(
-                        files_bse64=[fileUrl], 
+                        files_bse64=[fileUrl],
                         file_path=f'bill/{validated_data["id"]}'
                     )
                     validated_data['file'] = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{fileUrl}"
-            
-            # Asegurar que currentBalance sea igual a total si no se especifica
+
             if 'currentBalance' not in validated_data:
                 validated_data['currentBalance'] = validated_data.get('total', 0)
             elif validated_data.get('total'):
                 validated_data['currentBalance'] = validated_data['total']
-            
-            # Crear la factura
+
             bill = Bill.objects.create(**validated_data)
             return bill
-            
+
         except Exception as e:
-            logger.error(f"Error al crear factura: {str(e)}")
-            raise serializers.ValidationError(f"Error al crear la factura: {str(e)}")
+            logger.exception("Error al crear factura")
+            raise serializers.ValidationError({
+                "non_field_errors": [f"Error al crear la factura: {str(e)}"]
+            })
             
         
         

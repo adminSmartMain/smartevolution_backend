@@ -49,7 +49,7 @@ class BillCreationManualAV(BaseAV):
     def post(self, request):
         try:
       
-            
+            logger.debug(f"REQUEST.DATA REAL: {request.data}")
             # Pasar el contexto con el request al serializer
             serializer = BillCreationSerializer(
                 data=request.data,

@@ -30,6 +30,20 @@ from django.conf import settings
 import uuid
 from apps.base.utils.index import gen_uuid, PDFBase64File, uploadFileBase64
 from apps.base.utils.s3logging import log_execution_to_s3
+
+
+from datetime import date
+from django.db import transaction
+from datetime import date
+from django.db import transaction
+
+from apps.operation.utils.upload_excel_parser import UploadExcelParser
+from apps.operation.utils.upload_excel_resolver import UploadExcelReferenceResolver
+from apps.operation.utils.upload_excel_calculator import UploadExcelCalculator
+from apps.operation.utils.upload_excel_validator import UploadExcelValidator
+from apps.operation.utils.upload_excel_response import UploadExcelResponseBuilder
+
+
 # Configurar el logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -1355,6 +1369,10 @@ class OperationDetailAV(APIView):
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
 
 
+
+class UploadExcel(APIView):
+    def post (self,request):
+        return
 class MassiveOperations(APIView):
     def post(self, request):
         try:
@@ -1553,3 +1571,147 @@ class MassiveOperations(APIView):
 
         except Exception as e:
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
+        
+class UploadExcel(APIView):
+    def post(self, request):
+        excel_file = request.FILES.get("uploadExcel")
+        if not excel_file:
+            return Response(
+                {"message": "No se recibió el archivo uploadExcel"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            parser = UploadExcelParser()
+            parsed_rows = parser.parse(excel_file)
+        except ValueError as e:
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response(
+                {"message": "No fue posible leer el archivo Excel"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not parsed_rows:
+            return Response(
+                {"message": "El archivo no contiene filas válidas"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        references = UploadExcelReferenceResolver().resolve(parsed_rows)
+        calculator = UploadExcelCalculator()
+        validator = UploadExcelValidator(references, calculator)
+
+        validated_rows = validator.validate_rows(parsed_rows)
+        response_data = UploadExcelResponseBuilder().build(validated_rows)
+
+        return Response(response_data, status=status.HTTP_200_OK)      
+class RegisterOperationFromUpload(APIView):
+    @transaction.atomic
+    def post(self, request):
+        normalized_rows = request.data.get("rows", [])
+        op_type_id = request.data.get("opTypeId")
+
+        if not normalized_rows or not isinstance(normalized_rows, list):
+            return Response(
+                {"message": "Debe enviar la lista de rows"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not op_type_id:
+            return Response(
+                {"message": "El tipo de operación es requerido"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        rows_with_errors = [row for row in normalized_rows if row.get("hasErrors")]
+        if rows_with_errors:
+            return Response(
+                {"message": "Existen filas con errores. No se puede registrar la operación."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        created_ids = []
+
+        for row in normalized_rows:
+            calculated = row.get("calculated", {})
+
+            try:
+                account = Account.objects.get(account_number=row["clientAccountNumber"])
+            except Account.DoesNotExist:
+                transaction.set_rollback(True)
+                return Response(
+                    {"message": f"No existe la cuenta {row['clientAccountNumber']}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            try:
+                bill = Bill.objects.get(id=row["billId"])
+            except Bill.DoesNotExist:
+                transaction.set_rollback(True)
+                return Response(
+                    {"message": f"No existe la factura {row['billId']}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            last_fraction = (
+                PreOperation.objects
+                .filter(bill_id=row["billId"])
+                .order_by("-billFraction")
+                .values_list("billFraction", flat=True)
+                .first()
+            ) or 0
+
+            if row["billFraction"] <= last_fraction:
+                transaction.set_rollback(True)
+                return Response(
+                    {"message": f"La fracción {row['billFraction']} ya no es válida para la factura {row['billId']}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            pre_operation = PreOperation.objects.create(
+                id=gen_uuid(),
+                opId=row["opId"],
+                opType_id=op_type_id,
+                opDate=row["opDate"],
+                applyGm=bool(calculated.get("GM", 0) > 0),
+                emitter_id=row["emitterId"],
+                payer_id=row["payerId"],
+                investor_id=row["investorId"],
+                clientAccount=account,
+                bill=bill,
+                billFraction=row["billFraction"],
+                DateBill=getattr(bill, "dateBill", None),
+                DateExpiration=getattr(bill, "expirationDate", None),
+                probableDate=row["fechaProbable"],
+                opExpiration=calculated.get("opExpiration"),
+                amount=getattr(bill, "amount", 0) or 0,
+                payedPercent=((getattr(bill, "payed_amount", 0) or 0) / (getattr(bill, "amount", 1) or 1)) * 100,
+                payedAmount=getattr(bill, "payed_amount", 0) or 0,
+                opPendingAmount=(getattr(bill, "amount", 0) or 0) - (getattr(bill, "payed_amount", 0) or 0),
+                discountTax=row["tasaDescuento"],
+                investorTax=row["tasaInversionista"],
+                emitterBroker_id=row["emitterBrokerId"],
+                investorBroker_id=row["investorBrokerId"],
+                operationDays=calculated.get("operationDays"),
+                presentValueInvestor=calculated.get("presentValueInvestor"),
+                presentValueSF=calculated.get("presentValueSF"),
+                investorProfit=calculated.get("investorProfit"),
+                commissionSF=calculated.get("commissionSF"),
+                GM=calculated.get("GM"),
+                status=0,
+                isRebuy=False,
+                insufficientAccountBalance=calculated.get("insufficientAccountBalance", False),
+            )
+
+            created_ids.append(pre_operation.id)
+
+        return Response(
+            {
+                "success": True,
+                "message": "Operación registrada correctamente",
+                "createdCount": len(created_ids),
+                "ids": created_ids,
+            },
+            status=status.HTTP_201_CREATED
+        )
