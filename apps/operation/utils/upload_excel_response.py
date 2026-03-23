@@ -28,6 +28,7 @@ class UploadExcelResponseBuilder:
                 "fieldErrors": row.get("field_errors", {}),
                 "errors": row.get("errors", []),
                 "hasErrors": row.get("has_errors", False),
+                "porcentajeDescuento": row.get("porcentaje_descuento"),
             })
 
             normalized_rows.append({

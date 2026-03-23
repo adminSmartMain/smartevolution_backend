@@ -98,6 +98,10 @@ import uuid
 from django.utils import timezone
 from datetime import date
 
+
+from rest_framework.views import APIView
+from django.db.models import Count
+
 # Configurar el logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -852,8 +856,129 @@ class GetBillFractionAV(APIView):
                 
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
 
+from django.db.models import Max
+
+class GetBillFractionBulkAV(APIView):
+    def post(self, request):
+        try:
+            bills = request.data.get("bills")
+
+            if not bills or not isinstance(bills, list):
+                return response(
+                    {'error': True, 'message': "Debe enviar una lista en 'bills'"},
+                    400
+                )
+
+            flat_rows = []
+
+            for item in bills:
+                pk = item.get("id") or item.get("billId")
+                fractions_to_split = int(item.get("fractionsToSplit", 1) or 1)
+
+                if not pk:
+                    continue
+
+                try:
+                    bill = Bill.objects.get(pk=pk)
+
+                    max_fraction = PreOperation.objects.filter(bill=pk).aggregate(
+                        max_fraction=Max("billFraction")
+                    )["max_fraction"]
+
+                    start_fraction = (max_fraction or 0) + 1
+
+                    bill_value = bill.currentBalance
+                    date_bill = bill.dateBill
+                    date_payment = bill.datePayment
+                    expiration_date = bill.expirationDate
+
+                except Bill.DoesNotExist:
+                    continue
+                except Exception:
+                    continue
+
+                for i in range(fractions_to_split):
+                    flat_rows.append({
+                        "id": f"{pk}-{start_fraction + i}",
+                        "billUniqueId": str(pk),
+                        "billId": item.get("billId", ""),
+                        "currentBalance": bill_value,
+                        "fraction": start_fraction + i,
+                        "dateBill": date_bill,
+                        "datePayment": date_payment,
+                        "expirationDate": expiration_date,
+                        "investorId": "",
+                        "investorLabel": "",
+                        "selectedInvestor": None,
+                        "investorBrokerId": "",
+                        "investorBrokerName": "",
+                        "accountId": "",
+                        "selectedAccount": None,
+                        "availableAccounts": [],
+                        "accountAvailableBalance": 0,
+                        "accountTotalBalance": 0,
+                    })
+
+            return response({
+                "error": False,
+                "data": flat_rows
+            }, 200)
+
+        except Exception as e:
+            return response(
+                {'error': True, 'message': str(e)},
+                e.status_code if hasattr(e, 'status_code') else 500
+            )
+            
+            
 
 
+class ClientsWithAccountsAV(APIView):
+    def post(self, request):
+        try:
+            client_ids = request.data.get("client_ids", [])
+
+            if not isinstance(client_ids, list) or not client_ids:
+                return response(
+                    {"error": True, "message": "Debe enviar una lista en 'client_ids'"},
+                    400
+                )
+
+            clients = Client.objects.filter(id__in=client_ids)
+
+            accounts_count_by_client = (
+                Account.objects
+                .filter(client_id__in=client_ids)
+                .values("client_id")
+                .annotate(accounts_count=Count("id"))
+            )
+
+            accounts_map = {
+                str(item["client_id"]): item["accounts_count"]
+                for item in accounts_count_by_client
+            }
+
+            data = []
+            for client in clients:
+                client_id = str(client.id)
+                count = accounts_map.get(client_id, 0)
+
+                data.append({
+                    "client_id": client_id,
+                    "has_accounts": count > 0,
+                    "accounts_count": count,
+                })
+
+            return response({
+                "error": False,
+                "data": data,
+            }, 200)
+
+        except Exception as e:
+            return response(
+                {"error": True, "message": str(e)},
+                e.status_code if hasattr(e, "status_code") else 500
+            )
 class GetOperationByEmitter(APIView):
     def get(self, request, pk):
         
@@ -865,7 +990,6 @@ class GetOperationByEmitter(APIView):
             return response({'error': True, 'message': 'operacion no encontrada'}, 500)
         except Exception as e:
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
-
 
 class GetOperationByParams(BaseAV):
     def get(self, request):

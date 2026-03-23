@@ -144,13 +144,25 @@ class UploadExcelValidator:
 
             porcentaje_descuento = row.get("porcentaje_descuento")
             if porcentaje_descuento is not None:
-                if porcentaje_descuento <= 0:
-                    add_error("porcentaje_descuento", "El % descuento debe ser mayor a 0")
+                if porcentaje_descuento < 0:
+                    add_error("porcentaje_descuento", "El % descuento no puede ser menor a 0")
                 if porcentaje_descuento > 100:
                     add_error("porcentaje_descuento", "El % descuento no puede ser mayor a 100")
 
             tasa_desc = row.get("tasa_descuento")
+            if tasa_desc is not None:
+                if tasa_desc < 0:
+                    add_error("tasa_descuento", "La tasa de descuento no puede ser menor a 0")
+                if tasa_desc > 100:
+                    add_error("tasa_descuento", "La tasa de descuento no puede ser mayor a 100")
+
             tasa_inv = row.get("tasa_inversionista")
+            if tasa_inv is not None:
+                if tasa_inv < 0:
+                    add_error("tasa_inversionista", "La tasa inversionista no puede ser menor a 0")
+                if tasa_inv > 100:
+                    add_error("tasa_inversionista", "La tasa inversionista no puede ser mayor a 100")
+
             if tasa_desc is not None and tasa_inv is not None:
                 if tasa_desc < tasa_inv:
                     add_error(

@@ -1,8 +1,8 @@
 # views
 from django.urls import path
 from apps.operation.api.views.index import (PreOperationAV, GetLastOperationAV, 
-                                            GetBillFractionAV, GetOperationByEmitter, 
-                                            GetOperationByParams, OperationDetailAV, MassiveOperations,UploadExcel,RegisterOperationFromUpload)
+                                            GetBillFractionAV,GetBillFractionBulkAV, GetOperationByEmitter, 
+                                            GetOperationByParams, OperationDetailAV, MassiveOperations,UploadExcel,RegisterOperationFromUpload, ClientsWithAccountsAV)
 
 urlpatterns = [
     path('', PreOperationAV.as_view(), name='preOperation'),
@@ -15,4 +15,6 @@ urlpatterns = [
     path('detail/<int:pk>', OperationDetailAV.as_view(), name='operation_detail'),
     path("uploadExcel", UploadExcel.as_view(), name="upload_excel"),
     path("registerOperationFromUpload", RegisterOperationFromUpload.as_view(), name="register_operation_from_upload"),
+    path('billFractionBulk', GetBillFractionBulkAV.as_view(), name='bill_fraction_bulk'),
+    path("clientsWithAccounts", ClientsWithAccountsAV.as_view(), name="clients_with_accounts"),
 ]
