@@ -1793,42 +1793,56 @@ class RegisterOperationFromUpload(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            pre_operation = PreOperation.objects.create(
-                id=gen_uuid(),
-                opId=row["opId"],
-                opType_id=op_type_id,
-                opDate=row["opDate"],
-                applyGm=bool(calculated.get("GM", 0) > 0),
-                emitter_id=row["emitterId"],
-                payer_id=row["payerId"],
-                investor_id=row["investorId"],
-                clientAccount=account,
-                bill=bill,
-                billFraction=row["billFraction"],
-                DateBill=getattr(bill, "dateBill", None),
-                DateExpiration=getattr(bill, "expirationDate", None),
-                probableDate=row["fechaProbable"],
-                opExpiration=calculated.get("opExpiration"),
-                amount=getattr(bill, "amount", 0) or 0,
-                payedPercent=((getattr(bill, "payed_amount", 0) or 0) / (getattr(bill, "amount", 1) or 1)) * 100,
-                payedAmount=getattr(bill, "payed_amount", 0) or 0,
-                opPendingAmount=(getattr(bill, "amount", 0) or 0) - (getattr(bill, "payed_amount", 0) or 0),
-                discountTax=row["tasaDescuento"],
-                investorTax=row["tasaInversionista"],
-                emitterBroker_id=row["emitterBrokerId"],
-                investorBroker_id=row["investorBrokerId"],
-                operationDays=calculated.get("operationDays"),
-                presentValueInvestor=calculated.get("presentValueInvestor"),
-                presentValueSF=calculated.get("presentValueSF"),
-                investorProfit=calculated.get("investorProfit"),
-                commissionSF=calculated.get("commissionSF"),
-                GM=calculated.get("GM"),
-                status=0,
-                isRebuy=False,
-                insufficientAccountBalance=calculated.get("insufficientAccountBalance", False),
-            )
+            payload = {
+                "opId": row["opId"],
+                "opType": op_type_id,
+                "opDate": row["opDate"],
+                "applyGm": row.get("applyGm", False),
 
-            created_ids.append(pre_operation.id)
+                "emitter": row["emitterId"],
+                "payer": row["payerId"],
+                "investor": row["investorId"],
+                "clientAccount": account.id,
+                "bill": bill.id,
+
+                "billFraction": row["billFraction"],
+                "DateBill": getattr(bill, "dateBill", None),
+                "DateExpiration": getattr(bill, "expirationDate", None),
+                "probableDate": row["fechaProbable"],
+                "opExpiration": calculated.get("opExpiration"),
+
+                # Valores correctos desde el Excel / cálculo
+                "amount": row["valorFuturo"],
+                "payedPercent": row["porcentajeDescuento"],
+                "payedAmount": calculated.get("valorNominal"),
+
+                # Tasas en formato porcentual como las guarda la BD
+                "discountTax": row["tasaDescuento"],
+                "investorTax": row["tasaInversionista"],
+
+                "emitterBroker": row["emitterBrokerId"],
+                "investorBroker": row["investorBrokerId"],
+
+                "operationDays": calculated.get("operationDays"),
+                "presentValueInvestor": calculated.get("presentValueInvestor"),
+                "presentValueSF": calculated.get("presentValueSF"),
+                "investorProfit": calculated.get("investorProfit"),
+                "commissionSF": calculated.get("commissionSF"),
+                "GM": calculated.get("GM"),
+
+                "status": 0,
+                "isRebuy": False,
+                "insufficientAccountBalance": calculated.get("insufficientAccountBalance", False),
+            }
+
+            serializer = PreOperationSerializer(
+                data=payload,
+                context={"request": request}
+            )
+            serializer.is_valid(raise_exception=True)
+            instance = serializer.save()
+
+            created_ids.append(instance.id)
 
         return Response(
             {
