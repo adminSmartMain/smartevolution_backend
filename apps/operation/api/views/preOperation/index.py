@@ -23,7 +23,7 @@ from apps.base.decorators.index import checkRole
 from apps.base.utils.logBalanceAccount import log_balance_change
 import logging
 
-from django.db import transaction
+from django.db import transaction, connection
 from rest_framework.response import Response
 from rest_framework import status
 from django.conf import settings
@@ -31,7 +31,7 @@ import uuid
 from apps.base.utils.index import gen_uuid, PDFBase64File, uploadFileBase64
 from apps.base.utils.s3logging import log_execution_to_s3
 
-
+from django.db.models import Max
 from datetime import date
 from django.db import transaction
 from datetime import date
@@ -1755,6 +1755,47 @@ class RegisterOperationFromUpload(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Validar que todas las filas traigan opId
+        first_row = normalized_rows[0]
+        requested_op_id = first_row.get("opId")
+
+        if requested_op_id is None:
+            return Response(
+                {"message": "El opId es requerido"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            requested_op_id = int(requested_op_id)
+        except (TypeError, ValueError):
+            return Response(
+                {"message": "El opId debe ser numérico"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # IMPORTANTE:
+        # Bloqueo transaccional para evitar que dos peticiones calculen el mismo opId al tiempo.
+        # Esta solución usa advisory lock de PostgreSQL.
+        # Si usas PostgreSQL, esta es la forma más segura sin crear una tabla secuenciadora.
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT GET_LOCK(%s, %s)", ["register_massive_operation_opid", 10])
+            result = cursor.fetchone()
+
+            if not result or result[0] != 1:
+                return Response(
+                    {"message": "No fue posible asegurar el consecutivo del opId. Intente nuevamente."},
+                    status=status.HTTP_409_CONFLICT
+                )
+
+        last_op_id = (
+            PreOperation.objects
+            .aggregate(max_op_id=Max("opId"))
+            .get("max_op_id")
+        ) or 0
+
+        final_op_id = max(requested_op_id, last_op_id + 1)
+        op_id_changed = final_op_id != requested_op_id
+
         created_ids = []
 
         for row in normalized_rows:
@@ -1794,7 +1835,7 @@ class RegisterOperationFromUpload(APIView):
                 )
 
             payload = {
-                "opId": row["opId"],
+                "opId": final_op_id,  # <-- ya no usamos row["opId"]
                 "opType": op_type_id,
                 "opDate": row["opDate"],
                 "applyGm": row.get("applyGm", False),
@@ -1811,12 +1852,10 @@ class RegisterOperationFromUpload(APIView):
                 "probableDate": row["fechaProbable"],
                 "opExpiration": calculated.get("opExpiration"),
 
-                # Valores correctos desde el Excel / cálculo
                 "amount": row["valorFuturo"],
                 "payedPercent": row["porcentajeDescuento"],
                 "payedAmount": calculated.get("valorNominal"),
 
-                # Tasas en formato porcentual como las guarda la BD
                 "discountTax": row["tasaDescuento"],
                 "investorTax": row["tasaInversionista"],
 
@@ -1847,9 +1886,19 @@ class RegisterOperationFromUpload(APIView):
         return Response(
             {
                 "success": True,
-                "message": "Operación registrada correctamente",
+                "message": (
+                    f"Operación registrada correctamente. "
+                    f"El opId fue ajustado de {requested_op_id} a {final_op_id}."
+                    if op_id_changed
+                    else "Operación registrada correctamente"
+                ),
                 "createdCount": len(created_ids),
                 "ids": created_ids,
+                "opIdInfo": {
+                    "requested": requested_op_id,
+                    "final": final_op_id,
+                    "changed": op_id_changed,
+                },
             },
             status=status.HTTP_201_CREATED
         )
