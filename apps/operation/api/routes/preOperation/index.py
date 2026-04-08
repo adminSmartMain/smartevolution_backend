@@ -2,7 +2,7 @@
 from django.urls import path
 from apps.operation.api.views.index import (PreOperationAV, GetLastOperationAV, 
                                             GetBillFractionAV,GetBillFractionBulkAV, GetOperationByEmitter, 
-                                            GetOperationByParams, OperationDetailAV, MassiveOperations,UploadExcel,RegisterOperationFromUpload, ClientsWithAccountsAV)
+                                            GetOperationByParams, OperationDetailAV, MassiveOperations,UploadExcel,RegisterOperationFromUpload, ClientsWithAccountsAV,MassiveOperationReceiptPDFAV)
 
 urlpatterns = [
     path('', PreOperationAV.as_view(), name='preOperation'),
@@ -17,4 +17,5 @@ urlpatterns = [
     path("registerOperationFromUpload", RegisterOperationFromUpload.as_view(), name="register_operation_from_upload"),
     path('billFractionBulk', GetBillFractionBulkAV.as_view(), name='bill_fraction_bulk'),
     path("clientsWithAccounts", ClientsWithAccountsAV.as_view(), name="clients_with_accounts"),
+    path("massive-receipt/<int:op_id>",MassiveOperationReceiptPDFAV.as_view(),name="massive-operation-receipt-pdf",),
 ]

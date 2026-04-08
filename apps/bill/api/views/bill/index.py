@@ -380,7 +380,7 @@ class BillAV(BaseAV):
                     
                     # ✅ OPCIÓN 1: Filtrar directamente en la consulta (RECOMENDADO)
                     # Filtramos solo facturas con currentBalance > 0 para optimizar
-                    bills_with_balance = bills.filter(currentBalance__gt=0)
+                    bills_with_balance = bills
                     
                     # Serializar SOLO las facturas con saldo positivo
                     serializer = BillReadOnlySerializer(bills_with_balance, many=True)

@@ -43,7 +43,19 @@ from apps.operation.utils.upload_excel_calculator import UploadExcelCalculator
 from apps.operation.utils.upload_excel_validator import UploadExcelValidator
 from apps.operation.utils.upload_excel_response import UploadExcelResponseBuilder
 
+import base64
+import time
+from decimal import Decimal
 
+from django.http import HttpResponse
+from django.template.loader import get_template
+from django.utils import timezone
+from rest_framework.views import APIView
+from rest_framework import status
+
+
+from apps.operation.models import PreOperation
+from apps.base.utils.pdfToBase64 import pdfToBase64
 # Configurar el logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -1902,3 +1914,124 @@ class RegisterOperationFromUpload(APIView):
             },
             status=status.HTTP_201_CREATED
         )
+        
+        
+def build_client_name(client):
+    if not client:
+        return ""
+    if getattr(client, "social_reason", None):
+        return client.social_reason
+    return f"{client.first_name or ''} {client.last_name or ''}".strip()
+
+
+class MassiveOperationReceiptPDFAV(APIView):
+
+    def get(self, request, op_id):
+        # ⏱️ 1) medir query real
+        t0 = time.perf_counter()
+        operations = list(
+            PreOperation.objects
+            .select_related("bill", "emitter", "payer", "investor", "user_created_at")
+            .filter(opId=op_id)
+            .order_by("id")
+        )
+        logger.debug(f"⏱️ query: {time.perf_counter() - t0:.4f}s")
+
+        if not operations:
+            return HttpResponse(
+                "No existe una operación masiva con ese opId",
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        first = operations[0]
+
+        total_registros = len(operations)
+        total_days = Decimal("0")
+        total_discount_tax = Decimal("0")
+        total_investor_tax = Decimal("0")
+
+        detail_rows = []
+
+        for op in operations:
+            days = Decimal(str(op.operationDays or 0))
+            discount_tax = Decimal(str(op.discountTax or 0))
+            investor_tax = Decimal(str(op.investorTax or 0))
+
+            total_days += days
+            total_discount_tax += discount_tax
+            total_investor_tax += investor_tax
+
+            bill_number = getattr(op.bill, "billId", None) or str(op.bill_id)
+
+            if op.billFraction and int(op.billFraction) > 0:
+                bill_label = f"{bill_number}-{op.billFraction}"
+            else:
+                bill_label = bill_number
+
+            detail_rows.append({
+                "factura": bill_label,
+                "emisor": build_client_name(op.emitter),
+                "pagador": build_client_name(op.payer),
+                "vencimiento": op.DateExpiration,
+                "dias": int(op.operationDays or 0),
+                "tasa_desc": float(op.discountTax or 0),
+                "saldo_factura": float(op.amount or 0),
+            })
+
+        avg_days = float(total_days / total_registros) if total_registros else 0
+        avg_discount_tax = float(total_discount_tax / total_registros) if total_registros else 0
+        avg_investor_tax = float(total_investor_tax / total_registros) if total_registros else 0
+
+        created_by = "Usuario Smart Evolution"
+        if getattr(first, "user_created_at", None):
+            created_by = (
+                getattr(first.user_created_at, "name", None)
+                or getattr(first.user_created_at, "first_name", None)
+                or getattr(first.user_created_at, "email", None)
+                or created_by
+            )
+
+        context = {
+            "receipt": {
+                "op_id": first.opId,
+                "generated_at": timezone.now(),
+                "created_by": created_by,
+                "operation_date": first.opDate,
+                "total_registros": total_registros,
+                "avg_days": avg_days,
+                "avg_discount_tax": avg_discount_tax,
+                "avg_investor_tax": avg_investor_tax,
+                "detail_rows": detail_rows,
+                "note": (
+                    f"El promedio de días se calculó con base en la diferencia "
+                    f"entre la fecha de inicio ({first.opDate}) y la fecha fin de cada título. "
+                    f"Los valores de tasa son promedios simples de la carga masiva."
+                ),
+            }
+        }
+
+        template = get_template("massive_operation_receipt.html")
+
+        # ⏱️ 2) medir render html
+        t1 = time.perf_counter()
+        html_content = template.render(context)
+        logger.debug(f"⏱️ render html: {time.perf_counter() - t1:.4f}s")
+
+        # ⏱️ 3) medir generación pdf
+        t2 = time.perf_counter()
+        parse_base64 = pdfToBase64(html_content)
+        logger.debug(f"⏱️ pdf: {time.perf_counter() - t2:.4f}s")
+
+        if "pdf" not in parse_base64:
+            return HttpResponse(
+                "No fue posible generar el PDF",
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        pdf_bytes = base64.b64decode(parse_base64["pdf"])
+
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'attachment; filename="Comprobante_OP_{first.opId}_{timezone.now().strftime("%Y-%m-%d_%H-%M-%S")}.pdf"'
+        )
+        return response
