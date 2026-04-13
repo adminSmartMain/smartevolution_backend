@@ -7,6 +7,12 @@ from apps.base.utils.index import sendEmail
 
 
 def pdfToBase64(html):
+    # 👇 NUEVO: soportar dict o string
+    if isinstance(html, dict):
+        input_data = json.dumps(html)
+    else:
+        input_data = html
+
     process = subprocess.Popen(
         ['node', 'apps/base/scripts/pdf_parser/index.js'],
         stdin=subprocess.PIPE,
@@ -14,7 +20,7 @@ def pdfToBase64(html):
         stderr=subprocess.PIPE
     )
 
-    stdout, stderr = process.communicate(input=html.encode('utf-8'))
+    stdout, stderr = process.communicate(input=input_data.encode('utf-8'))
 
     response = json.loads(stdout.decode('utf-8'))
 

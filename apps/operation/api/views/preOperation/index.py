@@ -2019,7 +2019,12 @@ class MassiveOperationReceiptPDFAV(APIView):
 
         # ⏱️ 3) medir generación pdf
         t2 = time.perf_counter()
-        parse_base64 = pdfToBase64(html_content)
+        payload = {
+                "html": html_content,
+                "pdf_type": "massive_operation_receipt",
+            }
+
+        parse_base64 = pdfToBase64(payload)
         logger.debug(f"⏱️ pdf: {time.perf_counter() - t2:.4f}s")
 
         if "pdf" not in parse_base64:

@@ -12,7 +12,7 @@
 
         @page {
             size: A4;
-            margin: 22mm 16mm 22mm 16mm;
+            margin: 22mm 16mm 40mm 16mm;
         }
 
         html, body {
@@ -30,7 +30,6 @@
         .wrapper {
             max-width: 900px;
             margin: 0 auto;
-            padding: 0 0 95px 0;
             box-sizing: border-box;
         }
 
@@ -122,11 +121,30 @@
             color: #333;
         }
 
+        .table-section {
+            margin-bottom: 0;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
             font-size: 11px;
             margin-top: 10px;
+        }
+
+        thead {
+            display: table-header-group;
+        }
+
+        tfoot {
+            display: table-row-group;
+        }
+
+        tr,
+        td,
+        th {
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
 
         th {
@@ -140,6 +158,7 @@
         td {
             padding: 8px;
             border-bottom: 1px solid #eee;
+            vertical-align: top;
         }
 
         tr:nth-child(even) {
@@ -156,33 +175,8 @@
             padding: 15px;
             border-left: 4px solid #fbc02d;
             font-size: 12px;
-        }
-
-        .footer {
-            position: fixed;
-            left: 16mm;
-            right: 16mm;
-            bottom: 10mm;
-            border-top: 1px solid #d9d9d9;
-            padding-top: 10px;
-            font-size: 10px;
-            color: #888;
-            text-align: center;
-            line-height: 1.5;
-            background: #fff;
-        }
-
-        .page-counter {
-            position: fixed;
-            right: 16mm;
-            bottom: 3mm;
-            font-size: 10px;
-            color: #666;
-            text-align: right;
-        }
-
-        .page-counter::before {
-            content: "Página " counter(page) " de " counter(pages);
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
     </style>
 </head>
@@ -218,46 +212,40 @@
         </div>
     </div>
 
-    <h3>Detalle de la Operación</h3>
+    <div class="table-section">
+        <h3>Detalle de la Operación</h3>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Factura</th>
-                <th>Emisor</th>
-                <th>Pagador</th>
-                <th>Vencimiento</th>
-                <th class="text-right">Días</th>
-                <th class="text-right">Tasa Desc.</th>
-                <th class="text-right">Saldo Factura</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in receipt.detail_rows %}
-            <tr>
-                <td>{{ row.factura }}</td>
-                <td>{{ row.emisor }}</td>
-                <td>{{ row.pagador }}</td>
-                <td>{{ row.vencimiento|date:"Y-m-d" }}</td>
-                <td class="text-right">{{ row.dias }}</td>
-                <td class="text-right">{{ row.tasa_desc|floatformat:2 }}%</td>
-                <td class="text-right">${{ row.saldo_factura|floatformat:0 }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        <table>
+            <thead>
+                <tr>
+                    <th>Factura</th>
+                    <th>Emisor</th>
+                    <th>Pagador</th>
+                    <th>Vencimiento</th>
+                    <th class="text-right">Días</th>
+                    <th class="text-right">Tasa Desc.</th>
+                    <th class="text-right">Saldo Factura</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in receipt.detail_rows %}
+                <tr>
+                    <td>{{ row.factura }}</td>
+                    <td>{{ row.emisor }}</td>
+                    <td>{{ row.pagador }}</td>
+                    <td>{{ row.vencimiento|date:"Y-m-d" }}</td>
+                    <td class="text-right">{{ row.dias }}</td>
+                    <td class="text-right">{{ row.tasa_desc|floatformat:2 }}%</td>
+                    <td class="text-right">${{ row.saldo_factura|floatformat:0 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
 
-    <div class="system-note">
-        <strong>Nota del Sistema:</strong> {{ receipt.note }}
+        <div class="system-note">
+            <strong>Nota del Sistema:</strong> {{ receipt.note }}
+        </div>
     </div>
-
-    <div class="footer">
-        Este documento es un soporte electrónico de SMART EVOLUTION S.A.S. <br>
-        La información aquí contenida debe ser validada con la carga manual final en la plataforma. <br>
-        <strong>www.app.smartevolution.com.co</strong>
-    </div>
-
-    <div class="page-counter"></div>
 </div>
 </body>
 </html>
