@@ -186,13 +186,15 @@
         <img src="https://devapp.smartevolution.com.co/assets/Logo%20Smart%20-%20Lite.svg" alt="Smart Evolution" class="logo">
         <div class="op-title">
             <h1>Comprobante de Operación Masiva</h1>
-            <div class="op-id">OPID: {{ receipt.op_id }}</div>
+            <div class="op-id">OPID: {{ receipt.op_id }} </div>
             <small>Generado el: {{ receipt.generated_at|date:"d-m-Y h:i A" }}</small>
         </div>
     </div>
 
     <div class="user-info">
-        <div><b>Creado Por:</b> {{ receipt.created_by }}</div>
+        <div><b>Creado Por:</b> {{ receipt.created_by }} {{receipt.apellido}}
+        <div>{{ receipt.email }}</div></div>
+        
         <div><b>Fecha Operación:</b> {{ receipt.operation_date|date:"Y-m-d" }}</div>
         <div><b>Total Registros:</b> {{ receipt.total_registros }} Facturas</div>
     </div>

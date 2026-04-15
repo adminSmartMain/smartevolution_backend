@@ -1990,12 +1990,16 @@ class MassiveOperationReceiptPDFAV(APIView):
                 or getattr(first.user_created_at, "email", None)
                 or created_by
             )
+            
+            email= getattr(first.user_created_at, "email", None)
 
         context = {
             "receipt": {
                 "op_id": first.opId,
                 "generated_at": timezone.now(),
                 "created_by": created_by,
+                "apellido": getattr(first.user_created_at, "last_name", None),
+                "email": email,
                 "operation_date": first.opDate,
                 "total_registros": total_registros,
                 "avg_days": avg_days,
