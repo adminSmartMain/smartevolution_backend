@@ -1,6 +1,5 @@
 from django.urls import path, include
 
-
 urlpatterns = [
     path('preOperation/', include('apps.operation.api.routes.preOperation.index'),name='preOperation'),
     path('receipt/', include('apps.operation.api.routes.receipt.index'),name='receipt'),

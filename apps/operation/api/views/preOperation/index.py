@@ -22,14 +22,40 @@ from apps.base.decorators.index import checkRole
 #utils
 from apps.base.utils.logBalanceAccount import log_balance_change
 import logging
-
-from django.db import transaction
+from collections import defaultdict
+from django.db import transaction, connection
 from rest_framework.response import Response
 from rest_framework import status
 from django.conf import settings
 import uuid
 from apps.base.utils.index import gen_uuid, PDFBase64File, uploadFileBase64
 from apps.base.utils.s3logging import log_execution_to_s3
+
+from django.db.models import Max
+from datetime import date
+from django.db import transaction
+from datetime import date
+from django.db import transaction
+
+from apps.operation.utils.upload_excel_parser import UploadExcelParser
+from apps.operation.utils.upload_excel_resolver import UploadExcelReferenceResolver
+from apps.operation.utils.upload_excel_calculator import UploadExcelCalculator
+from apps.operation.utils.upload_excel_validator import UploadExcelValidator
+from apps.operation.utils.upload_excel_response import UploadExcelResponseBuilder
+
+import base64
+import time
+from decimal import Decimal
+
+from django.http import HttpResponse
+from django.template.loader import get_template
+from django.utils import timezone
+from rest_framework.views import APIView
+from rest_framework import status
+
+
+from apps.operation.models import PreOperation
+from apps.base.utils.pdfToBase64 import pdfToBase64
 # Configurar el logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -83,6 +109,10 @@ from rest_framework import status
 import uuid
 from django.utils import timezone
 from datetime import date
+
+
+from rest_framework.views import APIView
+from django.db.models import Count
 
 # Configurar el logger
 logger = logging.getLogger(__name__)
@@ -838,8 +868,129 @@ class GetBillFractionAV(APIView):
                 
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
 
+from django.db.models import Max
+
+class GetBillFractionBulkAV(APIView):
+    def post(self, request):
+        try:
+            bills = request.data.get("bills")
+
+            if not bills or not isinstance(bills, list):
+                return response(
+                    {'error': True, 'message': "Debe enviar una lista en 'bills'"},
+                    400
+                )
+
+            flat_rows = []
+
+            for item in bills:
+                pk = item.get("id") or item.get("billId")
+                fractions_to_split = int(item.get("fractionsToSplit", 1) or 1)
+
+                if not pk:
+                    continue
+
+                try:
+                    bill = Bill.objects.get(pk=pk)
+
+                    max_fraction = PreOperation.objects.filter(bill=pk).aggregate(
+                        max_fraction=Max("billFraction")
+                    )["max_fraction"]
+
+                    start_fraction = (max_fraction or 0) + 1
+
+                    bill_value = bill.currentBalance
+                    date_bill = bill.dateBill
+                    date_payment = bill.datePayment
+                    expiration_date = bill.expirationDate
+
+                except Bill.DoesNotExist:
+                    continue
+                except Exception:
+                    continue
+
+                for i in range(fractions_to_split):
+                    flat_rows.append({
+                        "id": f"{pk}-{start_fraction + i}",
+                        "billUniqueId": str(pk),
+                        "billId": item.get("billId", ""),
+                        "currentBalance": bill_value,
+                        "fraction": start_fraction + i,
+                        "dateBill": date_bill,
+                        "datePayment": date_payment,
+                        "expirationDate": expiration_date,
+                        "investorId": "",
+                        "investorLabel": "",
+                        "selectedInvestor": None,
+                        "investorBrokerId": "",
+                        "investorBrokerName": "",
+                        "accountId": "",
+                        "selectedAccount": None,
+                        "availableAccounts": [],
+                        "accountAvailableBalance": 0,
+                        "accountTotalBalance": 0,
+                    })
+
+            return response({
+                "error": False,
+                "data": flat_rows
+            }, 200)
+
+        except Exception as e:
+            return response(
+                {'error': True, 'message': str(e)},
+                e.status_code if hasattr(e, 'status_code') else 500
+            )
+            
+            
 
 
+class ClientsWithAccountsAV(APIView):
+    def post(self, request):
+        try:
+            client_ids = request.data.get("client_ids", [])
+
+            if not isinstance(client_ids, list) or not client_ids:
+                return response(
+                    {"error": True, "message": "Debe enviar una lista en 'client_ids'"},
+                    400
+                )
+
+            clients = Client.objects.filter(id__in=client_ids)
+
+            accounts_count_by_client = (
+                Account.objects
+                .filter(client_id__in=client_ids)
+                .values("client_id")
+                .annotate(accounts_count=Count("id"))
+            )
+
+            accounts_map = {
+                str(item["client_id"]): item["accounts_count"]
+                for item in accounts_count_by_client
+            }
+
+            data = []
+            for client in clients:
+                client_id = str(client.id)
+                count = accounts_map.get(client_id, 0)
+
+                data.append({
+                    "client_id": client_id,
+                    "has_accounts": count > 0,
+                    "accounts_count": count,
+                })
+
+            return response({
+                "error": False,
+                "data": data,
+            }, 200)
+
+        except Exception as e:
+            return response(
+                {"error": True, "message": str(e)},
+                e.status_code if hasattr(e, "status_code") else 500
+            )
 class GetOperationByEmitter(APIView):
     def get(self, request, pk):
         
@@ -851,7 +1002,6 @@ class GetOperationByEmitter(APIView):
             return response({'error': True, 'message': 'operacion no encontrada'}, 500)
         except Exception as e:
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
-
 
 class GetOperationByParams(BaseAV):
     def get(self, request):
@@ -1355,6 +1505,7 @@ class OperationDetailAV(APIView):
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
 
 
+
 class MassiveOperations(APIView):
     def post(self, request):
         try:
@@ -1553,3 +1704,732 @@ class MassiveOperations(APIView):
 
         except Exception as e:
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
+
+
+
+
+
+
+
+class UploadExcelValidator:
+    REQUIRED_FIELDS = [
+        "op_id",
+        "op_date",
+        "emitter_name",
+        "emitter_id",
+        "emitter_broker_name",
+        "emitter_broker_id",
+        "payer_name",
+        "payer_id",
+        "bill_number",
+        "bill_id",
+        "bill_balance",
+        "bill_fraction",
+        "investor_name",
+        "investor_id",
+        "investor_account",
+        "fecha_probable",
+        "fecha_fin",
+        "valor_futuro",
+        "porcentaje_descuento",
+        "tasa_descuento",
+        "tasa_inversionista",
+    ]
+
+    CALC_REQUIRED_FIELDS = [
+        "valor_futuro",
+        "porcentaje_descuento",
+        "tasa_descuento",
+        "tasa_inversionista",
+        "op_date",
+        "fecha_fin",
+    ]
+
+    def __init__(self, references, calculator, upload_context=None):
+        self.references = references
+        self.calculator = calculator
+        self.upload_context = upload_context or {}
+
+    def _add_context_errors(self, parsed_rows):
+        """
+        Valida que el Excel pertenezca a la operación armada en el front.
+        """
+        if not self.upload_context:
+            return {}
+
+        errors_by_row = defaultdict(list)
+
+        expected_op_date = self.upload_context.get("opDate")
+        expected_emitter_id = str(self.upload_context.get("emitterId") or "").strip()
+        expected_emitter_broker_id = str(self.upload_context.get("emitterBrokerId") or "").strip()
+        expected_payer_id = str(self.upload_context.get("payerId") or "").strip()
+
+        expected_rows = self.upload_context.get("rows") or []
+
+        excel_op_dates = {
+            row.get("op_date").isoformat() if row.get("op_date") else None
+            for row in parsed_rows
+        }
+        excel_emitter_ids = {
+            str(row.get("emitter_id") or "").strip()
+            for row in parsed_rows
+        }
+        excel_emitter_broker_ids = {
+            str(row.get("emitter_broker_id") or "").strip()
+            for row in parsed_rows
+        }
+        excel_payer_ids = {
+            str(row.get("payer_id") or "").strip()
+            for row in parsed_rows
+        }
+
+        if expected_op_date and excel_op_dates != {expected_op_date}:
+            for row in parsed_rows:
+                errors_by_row[row["row_number"]].append({
+                    "field": "op_date",
+                    "message": "La fecha de operación del Excel no coincide con la operación actual",
+                })
+
+        if expected_emitter_id and excel_emitter_ids != {expected_emitter_id}:
+            for row in parsed_rows:
+                errors_by_row[row["row_number"]].append({
+                    "field": "emitter_id",
+                    "message": "El emisor del Excel no coincide con el emisor seleccionado",
+                })
+
+        if expected_emitter_broker_id and excel_emitter_broker_ids != {expected_emitter_broker_id}:
+            for row in parsed_rows:
+                errors_by_row[row["row_number"]].append({
+                    "field": "emitter_broker_id",
+                    "message": "El corredor del emisor del Excel no coincide con el seleccionado",
+                })
+
+        if expected_payer_id and excel_payer_ids != {expected_payer_id}:
+            for row in parsed_rows:
+                errors_by_row[row["row_number"]].append({
+                    "field": "payer_id",
+                    "message": "El pagador del Excel no coincide con el pagador seleccionado",
+                })
+
+        expected_pairs = {
+            (
+                str(item.get("billId") or "").strip(),
+                int(item.get("billFraction") or 0),
+                str(item.get("investorId") or "").strip(),
+                str(item.get("investorAccount") or "").strip(),
+            )
+            for item in expected_rows
+        }
+
+        excel_pairs = {
+            (
+                str(row.get("bill_id") or "").strip(),
+                int(row.get("bill_fraction") or 0),
+                str(row.get("investor_id") or "").strip(),
+                str(row.get("investor_account") or "").strip(),
+            )
+            for row in parsed_rows
+        }
+
+        if expected_pairs and excel_pairs != expected_pairs:
+            unexpected_pairs = excel_pairs - expected_pairs
+            missing_pairs = expected_pairs - excel_pairs
+
+            for row in parsed_rows:
+                current_pair = (
+                    str(row.get("bill_id") or "").strip(),
+                    int(row.get("bill_fraction") or 0),
+                    str(row.get("investor_id") or "").strip(),
+                    str(row.get("investor_account") or "").strip(),
+                )
+
+                if current_pair in unexpected_pairs:
+                    errors_by_row[row["row_number"]].append({
+                        "field": "operation_context",
+                        "message": "Esta fila no pertenece al lote actual de la operación",
+                    })
+
+            if missing_pairs:
+                for row in parsed_rows:
+                    errors_by_row[row["row_number"]].append({
+                        "field": "operation_context",
+                        "message": "Faltan filas del lote actual en el Excel cargado",
+                    })
+                    break
+
+        return errors_by_row
+
+    def validate_rows(self, parsed_rows):
+        grouped_by_bill = defaultdict(list)
+        for row in parsed_rows:
+            bill_id = str(row.get("bill_id")) if row.get("bill_id") else None
+            if bill_id:
+                grouped_by_bill[bill_id].append(row)
+
+        context_errors_by_row = self._add_context_errors(parsed_rows)
+
+        validated = []
+
+        for row in parsed_rows:
+            field_errors = {}
+            errors = []
+
+            def add_error(field, message):
+                field_errors[field] = True
+                errors.append({"field": field, "message": message})
+
+            for field in self.REQUIRED_FIELDS:
+                if row.get(field) in [None, ""]:
+                    add_error(field, "Este campo es obligatorio")
+
+            for ctx_error in context_errors_by_row.get(row["row_number"], []):
+                add_error(ctx_error["field"], ctx_error["message"])
+
+            emitter = self.references["clients_by_id"].get(str(row.get("emitter_id")))
+            payer = self.references["clients_by_id"].get(str(row.get("payer_id")))
+            investor = self.references["clients_by_id"].get(str(row.get("investor_id")))
+            bill = self.references["bills_by_id"].get(str(row.get("bill_id")))
+            emitter_broker = self.references["brokers_by_id"].get(str(row.get("emitter_broker_id")))
+            account = self.references["accounts_by_number"].get(str(row.get("investor_account")).strip())
+            risk_profile = self.references["risk_profile_by_client_id"].get(str(row.get("investor_id")))
+            investor_broker_info = self.references["investor_broker_by_investor_id"].get(
+                str(row.get("investor_id")),
+                {},
+            )
+
+            if row.get("emitter_id") and not emitter:
+                add_error("emitter_id", "El emisor no existe")
+
+            if row.get("payer_id") and not payer:
+                add_error("payer_id", "El pagador no existe")
+
+            if row.get("investor_id") and not investor:
+                add_error("investor_id", "El inversionista no existe")
+
+            if row.get("bill_id") and not bill:
+                add_error("bill_id", "La factura no existe")
+
+            if row.get("emitter_broker_id") and not emitter_broker:
+                add_error("emitter_broker_id", "El corredor del emisor no existe")
+
+            if row.get("investor_account") and not account:
+                add_error("investor_account", "La cuenta del inversionista no existe")
+
+            if investor and account and str(getattr(account, "client_id", "")) != str(investor.id):
+                add_error("investor_account", "La cuenta no pertenece al inversionista")
+
+            if investor and not investor_broker_info.get("broker_id"):
+                add_error("investor_id", "El inversionista no tiene corredor asociado")
+
+            if bill and emitter and hasattr(bill, "emitter_id"):
+                if str(bill.emitter_id) != str(emitter.id):
+                    add_error("bill_id", "La factura no pertenece al emisor")
+
+            if bill and payer and hasattr(bill, "payer_id"):
+                if str(bill.payer_id) != str(payer.id):
+                    add_error("bill_id", "La factura no pertenece al pagador")
+
+            bill_id = str(row.get("bill_id")) if row.get("bill_id") else None
+            if bill_id and row.get("bill_fraction") is not None:
+                grouped_rows = sorted(
+                    grouped_by_bill[bill_id],
+                    key=lambda x: x.get("bill_fraction") or 0
+                )
+
+                expected_start = self.references["next_fraction_by_bill"].get(bill_id, 0)
+                if expected_start == 0:
+                    expected_start = 1
+
+                expected_sequence = list(range(expected_start, expected_start + len(grouped_rows)))
+                actual_sequence = [r.get("bill_fraction") for r in grouped_rows]
+
+                if actual_sequence != expected_sequence:
+                    add_error(
+                        "bill_fraction",
+                        f"Las fracciones deben ser consecutivas: {expected_sequence}"
+                    )
+
+            valor_futuro = row.get("valor_futuro")
+            bill_balance = row.get("bill_balance")
+
+            if valor_futuro is not None and bill_balance is not None:
+                if valor_futuro <= 0:
+                    add_error("valor_futuro", "El valor futuro debe ser mayor a 0")
+                if valor_futuro > bill_balance:
+                    add_error("valor_futuro", "El valor futuro no puede ser mayor al saldo")
+
+            if bill_id:
+                total_future = sum((r.get("valor_futuro") or 0) for r in grouped_by_bill[bill_id])
+                current_balance = row.get("bill_balance") or 0
+                if total_future > current_balance:
+                    add_error(
+                        "valor_futuro",
+                        "La suma del valor futuro de las fracciones no puede superar el saldo"
+                    )
+
+            porcentaje_descuento = row.get("porcentaje_descuento")
+            if porcentaje_descuento is not None:
+                if porcentaje_descuento < 0:
+                    add_error("porcentaje_descuento", "El % descuento no puede ser menor a 0")
+                if porcentaje_descuento > 100:
+                    add_error("porcentaje_descuento", "El % descuento no puede ser mayor a 100")
+
+            tasa_desc = row.get("tasa_descuento")
+            if tasa_desc is not None:
+                if tasa_desc < 0:
+                    add_error("tasa_descuento", "La tasa de descuento no puede ser menor a 0")
+                if tasa_desc > 100:
+                    add_error("tasa_descuento", "La tasa de descuento no puede ser mayor a 100")
+
+            tasa_inv = row.get("tasa_inversionista")
+            if tasa_inv is not None:
+                if tasa_inv < 0:
+                    add_error("tasa_inversionista", "La tasa inversionista no puede ser menor a 0")
+                if tasa_inv > 100:
+                    add_error("tasa_inversionista", "La tasa inversionista no puede ser mayor a 100")
+
+            if tasa_desc is not None and tasa_inv is not None:
+                if tasa_desc < tasa_inv:
+                    add_error(
+                        "tasa_descuento",
+                        "La tasa de descuento no puede ser menor a la tasa inversionista"
+                    )
+
+            fecha_probable = row.get("fecha_probable")
+            fecha_fin = row.get("fecha_fin")
+            op_date = row.get("op_date")
+
+            if fecha_probable and op_date and fecha_probable < op_date:
+                add_error(
+                    "fecha_probable",
+                    "La fecha probable no puede ser menor a la fecha de operación"
+                )
+
+            if fecha_fin and fecha_probable and fecha_fin < fecha_probable:
+                add_error(
+                    "fecha_fin",
+                    "La fecha fin no puede ser menor a la fecha probable"
+                )
+
+            calculated_payload = {}
+            can_calculate = all(row.get(field) not in [None, ""] for field in self.CALC_REQUIRED_FIELDS)
+
+            if can_calculate:
+                try:
+                    apply_gm = bool(getattr(risk_profile, "gmf", False)) if risk_profile else False
+
+                    calculated_payload = self.calculator.calculate(row, apply_gm=apply_gm)
+                    calculated_payload["applyGm"] = apply_gm
+
+                    valor_nominal = calculated_payload.get("valorNominal")
+                    if valor_nominal is not None and valor_futuro is not None and valor_nominal > valor_futuro:
+                        add_error(
+                            "valor_nominal",
+                            "El valor nominal no puede ser mayor al valor futuro"
+                        )
+
+                    if account:
+                        required_balance = (
+                            calculated_payload.get("presentValueInvestor", 0) +
+                            calculated_payload.get("GM", 0)
+                        )
+                        account_balance = float(getattr(account, "balance", 0) or 0)
+                        calculated_payload["insufficientAccountBalance"] = required_balance > account_balance
+                        calculated_payload["accountBalance"] = account_balance
+
+                    calculated_payload["investorBrokerId"] = investor_broker_info.get("broker_id")
+                    calculated_payload["investorBrokerName"] = investor_broker_info.get("broker_name", "")
+
+                except Exception as exc:
+                    add_error("calculation", f"No se pudo calcular la fila: {str(exc)}")
+
+            validated.append({
+                **row,
+                "field_errors": field_errors,
+                "errors": errors,
+                "has_errors": len(errors) > 0,
+                "calculated_payload": calculated_payload,
+            })
+
+        return validated        
+class UploadExcel(APIView):
+    def post(self, request):
+        excel_file = request.FILES.get("uploadExcel")
+        if not excel_file:
+            return Response(
+                {"message": "No se recibió el archivo uploadExcel"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        raw_context = request.data.get("context")
+        upload_context = None
+
+        if raw_context:
+            try:
+                upload_context = json.loads(raw_context)
+            except Exception:
+                return Response(
+                    {"message": "El contexto de carga es inválido"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        try:
+            parser = UploadExcelParser()
+            parsed_rows = parser.parse(excel_file)
+        except ValueError as e:
+            return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response(
+                {"message": "No fue posible leer el archivo Excel"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not parsed_rows:
+            return Response(
+                {"message": "El archivo no contiene filas válidas"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        references = UploadExcelReferenceResolver().resolve(parsed_rows)
+        calculator = UploadExcelCalculator()
+        validator = UploadExcelValidator(
+            references,
+            calculator,
+            upload_context=upload_context,
+        )
+
+        validated_rows = validator.validate_rows(parsed_rows)
+        response_data = UploadExcelResponseBuilder().build(validated_rows)
+
+        if response_data.get("errorCount", 0) > 0:
+            all_errors = [
+                error
+                for row in response_data.get("rows", [])
+                for error in row.get("errors", [])
+            ]
+
+            has_context_error = any(
+                error.get("field") in [
+                    "operation_context",
+                    "context_op_date",
+                    "context_emitter_id",
+                    "context_emitter_broker_id",
+                    "context_payer_id",
+                ]
+                for error in all_errors
+            )
+
+            if has_context_error:
+                response_data["message"] = (
+                    "El Excel no corresponde a la operación actual. "
+                    "Verifique emisor, pagador, facturas, fracciones, inversionistas y cuentas."
+                )
+            else:
+                response_data["message"] = (
+                    "El Excel contiene errores en los datos. "
+                    "Revise los valores resaltados en la tabla."
+                )
+
+        return Response(response_data, status=status.HTTP_200_OK) 
+class RegisterOperationFromUpload(APIView):
+    @transaction.atomic
+    def post(self, request):
+        normalized_rows = request.data.get("rows", [])
+        op_type_id = request.data.get("opTypeId")
+
+        if not normalized_rows or not isinstance(normalized_rows, list):
+            return Response(
+                {"message": "Debe enviar la lista de rows"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not op_type_id:
+            return Response(
+                {"message": "El tipo de operación es requerido"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        rows_with_errors = [row for row in normalized_rows if row.get("hasErrors")]
+        if rows_with_errors:
+            return Response(
+                {"message": "Existen filas con errores. No se puede registrar la operación."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validar que todas las filas traigan opId
+        first_row = normalized_rows[0]
+        requested_op_id = first_row.get("opId")
+
+        if requested_op_id is None:
+            return Response(
+                {"message": "El opId es requerido"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            requested_op_id = int(requested_op_id)
+        except (TypeError, ValueError):
+            return Response(
+                {"message": "El opId debe ser numérico"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # IMPORTANTE:
+        # Bloqueo transaccional para evitar que dos peticiones calculen el mismo opId al tiempo.
+        # Esta solución usa advisory lock de PostgreSQL.
+        # Si usas PostgreSQL, esta es la forma más segura sin crear una tabla secuenciadora.
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT GET_LOCK(%s, %s)", ["register_massive_operation_opid", 10])
+            result = cursor.fetchone()
+
+            if not result or result[0] != 1:
+                return Response(
+                    {"message": "No fue posible asegurar el consecutivo del opId. Intente nuevamente."},
+                    status=status.HTTP_409_CONFLICT
+                )
+
+        last_op_id = (
+            PreOperation.objects
+            .aggregate(max_op_id=Max("opId"))
+            .get("max_op_id")
+        ) or 0
+
+        final_op_id = max(requested_op_id, last_op_id + 1)
+        op_id_changed = final_op_id != requested_op_id
+
+        created_ids = []
+
+        for row in normalized_rows:
+            calculated = row.get("calculated", {})
+
+            try:
+                account = Account.objects.get(account_number=row["clientAccountNumber"])
+            except Account.DoesNotExist:
+                transaction.set_rollback(True)
+                return Response(
+                    {"message": f"No existe la cuenta {row['clientAccountNumber']}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            try:
+                bill = Bill.objects.get(id=row["billId"])
+            except Bill.DoesNotExist:
+                transaction.set_rollback(True)
+                return Response(
+                    {"message": f"No existe la factura {row['billId']}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            last_fraction = (
+                PreOperation.objects
+                .filter(bill_id=row["billId"])
+                .order_by("-billFraction")
+                .values_list("billFraction", flat=True)
+                .first()
+            ) or 0
+
+            if row["billFraction"] <= last_fraction:
+                transaction.set_rollback(True)
+                return Response(
+                    {"message": f"La fracción {row['billFraction']} ya no es válida para la factura {row['billId']}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            payload = {
+                "opId": final_op_id,  # <-- ya no usamos row["opId"]
+                "opType": op_type_id,
+                "opDate": row["opDate"],
+                "applyGm": row.get("applyGm", False),
+
+                "emitter": row["emitterId"],
+                "payer": row["payerId"],
+                "investor": row["investorId"],
+                "clientAccount": account.id,
+                "bill": bill.id,
+
+                "billFraction": row["billFraction"],
+                "DateBill": getattr(bill, "dateBill", None),
+                "DateExpiration": getattr(bill, "expirationDate", None),
+                "probableDate": row["fechaProbable"],
+                "opExpiration": calculated.get("opExpiration"),
+
+                "amount": row["valorFuturo"],
+                "payedPercent": row["porcentajeDescuento"],
+                "payedAmount": calculated.get("valorNominal"),
+
+                "discountTax": row["tasaDescuento"],
+                "investorTax": row["tasaInversionista"],
+
+                "emitterBroker": row["emitterBrokerId"],
+                "investorBroker": row["investorBrokerId"],
+
+                "operationDays": calculated.get("operationDays"),
+                "presentValueInvestor": calculated.get("presentValueInvestor"),
+                "presentValueSF": calculated.get("presentValueSF"),
+                "investorProfit": calculated.get("investorProfit"),
+                "commissionSF": calculated.get("commissionSF"),
+                "GM": calculated.get("GM"),
+
+                "status": 0,
+                "isRebuy": False,
+                "insufficientAccountBalance": calculated.get("insufficientAccountBalance", False),
+            }
+
+            serializer = PreOperationSerializer(
+                data=payload,
+                context={"request": request}
+            )
+            serializer.is_valid(raise_exception=True)
+            instance = serializer.save()
+
+            created_ids.append(instance.id)
+
+        return Response(
+            {
+                "success": True,
+                "message": (
+                    f"Operación registrada correctamente. "
+                    f"El opId fue ajustado de {requested_op_id} a {final_op_id}."
+                    if op_id_changed
+                    else "Operación registrada correctamente"
+                ),
+                "createdCount": len(created_ids),
+                "ids": created_ids,
+                "opIdInfo": {
+                    "requested": requested_op_id,
+                    "final": final_op_id,
+                    "changed": op_id_changed,
+                },
+            },
+            status=status.HTTP_201_CREATED
+        )
+        
+        
+def build_client_name(client):
+    if not client:
+        return ""
+    if getattr(client, "social_reason", None):
+        return client.social_reason
+    return f"{client.first_name or ''} {client.last_name or ''}".strip()
+
+
+class MassiveOperationReceiptPDFAV(APIView):
+
+    def get(self, request, op_id):
+        # ⏱️ 1) medir query real
+        t0 = time.perf_counter()
+        operations = list(
+            PreOperation.objects
+            .select_related("bill", "emitter", "payer", "investor", "user_created_at")
+            .filter(opId=op_id)
+            .order_by("id")
+        )
+        logger.debug(f"⏱️ query: {time.perf_counter() - t0:.4f}s")
+
+        if not operations:
+            return HttpResponse(
+                "No existe una operación masiva con ese opId",
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        first = operations[0]
+
+        total_registros = len(operations)
+        total_days = Decimal("0")
+        total_discount_tax = Decimal("0")
+        total_investor_tax = Decimal("0")
+
+        detail_rows = []
+
+        for op in operations:
+            days = Decimal(str(op.operationDays or 0))
+            discount_tax = Decimal(str(op.discountTax or 0))
+            investor_tax = Decimal(str(op.investorTax or 0))
+
+            total_days += days
+            total_discount_tax += discount_tax
+            total_investor_tax += investor_tax
+
+            bill_number = getattr(op.bill, "billId", None) or str(op.bill_id)
+
+            if op.billFraction and int(op.billFraction) > 0:
+                bill_label = f"{bill_number}-{op.billFraction}"
+            else:
+                bill_label = bill_number
+
+            detail_rows.append({
+                "factura": bill_label,
+                "emisor": build_client_name(op.emitter),
+                "pagador": build_client_name(op.payer),
+                "vencimiento": op.DateExpiration,
+                "dias": int(op.operationDays or 0),
+                "tasa_desc": float(op.discountTax or 0),
+                "saldo_factura": float(op.amount or 0),
+            })
+
+        avg_days = float(total_days / total_registros) if total_registros else 0
+        avg_discount_tax = float(total_discount_tax / total_registros) if total_registros else 0
+        avg_investor_tax = float(total_investor_tax / total_registros) if total_registros else 0
+
+        created_by = "Usuario Smart Evolution"
+        if getattr(first, "user_created_at", None):
+            created_by = (
+                getattr(first.user_created_at, "name", None)
+                or getattr(first.user_created_at, "first_name", None)
+                or getattr(first.user_created_at, "email", None)
+                or created_by
+            )
+            
+            email= getattr(first.user_created_at, "email", None)
+
+        context = {
+            "receipt": {
+                "op_id": first.opId,
+                "generated_at": timezone.now(),
+                "created_by": created_by,
+                "apellido": getattr(first.user_created_at, "last_name", None),
+                "email": email,
+                "operation_date": first.opDate,
+                "total_registros": total_registros,
+                "avg_days": avg_days,
+                "avg_discount_tax": avg_discount_tax,
+                "avg_investor_tax": avg_investor_tax,
+                "detail_rows": detail_rows,
+                "note": (
+                    f"El promedio de días se calculó con base en la diferencia "
+                    f"entre la fecha de inicio ({first.opDate}) y la fecha fin de cada título. "
+                    f"Los valores de tasa son promedios simples de la carga masiva."
+                ),
+            }
+        }
+
+        template = get_template("massive_operation_receipt.html")
+
+        # ⏱️ 2) medir render html
+        t1 = time.perf_counter()
+        html_content = template.render(context)
+        logger.debug(f"⏱️ render html: {time.perf_counter() - t1:.4f}s")
+
+        # ⏱️ 3) medir generación pdf
+        t2 = time.perf_counter()
+        payload = {
+                "html": html_content,
+                "pdf_type": "massive_operation_receipt",
+            }
+
+        parse_base64 = pdfToBase64(payload)
+        logger.debug(f"⏱️ pdf: {time.perf_counter() - t2:.4f}s")
+
+        if "pdf" not in parse_base64:
+            return HttpResponse(
+                "No fue posible generar el PDF",
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        pdf_bytes = base64.b64decode(parse_base64["pdf"])
+
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'attachment; filename="Comprobante_OP_{first.opId}_{timezone.now().strftime("%Y-%m-%d_%H-%M-%S")}.pdf"'
+        )
+        return response

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Comprobante de Operación Masiva #{{ receipt.op_id }}</title>
+    <style>
+        :root {
+            --primary: #002855;
+            --accent: #0056b3;
+            --bg-light: #f4f7f9;
+        }
+
+        @page {
+            size: A4;
+            margin: 22mm 16mm 40mm 16mm;
+        }
+
+        html, body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #fff;
+        }
+
+        body {
+            font-size: 12px;
+        }
+
+        .wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 20px;
+        }
+
+        .logo {
+            width: 180px;
+        }
+
+        .op-title {
+            text-align: right;
+        }
+
+        .op-title h1 {
+            margin: 0;
+            font-size: 18px;
+            color: var(--primary);
+            text-transform: uppercase;
+        }
+
+        .op-id {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--accent);
+            margin: 5px 0;
+        }
+
+        .user-info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            background: var(--bg-light);
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-size: 13px;
+            gap: 12px;
+        }
+
+        .user-info div b {
+            display: block;
+            color: var(--primary);
+            margin-bottom: 3px;
+        }
+
+        .kpi-section {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .kpi-card {
+            flex: 1;
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .kpi-card i {
+            display: block;
+            font-style: normal;
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .kpi-card span {
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .kpi-card.highlight {
+            border-left: 5px solid var(--accent);
+            background: #eef6ff;
+        }
+
+        h3 {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .table-section {
+            margin-bottom: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-top: 10px;
+        }
+
+        thead {
+            display: table-header-group;
+        }
+
+        tfoot {
+            display: table-row-group;
+        }
+
+        tr,
+        td,
+        th {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        th {
+            background: var(--primary);
+            color: white;
+            padding: 10px;
+            text-align: left;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            vertical-align: top;
+        }
+
+        tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .system-note {
+            margin-top: 20px;
+            background: #fffde7;
+            padding: 15px;
+            border-left: 4px solid #fbc02d;
+            font-size: 12px;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="header">
+        <img src="https://devapp.smartevolution.com.co/assets/Logo%20Smart%20-%20Lite.svg" alt="Smart Evolution" class="logo">
+        <div class="op-title">
+            <h1>Comprobante de Operación Masiva</h1>
+            <div class="op-id">OPID: {{ receipt.op_id }} </div>
+            <small>Generado el: {{ receipt.generated_at|date:"d-m-Y h:i A" }}</small>
+        </div>
+    </div>
+
+    <div class="user-info">
+        <div><b>Creado Por:</b> {{ receipt.created_by }} {{receipt.apellido}}
+        <div>{{ receipt.email }}</div></div>
+        
+        <div><b>Fecha Operación:</b> {{ receipt.operation_date|date:"Y-m-d" }}</div>
+        <div><b>Total Registros:</b> {{ receipt.total_registros }} Facturas</div>
+    </div>
+
+    <div class="kpi-section">
+        <div class="kpi-card highlight">
+            <i>Días Promedio Operación</i>
+            <span>{{ receipt.avg_days|floatformat:1 }} Días</span>
+        </div>
+        <div class="kpi-card">
+            <i>Tasa Descuento Prom.</i>
+            <span>{{ receipt.avg_discount_tax|floatformat:2 }}%</span>
+        </div>
+        <div class="kpi-card">
+            <i>Tasa Inversionista Prom.</i>
+            <span>{{ receipt.avg_investor_tax|floatformat:2 }}%</span>
+        </div>
+    </div>
+
+    <div class="table-section">
+        <h3>Detalle de la Operación</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Factura</th>
+                    <th>Emisor</th>
+                    <th>Pagador</th>
+                    <th>Vencimiento</th>
+                    <th class="text-right">Días</th>
+                    <th class="text-right">Tasa Desc.</th>
+                    <th class="text-right">Saldo Factura</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in receipt.detail_rows %}
+                <tr>
+                    <td>{{ row.factura }}</td>
+                    <td>{{ row.emisor }}</td>
+                    <td>{{ row.pagador }}</td>
+                    <td>{{ row.vencimiento|date:"Y-m-d" }}</td>
+                    <td class="text-right">{{ row.dias }}</td>
+                    <td class="text-right">{{ row.tasa_desc|floatformat:2 }}%</td>
+                    <td class="text-right">${{ row.saldo_factura|floatformat:0 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="system-note">
+            <strong>Nota del Sistema:</strong> {{ receipt.note }}
+        </div>
+    </div>
+</div>
+</body>
+</html>

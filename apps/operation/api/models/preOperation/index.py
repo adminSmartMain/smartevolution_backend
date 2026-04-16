@@ -46,4 +46,4 @@ class PreOperation(BaseModel):
         db_table = 'operation'
         verbose_name = 'operation'
         verbose_name_plural = 'operations'
-        ordering = ['-created_at']
+        ordering = ['-opDate','-opId']
