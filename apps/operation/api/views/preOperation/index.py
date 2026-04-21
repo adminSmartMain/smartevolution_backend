@@ -4,12 +4,13 @@ from django.db.models import Q, Count
 from rest_framework import serializers
 # Models
 from apps.client.models import Client, RiskProfile, Account, Broker
-from apps.operation.models import PreOperation, Receipt, BuyOrder
+from apps.operation.models import PreOperation, Receipt, BuyOrder,OperationLog
 from apps.bill.models import Bill
 from apps.misc.models import TypeBill
 # Serializers
 from apps.operation.api.serializers.index import (PreOperationSerializer, PreOperationReadOnlySerializer, 
                                                   ReceiptSerializer, PreOperationSignatureSerializer, PreOperationByParamsSerializer)
+from apps.operation.utils.operation_logger import create_operation_log, create_exception_log
 # Utils
 from apps.base.utils.index import response, gen_uuid, BaseAV
 from apps.report.utils.index import generateSellOffer, calcOperationDetail
@@ -42,7 +43,7 @@ from apps.operation.utils.upload_excel_resolver import UploadExcelReferenceResol
 from apps.operation.utils.upload_excel_calculator import UploadExcelCalculator
 from apps.operation.utils.upload_excel_validator import UploadExcelValidator
 from apps.operation.utils.upload_excel_response import UploadExcelResponseBuilder
-
+from apps.bill.api.serializers.index import BillSerializer
 import base64
 import time
 from decimal import Decimal
@@ -138,13 +139,8 @@ def is_uuid(val):
 class PreOperationAV(BaseAV):
     @transaction.atomic
     @checkRole(['admin'])
-    
     def post(self, request):
         try:
-            # ==================== INITIAL SETUP ====================
-            
-            
-            # Parse and validate request data
             try:
                 json_data = json.loads(request.body.decode('utf-8'))
                 values_list = json_data.get('values', [])
@@ -159,13 +155,9 @@ class PreOperationAV(BaseAV):
                     status.HTTP_400_BAD_REQUEST
                 )
 
-            
-
-            # ==================== SINGLE OPERATION ====================
             if len(values_list) == 1:
                 return self._handle_single_operation(request, values_list[0])
 
-            # ==================== BULK OPERATIONS ====================
             return self._handle_bulk_operations(request, values_list)
 
         except Exception as e:
@@ -177,56 +169,74 @@ class PreOperationAV(BaseAV):
 
     def _handle_single_operation(self, request, operation_data):
         """Process single operation with atomic creation of bill if needed"""
-
         try:
             with transaction.atomic():
-                # Create bill if billCode exists and it's the first occurrence
                 bill_id = None
+
                 if operation_data.get('billCode', '') != '' and operation_data.get('_isFirstOccurrence', False):
-                    bill_id = self._create_or_get_bill(operation_data)
+                    bill_id = self._create_or_get_bill(operation_data, request=request)
                     operation_data['bill'] = bill_id
+
                 elif operation_data.get('bill', '') and is_uuid(operation_data['bill']):
-                    # Si ya tiene un bill ID válido, lo usamos directamente
                     bill_id = operation_data['bill']
+
                 elif operation_data.get('bill', '') and not is_uuid(operation_data['bill']):
-                    # Si tiene un bill que no es UUID, buscamos la factura por billId Y emitter
                     emitter_id = operation_data.get('emitter')
                     if not emitter_id:
                         raise ValueError("Se requiere emitter para buscar la factura por billId")
-                    
-                    # Buscar cliente emisor para obtener document_number
+
                     try:
                         emitter_client = Client.objects.get(pk=emitter_id)
                         emitter_doc_number = emitter_client.document_number
                     except Client.DoesNotExist:
                         raise ValueError(f"Emisor con ID {emitter_id} no encontrado")
-                    
-                    # Buscar factura por billId Y emitterId
+
                     bill = Bill.objects.filter(
                         billId=operation_data['bill'],
                         emitterId=emitter_doc_number
                     ).first()
-                    
+
                     if bill:
                         operation_data['bill'] = str(bill.id)
                         bill_id = str(bill.id)
                     else:
-                        raise ValueError(f"Factura con billId {operation_data['bill']} y emisor {emitter_doc_number} no encontrada")
+                        raise ValueError(
+                            f"Factura con billId {operation_data['bill']} y emisor {emitter_doc_number} no encontrada"
+                        )
 
-                # Validate and save operation
                 serializer = PreOperationSerializer(
                     data=operation_data,
                     context={'request': request}
                 )
-                
+
                 if not serializer.is_valid():
                     logger.error(f"Validation failed: {serializer.errors}")
                     raise serializers.ValidationError(serializer.errors)
 
                 instance = serializer.save()
-                
+
+                log_operation_data = dict(operation_data)
+                log_response_data = {
+                    "id": str(instance.id),
+                    "bill_id": str(bill_id) if bill_id else None,
+                }
+
+                transaction.on_commit(lambda instance=instance, log_operation_data=log_operation_data, log_response_data=log_response_data: create_operation_log(
+                    source="SINGLE",
+                    action="CREATE_SINGLE_OPERATION",
+                    status="SUCCESS",
+                    message="Operation created successfully",
+                    op_id=instance.opId,
+                    pre_operation=instance,
+                    request_payload=log_operation_data,
+                    response_payload=log_response_data,
+                    bill_code=log_operation_data.get("billCode"),
+                    bill_id_ref=log_operation_data.get("bill"),
+                    user=request.user,
+                ))
+
                 logger.info(f"Created operation {instance.id} with bill {bill_id or 'none'}")
-                
+
                 return response({
                     'error': False,
                     'message': 'Operation created successfully',
@@ -245,27 +255,22 @@ class PreOperationAV(BaseAV):
         operations_created = []
         errors = []
 
-        
         try:
             with transaction.atomic():
-                # Fase 1: Identificar y crear facturas necesarias
                 bills_to_create = {}
-                existing_bills_to_find = {}  # Cambiado a dict para guardar emitter también
-                
+                existing_bills_to_find = {}
+
                 for index, op_data in enumerate(values_list):
-                    # Si tiene billCode y es primera ocurrencia, necesita crear factura
                     if op_data.get('billCode', '') and op_data.get('_isFirstOccurrence', False):
                         bill_code = op_data['billCode']
                         if bill_code not in bills_to_create:
                             bills_to_create[bill_code] = op_data
-                    
-                    # Si tiene bill que no es UUID, necesitamos buscar la factura existente
+
                     elif op_data.get('bill', '') and not is_uuid(op_data['bill']):
                         bill_id_ref = op_data['bill']
                         emitter_id = op_data.get('emitter')
-                        
+
                         if emitter_id:
-                            # Guardar la combinación billId + emitter
                             key = f"{bill_id_ref}_{emitter_id}"
                             existing_bills_to_find[key] = {
                                 'billId': bill_id_ref,
@@ -278,38 +283,33 @@ class PreOperationAV(BaseAV):
                                 'error': "Se requiere emitter para buscar factura existente",
                                 'data': op_data
                             })
-                
-                # Crear nuevas facturas
+
                 bill_mapping = {}
                 for bill_code, op_data in bills_to_create.items():
                     try:
-                        bill_id = self._create_or_get_bill(op_data)
+                        bill_id = self._create_or_get_bill(op_data, request=request)
                         bill_mapping[bill_code] = bill_id
                         logger.info(f"Factura creada: {bill_code} -> {bill_id}")
                     except Exception as e:
                         logger.error(f"Error creando factura {bill_code}: {str(e)}")
-                        # Encontrar todos los índices que usan esta factura
-                        for index, op_data in enumerate(values_list):
-                            if op_data.get('billCode') == bill_code:
+                        for index, item in enumerate(values_list):
+                            if item.get('billCode') == bill_code:
                                 errors.append({
                                     'index': index,
                                     'error': f"Error creando factura {bill_code}: {str(e)}",
-                                    'data': op_data
+                                    'data': item
                                 })
-                
-                # Buscar facturas existentes por billId Y emitterId
+
                 if existing_bills_to_find:
-                    # Obtener todos los emisores necesarios
                     emitter_ids = [item['emitterId'] for item in existing_bills_to_find.values()]
                     emitters = Client.objects.filter(id__in=emitter_ids)
                     emitter_map = {str(emitter.id): emitter.document_number for emitter in emitters}
-                    
-                    # Buscar facturas
+
                     for key, bill_info in existing_bills_to_find.items():
                         bill_id_ref = bill_info['billId']
                         emitter_client_id = bill_info['emitterId']
                         emitter_doc_number = emitter_map.get(emitter_client_id)
-                        
+
                         if not emitter_doc_number:
                             for index in bill_info['indexes']:
                                 errors.append({
@@ -318,13 +318,12 @@ class PreOperationAV(BaseAV):
                                     'data': values_list[index]
                                 })
                             continue
-                        
-                        # Buscar factura por billId Y emitterId
+
                         bill = Bill.objects.filter(
                             billId=bill_id_ref,
                             emitterId=emitter_doc_number
                         ).first()
-                        
+
                         if bill:
                             bill_mapping[key] = str(bill.id)
                         else:
@@ -334,73 +333,87 @@ class PreOperationAV(BaseAV):
                                     'error': f"Factura con billId {bill_id_ref} y emisor {emitter_doc_number} no encontrada",
                                     'data': values_list[index]
                                 })
-                
-                # Fase 2: Procesar operaciones
+
                 for index, op_data in enumerate(values_list):
                     if any(err['index'] == index for err in errors):
                         continue
-                    
+
                     try:
                         operation_data = {**op_data}
-                        
-                        # Manejar referencia a factura
+
                         if op_data.get('billCode', ''):
-                            # Operación con nueva factura
                             bill_code = op_data['billCode']
                             if bill_code in bill_mapping:
                                 operation_data['bill'] = bill_mapping[bill_code]
                             else:
                                 raise ValueError(f"Factura {bill_code} no encontrada en el mapeo")
-                        
+
                         elif op_data.get('bill', '') and not is_uuid(op_data['bill']):
-                            # Operación con factura existente referenciada por billId
                             bill_id_ref = op_data['bill']
                             emitter_id = op_data.get('emitter')
-                            
+
                             if not emitter_id:
                                 raise ValueError("Se requiere emitter para buscar factura existente")
-                            
-                            # Crear clave única para el mapeo
+
                             key = f"{bill_id_ref}_{emitter_id}"
-                            
+
                             if key in bill_mapping:
                                 operation_data['bill'] = bill_mapping[key]
                             else:
-                                # Intentar buscar directamente
                                 try:
                                     emitter_client = Client.objects.get(pk=emitter_id)
                                     emitter_doc_number = emitter_client.document_number
-                                    
+
                                     bill = Bill.objects.filter(
                                         billId=bill_id_ref,
                                         emitterId=emitter_doc_number
                                     ).first()
-                                    
+
                                     if bill:
                                         operation_data['bill'] = str(bill.id)
                                         bill_mapping[key] = str(bill.id)
                                     else:
-                                        raise ValueError(f"Factura con billId {bill_id_ref} y emisor {emitter_doc_number} no encontrada")
+                                        raise ValueError(
+                                            f"Factura con billId {bill_id_ref} y emisor {emitter_doc_number} no encontrada"
+                                        )
                                 except Client.DoesNotExist:
                                     raise ValueError(f"Emisor con ID {emitter_id} no encontrado")
-                        
-                        # Si ya tiene un bill UUID válido, lo dejamos como está
-                        
+
                         serializer = PreOperationSerializer(
                             data=operation_data,
                             context={'request': request}
                         )
-                        
+
                         if not serializer.is_valid():
                             logger.error(f"Error validación operación {index}: {serializer.errors}")
                             raise serializers.ValidationError(serializer.errors)
-                        
+
                         instance = serializer.save()
                         operations_created.append({
                             'index': index,
                             'operation_id': str(instance.id),
                             'bill_id': operation_data.get('bill')
                         })
+
+                        transaction.on_commit(
+                            lambda instance=instance, index=index, operation_data=operation_data: create_operation_log(
+                                source="BULK",
+                                action="CREATE_BULK_ROW",
+                                status="SUCCESS",
+                                message=f"Fila {index} creada correctamente",
+                                op_id=instance.opId,
+                                pre_operation=instance,
+                                row_index=index,
+                                request_payload=operation_data,
+                                response_payload={
+                                    "operation_id": str(instance.id),
+                                    "bill_id": operation_data.get("bill")
+                                },
+                                bill_code=operation_data.get("billCode"),
+                                bill_id_ref=operation_data.get("bill"),
+                                user=request.user,
+                            )
+                        )
 
                     except Exception as e:
                         logger.error(f"Error en operación {index}: {str(e)}")
@@ -412,6 +425,19 @@ class PreOperationAV(BaseAV):
 
                 if errors:
                     raise Exception("Algunas operaciones fallaron")
+
+                transaction.on_commit(lambda: create_operation_log(
+                    source="BULK",
+                    action="BULK_SUMMARY",
+                    status="SUCCESS",
+                    message="Todas las operaciones fueron creadas correctamente",
+                    op_id=values_list[0].get("opId") if values_list else None,
+                    response_payload={
+                        "successful_count": len(operations_created),
+                        "failed_count": 0
+                    },
+                    user=request.user,
+                ))
 
                 return response({
                     'total_operations': len(values_list),
@@ -429,38 +455,47 @@ class PreOperationAV(BaseAV):
                 'successful_count': len(operations_created)
             }, status.HTTP_400_BAD_REQUEST)
 
-    def _create_or_get_bill(self, operation_data):
+    def _create_or_get_bill(self, operation_data, request=None):
         """Helper to create or get existing bill by billId and emitterId"""
         bill_code = operation_data['billCode']
-        
+
         try:
-            # Obtener emitter document_number
             emitter = Client.objects.get(pk=operation_data['emitter'])
             emitter_doc_number = emitter.document_number
-            
-            # Primero intentar buscar si ya existe una factura con este billId Y emitterId
+
             bill = Bill.objects.filter(
                 billId=bill_code,
                 emitterId=emitter_doc_number
             ).first()
-            
+
             if bill:
+                log_operation_data = dict(operation_data)
+                log_response_data = {"bill_id": str(bill.id)}
+
+                transaction.on_commit(lambda log_operation_data=log_operation_data, log_response_data=log_response_data: create_operation_log(
+                    source="BILL",
+                    action="FIND_OR_CREATE_BILL",
+                    status="SUCCESS",
+                    message="Factura creada correctamente",
+                    op_id=log_operation_data.get("opId"),
+                    request_payload=log_operation_data,
+                    response_payload=log_response_data,
+                    bill_code=bill_code,
+                    user=request.user if request else None,
+                ))
                 return str(bill.id)
-            
-            # Crear nueva factura si no existe
+
             payer = Client.objects.get(pk=operation_data['payer'])
             type_bill = TypeBill.objects.get(pk='fdb5feb4-24e9-41fc-9689-31aff60b76c9')
 
-            # Manejar archivo si existe
             file_url = None
             if 'file' in operation_data and operation_data['file']:
                 file_url = uploadFileBase64(
-                    files_bse64=[operation_data['file']], 
+                    files_bse64=[operation_data['file']],
                     file_path=f'bill/{operation_data.get("id", gen_uuid())}'
                 )
                 file_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{file_url}"
 
-            # Crear la nueva factura
             bill = Bill.objects.create(
                 id=gen_uuid(),
                 typeBill=type_bill,
@@ -478,9 +513,21 @@ class PreOperationAV(BaseAV):
                 expirationDate=operation_data['DateExpiration'],
                 file=file_url
             )
-            
+
+            transaction.on_commit(lambda: create_operation_log(
+                source="BILL",
+                action="FIND_OR_CREATE_BILL",
+                status="SUCCESS",
+                message="Factura creada correctamente",
+                op_id=operation_data.get("opId"),
+                request_payload=operation_data,
+                response_payload={"bill_id": str(bill.id)},
+                bill_code=bill_code,
+                user=request.user if request else None,
+            ))
+
             return str(bill.id)
-            
+
         except Exception as e:
             logger.error(f"Bill creation failed for {bill_code}: {str(e)}")
             raise
@@ -2156,7 +2203,6 @@ class RegisterOperationFromUpload(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Validar que todas las filas traigan opId
         first_row = normalized_rows[0]
         requested_op_id = first_row.get("opId")
 
@@ -2174,10 +2220,6 @@ class RegisterOperationFromUpload(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # IMPORTANTE:
-        # Bloqueo transaccional para evitar que dos peticiones calculen el mismo opId al tiempo.
-        # Esta solución usa advisory lock de PostgreSQL.
-        # Si usas PostgreSQL, esta es la forma más segura sin crear una tabla secuenciadora.
         with connection.cursor() as cursor:
             cursor.execute("SELECT GET_LOCK(%s, %s)", ["register_massive_operation_opid", 10])
             result = cursor.fetchone()
@@ -2199,7 +2241,7 @@ class RegisterOperationFromUpload(APIView):
 
         created_ids = []
 
-        for row in normalized_rows:
+        for index, row in enumerate(normalized_rows):
             calculated = row.get("calculated", {})
 
             try:
@@ -2236,7 +2278,7 @@ class RegisterOperationFromUpload(APIView):
                 )
 
             payload = {
-                "opId": final_op_id,  # <-- ya no usamos row["opId"]
+                "opId": final_op_id,
                 "opType": op_type_id,
                 "opDate": row["opDate"],
                 "applyGm": row.get("applyGm", False),
@@ -2283,6 +2325,47 @@ class RegisterOperationFromUpload(APIView):
             instance = serializer.save()
 
             created_ids.append(instance.id)
+
+            transaction.on_commit(
+                lambda instance=instance, index=index, payload=payload, bill=bill: create_operation_log(
+                    source="REGISTER_FROM_UPLOAD",
+                    action="CREATE_ROW",
+                    status="SUCCESS",
+                    message=f"Fila {index} registrada correctamente",
+                    op_id=instance.opId,
+                    pre_operation=instance,
+                    row_index=index,
+                    request_payload=payload,
+                    response_payload={"id": str(instance.id)},
+                    bill_id_ref=str(bill.id),
+                    user=request.user,
+                )
+            )
+
+        
+        
+        
+        
+        transaction.on_commit(lambda: create_operation_log(
+            source="REGISTER_FROM_UPLOAD",
+            action="REGISTER_OPERATION",
+            status="SUCCESS",
+            message=(
+                f"Operación registrada correctamente. El opId fue ajustado de {requested_op_id} a {final_op_id}."
+                if op_id_changed
+                else "Operación registrada correctamente"
+            ),
+            op_id=final_op_id,
+            response_payload={
+                "createdCount": len(created_ids),
+                "ids": [str(x) for x in created_ids],
+                "requested": requested_op_id,
+                "final": final_op_id,
+                "changed": op_id_changed,
+            },
+            user=request.user,
+        ))
+
 
         return Response(
             {
@@ -2433,3 +2516,52 @@ class MassiveOperationReceiptPDFAV(APIView):
             f'attachment; filename="Comprobante_OP_{first.opId}_{timezone.now().strftime("%Y-%m-%d_%H-%M-%S")}.pdf"'
         )
         return response
+    
+class BillsByOpId(APIView):
+    def get(self, request, pk):
+        try:
+            operations = (
+                PreOperation.objects
+                .filter(opId=pk, bill__isnull=False,status=1)
+                .select_related("bill", "investor", "clientAccount")
+            )
+
+            data = []
+            for op in operations:
+                bill_data = BillSerializer(op.bill).data
+
+                investor_name = ""
+                if op.investor:
+                    if getattr(op.investor, "first_name", None):
+                        investor_name = f"{op.investor.first_name} {op.investor.last_name}"
+                    else:
+                        investor_name = op.investor.social_reason or ""
+
+                investor_account = ""
+                if op.clientAccount:
+                    investor_account = (
+                        getattr(op.clientAccount, "account_number", None)
+                        or getattr(op.clientAccount, "number", None)
+                        or ""
+                    )
+
+                bill_data["investorId"] = str(op.investor_id) if op.investor_id else None
+                bill_data["investorName"] = investor_name
+                bill_data["investorAccountId"] = str(op.clientAccount_id) if op.clientAccount_id else None
+                bill_data["investorAccount"] = investor_account
+                bill_data["valorNominal"] = op.payedAmount
+                bill_data["valorFuturo"] = op.amount
+                bill_data["billFraction"] = op.billFraction
+
+                data.append(bill_data)
+
+            return response({
+                "error": False,
+                "data": data
+            }, 200)
+
+        except Exception as e:
+            return response(
+                {"error": True, "message": str(e)},
+                e.status_code if hasattr(e, "status_code") else 500
+            )

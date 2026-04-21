@@ -47,3 +47,62 @@ class PreOperation(BaseModel):
         verbose_name = 'operation'
         verbose_name_plural = 'operations'
         ordering = ['-opDate','-opId']
+        
+        
+
+class OperationLog(BaseModel):
+    STATUS_CHOICES = (
+        ("SUCCESS", "Success"),
+        ("ERROR", "Error"),
+        ("PARTIAL", "Partial"),
+        ("INFO", "Info"),
+    )
+
+    SOURCE_CHOICES = (
+        ("SINGLE", "Single Operation"),
+        ("BULK", "Bulk Operation"),
+        ("UPLOAD_EXCEL", "Upload Excel"),
+        ("REGISTER_FROM_UPLOAD", "Register From Upload"),
+        ("PATCH", "Patch Operation"),
+        ("DELETE", "Delete Operation"),
+        ("BILL", "Bill"),
+    )
+
+    opId = models.BigIntegerField(null=True, blank=True)
+
+    pre_operation = models.ForeignKey(
+        "operation.PreOperation",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="logs"
+    )
+
+    source = models.CharField(max_length=40, choices=SOURCE_CHOICES)
+    action = models.CharField(max_length=120)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="INFO")
+
+    message = models.TextField()
+    error_type = models.CharField(max_length=255, null=True, blank=True)
+    error_detail = models.TextField(null=True, blank=True)
+    stack_trace = models.TextField(null=True, blank=True)
+
+    row_index = models.IntegerField(null=True, blank=True)
+    bill_code = models.CharField(max_length=255, null=True, blank=True)
+    bill_id_ref = models.CharField(max_length=255, null=True, blank=True)
+
+    request_payload = models.JSONField(null=True, blank=True)
+    response_payload = models.JSONField(null=True, blank=True)
+    extra_data = models.JSONField(null=True, blank=True)
+
+    user_email = models.CharField(max_length=255, null=True, blank=True)
+    user_id_ref = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        db_table = "operation_log"
+        verbose_name = "operation log"
+        verbose_name_plural = "operation logs"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.source} - {self.action} - {self.status} - opId:{self.opId or 'N/A'}"
