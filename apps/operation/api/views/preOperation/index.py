@@ -1443,11 +1443,11 @@ class GetOperationByParams(BaseAV):
                 presentValueInvestor += x.presentValueInvestor
                 futureValue += x.amount
 
-            if sum >= 165000:
-                data['commission'] = sum
-            else:
-                data['commission'] = 165000
-                
+            #if sum >= 165000:
+             #   data['commission'] = sum
+            #else:
+             #   data['commission'] = 165000
+            data['commission'] = sum   
             # calc iva
             data['iva'] = data['commission'] * 0.19
             #calc rteFte

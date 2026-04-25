@@ -102,12 +102,12 @@ class NegotiationSummaryAV(BaseAV):
 
                 data['operation']['investorDiscount'] = round(data['operation']['valueToDiscount'] - data['operation']['investorValue'])
                 data['operation']['commissionValueBeforeTaxes'] = round(data['operation']['investorValue'] - data['operation']['SMDiscount'])
-                if  data['operation']['commissionValueBeforeTaxes'] < 165000:
-                     data['operation']['commissionValueBeforeTaxes'] = 165000
+                #if  data['operation']['commissionValueBeforeTaxes'] < 165000:
+                #     data['operation']['commissionValueBeforeTaxes'] = 165000
                 data['operation']['operationValue'] =  round(data['operation']['investorDiscount'] + data['operation']['commissionValueBeforeTaxes'])
                 data['operation']['tableCommission'] = round(data['operation']['investorValue']  - data['operation']['SMDiscount'])
-                if data['operation']['tableCommission'] < 165000:
-                    data['operation']['tableCommission'] = 165000
+               # if data['operation']['tableCommission'] < 165000:
+                #    data['operation']['tableCommission'] = 165000
 
                 data['operation']['iva'] = round(data['operation']['tableCommission'] * 0.19)
                 # risk profile
