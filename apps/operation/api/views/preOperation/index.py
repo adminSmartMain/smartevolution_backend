@@ -2,6 +2,12 @@
 from rest_framework.decorators import APIView
 from django.db.models import Q, Count
 from rest_framework import serializers
+from django.utils import timezone
+from datetime import timedelta
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.db.models import Q, Max
 # Models
 from apps.client.models import Client, RiskProfile, Account, Broker
 from apps.operation.models import PreOperation, Receipt, BuyOrder,OperationLog
@@ -57,6 +63,11 @@ from rest_framework import status
 
 from apps.operation.models import PreOperation
 from apps.base.utils.pdfToBase64 import pdfToBase64
+
+
+
+from apps.operation.api.models.index import MassiveOperationDraft, PreOperation
+from apps.operation.api.serializers.index import MassiveOperationDraftSerializer, MassiveOperationDraftListSerializer, PreOperationReadOnlySerializer
 # Configurar el logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -64,6 +75,8 @@ logger.setLevel(logging.DEBUG)
 # Crear un handler de consola y definir el nivel
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.DEBUG)
+
+
 
 # Crear un formato para los mensajes de log
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -2566,3 +2579,388 @@ class BillsByOpId(APIView):
                 {"error": True, "message": str(e)},
                 e.status_code if hasattr(e, "status_code") else 500
             )
+            
+def get_draft_queryset(request):
+    return MassiveOperationDraft.objects.filter(
+        state=True,
+        user_created_at=request.user,
+        status__in=[
+            MassiveOperationDraft.STATUS_DRAFT,
+            MassiveOperationDraft.STATUS_READY_FOR_EXCEL,
+        ],
+    )
+
+class MassiveOperationDraftAV(APIView):
+    def get(self, request):
+        qs = get_draft_queryset(request)
+
+        status_filter = request.query_params.get("status")
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+
+        qs = (
+            qs.order_by("-updated_at", "-created_at")
+            .values(
+                "id", "opId", "opDate", "opType_id", "emitter_id",
+                "payer_id", "emitterBroker_id", "currentStep", "status",
+                "expiresAt", "registeredOpId", "created_at", "updated_at",
+                "metadata",
+            )[:50]
+        )
+
+        data = []
+        for item in qs:
+            metadata = item.get("metadata") or {}
+            data.append({
+                "id": item["id"],
+                "opId": item["opId"],
+                "opDate": item["opDate"],
+                "opTypeId": item["opType_id"],
+                "emitterId": item["emitter_id"],
+                "payerId": item["payer_id"],
+                "emitterBrokerId": item["emitterBroker_id"],
+                "currentStep": item["currentStep"],
+                "status": item["status"],
+                "expiresAt": item["expiresAt"],
+                "registeredOpId": item["registeredOpId"],
+                "created_at": item["created_at"],
+                "updated_at": item["updated_at"],
+                "metadata": metadata,
+                "selectedBillsCount": metadata.get("selectedBillsCount", 0),
+                "assignmentsCount": metadata.get("assignmentsCount", 0),
+            })
+
+        return Response({"error": False, "data": data}, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        data = request.data.copy()
+
+        if not data.get("expiresAt"):
+            data["expiresAt"] = timezone.now() + timedelta(days=10)
+
+        serializer = MassiveOperationDraftSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+
+        draft = serializer.save(
+            user_created_at=request.user,
+            user_updated_at=request.user,
+        )
+
+        return Response({
+            "error": False,
+            "message": "Borrador creado correctamente",
+            "data": MassiveOperationDraftSerializer(draft).data,
+        }, status=status.HTTP_201_CREATED)
+class MassiveOperationDraftDetailAV(APIView):
+    def get_object(self, request, pk):
+        return MassiveOperationDraft.objects.get(
+            id=pk,
+            state=True,
+            user_created_at=request.user,
+        )
+
+    def get(self, request, pk):
+        draft = self.get_object(request, pk)
+        serializer = MassiveOperationDraftSerializer(draft)
+
+        return Response({
+            "error": False,
+            "data": serializer.data,
+        }, status=status.HTTP_200_OK)
+
+    def patch(self, request, pk):
+        draft = self.get_object(request, pk)
+
+        if draft.status == MassiveOperationDraft.STATUS_REGISTERED:
+            return Response({
+                "error": True,
+                "message": "No se puede modificar un borrador ya registrado.",
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = MassiveOperationDraftSerializer(
+            draft,
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+
+        draft = serializer.save(
+            user_updated_at=request.user,
+            updated_at=timezone.now(),
+            expiresAt=timezone.now() + timedelta(days=10),
+        )
+
+        return Response({
+            "error": False,
+            "message": "Borrador actualizado correctamente",
+            "data": MassiveOperationDraftSerializer(draft).data,
+        }, status=status.HTTP_200_OK)
+
+    def delete(self, request, pk):
+        draft = self.get_object(request, pk)
+        draft.state = False
+        draft.status = MassiveOperationDraft.STATUS_CANCELLED
+        draft.user_updated_at = request.user
+        draft.updated_at = timezone.now()
+        draft.save()
+
+        return Response({
+            "error": False,
+            "message": "Borrador eliminado correctamente",
+        }, status=status.HTTP_200_OK)
+        
+        
+class MassiveOperationDraftValidateAV(APIView):
+    def post(self, request, pk):
+        try:
+            draft = MassiveOperationDraft.objects.get(
+                id=pk,
+                state=True,
+                user_created_at=request.user,
+            )
+        except MassiveOperationDraft.DoesNotExist:
+            return Response({
+                "error": True,
+                "message": "Borrador no encontrado.",
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        conflicts = []
+
+        if draft.expiresAt and draft.expiresAt < timezone.now():
+            conflicts.append({
+                "field": "expiresAt",
+                "message": "El borrador expiró. Debe crear una nueva operación.",
+            })
+
+        selected_bills = draft.selectedBills or []
+        investor_assignments = draft.investorAssignments or []
+
+        def get_bill_uuid(item):
+            return str(
+                item.get("billUniqueId")
+                or item.get("bill_uuid")
+                or item.get("billUuid")
+                or item.get("billPk")
+                or item.get("bill_id_uuid")
+                or item.get("id")
+                or ""
+            ).strip()
+
+        def get_bill_label(item):
+            return str(
+                item.get("billId")
+                or item.get("billCode")
+                or item.get("billNumber")
+                or get_bill_uuid(item)
+                or ""
+            ).strip()
+
+        def get_account_number(item):
+            selected_account = item.get("selectedAccount") or {}
+            return str(
+                selected_account.get("account_number")
+                or selected_account.get("accountNumber")
+                or selected_account.get("number")
+                or item.get("investorAccount")
+                or ""
+            ).strip()
+
+        bill_uuids = {
+            get_bill_uuid(item)
+            for item in selected_bills
+            if get_bill_uuid(item)
+        }
+
+        assignment_bill_uuids = {
+            get_bill_uuid(item)
+            for item in investor_assignments
+            if get_bill_uuid(item)
+        }
+
+        all_bill_uuids = bill_uuids.union(assignment_bill_uuids)
+
+        bills = Bill.objects.filter(id__in=all_bill_uuids)
+        bills_by_id = {str(b.id): b for b in bills}
+
+        draft_emitter_document = str(
+            getattr(draft.emitter, "document_number", None)
+            or getattr(draft.emitter, "nit", None)
+            or getattr(draft.emitter, "identification", None)
+            or ""
+        ).strip()
+
+        draft_payer_document = str(
+            getattr(draft.payer, "document_number", None)
+            or getattr(draft.payer, "nit", None)
+            or getattr(draft.payer, "identification", None)
+            or ""
+        ).strip()
+
+        for item in selected_bills:
+            bill_uuid = get_bill_uuid(item)
+            bill_label = get_bill_label(item)
+
+            if not bill_uuid:
+                conflicts.append({
+                    "field": "bill",
+                    "billId": bill_label,
+                    "message": "La factura no tiene UUID válido en el borrador.",
+                })
+                continue
+
+            bill = bills_by_id.get(bill_uuid)
+
+            if not bill:
+                conflicts.append({
+                    "field": "bill",
+                    "billId": bill_label,
+                    "message": "La factura ya no existe.",
+                })
+                continue
+
+            bill_emitter_document = str(getattr(bill, "emitterId", "") or "").strip()
+            bill_payer_document = str(getattr(bill, "payerId", "") or "").strip()
+
+            if draft_emitter_document and bill_emitter_document != draft_emitter_document:
+                conflicts.append({
+                    "field": "bill",
+                    "billId": bill_label,
+                    "message": "La factura ya no pertenece al emisor del borrador.",
+                })
+
+            if draft_payer_document and bill_payer_document != draft_payer_document:
+                conflicts.append({
+                    "field": "bill",
+                    "billId": bill_label,
+                    "message": "La factura ya no pertenece al pagador del borrador.",
+                })
+
+        investor_ids = {
+            str(item.get("investorId") or "").strip()
+            for item in investor_assignments
+            if item.get("investorId")
+        }
+
+        account_ids = {
+            str(item.get("accountId") or "").strip()
+            for item in investor_assignments
+            if item.get("accountId")
+        }
+
+        account_numbers = {
+            get_account_number(item)
+            for item in investor_assignments
+            if get_account_number(item)
+        }
+
+        investors = Client.objects.filter(id__in=investor_ids)
+        investors_by_id = {str(i.id): i for i in investors}
+
+        accounts_by_id = {
+            str(a.id): a
+            for a in Account.objects.filter(id__in=account_ids)
+        }
+
+        accounts_by_number = {
+            str(a.account_number).strip(): a
+            for a in Account.objects.filter(account_number__in=account_numbers)
+            if a.account_number
+        }
+
+        for item in investor_assignments:
+            bill_uuid = get_bill_uuid(item)
+            bill_label = get_bill_label(item)
+
+            fraction = int(item.get("fraction") or item.get("billFraction") or 0)
+
+            investor_id = str(item.get("investorId") or "").strip()
+            account_id = str(item.get("accountId") or "").strip()
+            account_number = get_account_number(item)
+
+            if investor_id and investor_id not in investors_by_id:
+                conflicts.append({
+                    "field": "investor",
+                    "investorId": investor_id,
+                    "message": "El inversionista ya no existe.",
+                })
+
+            account = None
+
+            if account_id:
+                account = accounts_by_id.get(account_id)
+
+            if not account and account_number:
+                account = accounts_by_number.get(account_number)
+
+            if not account:
+                if account_id or account_number:
+                    conflicts.append({
+                        "field": "account",
+                        "accountId": account_id,
+                        "accountNumber": account_number,
+                        "message": "La cuenta del inversionista ya no existe.",
+                    })
+            elif investor_id and str(account.client_id) != investor_id:
+                conflicts.append({
+                    "field": "account",
+                    "accountId": str(account.id),
+                    "accountNumber": str(account.account_number),
+                    "message": "La cuenta ya no pertenece al inversionista.",
+                })
+
+            if bill_uuid:
+                last_fraction = (
+                    PreOperation.objects
+                    .filter(bill_id=bill_uuid)
+                    .aggregate(max_fraction=Max("billFraction"))
+                    .get("max_fraction")
+                ) or 0
+
+                if fraction and fraction <= last_fraction:
+                    conflicts.append({
+                        "field": "billFraction",
+                        "billId": bill_label,
+                        "fraction": fraction,
+                        "message": "La fracción ya no está disponible para esta factura.",
+                    })
+
+        is_valid = len(conflicts) == 0
+
+        return Response({
+            "error": not is_valid,
+            "valid": is_valid,
+            "message": (
+                "El borrador está vigente."
+                if is_valid
+                else "El borrador tiene conflictos y debe ser revisado."
+            ),
+            "conflicts": conflicts,
+            "data": MassiveOperationDraftSerializer(draft).data,
+        }, status=status.HTTP_200_OK)
+class MassiveOperationDraftMarkRegisteredAV(APIView):
+    def post(self, request, pk):
+        try:
+            draft = MassiveOperationDraft.objects.get(
+                id=pk,
+                state=True,
+                user_created_at=request.user,
+            )
+        except MassiveOperationDraft.DoesNotExist:
+            return Response({
+                "error": True,
+                "message": "Borrador no encontrado.",
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        registered_op_id = request.data.get("registeredOpId")
+
+        draft.status = MassiveOperationDraft.STATUS_REGISTERED
+        draft.registeredOpId = registered_op_id
+        draft.user_updated_at = request.user
+        draft.updated_at = timezone.now()
+        draft.save()
+
+        return Response({
+            "error": False,
+            "message": "Borrador marcado como registrado.",
+            "data": MassiveOperationDraftSerializer(draft).data,
+        }, status=status.HTTP_200_OK)

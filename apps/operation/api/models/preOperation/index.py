@@ -106,3 +106,49 @@ class OperationLog(BaseModel):
 
     def __str__(self):
         return f"{self.source} - {self.action} - {self.status} - opId:{self.opId or 'N/A'}"
+    
+    
+    
+class MassiveOperationDraft(BaseModel):
+    STATUS_DRAFT = "DRAFT"
+    STATUS_READY_FOR_EXCEL = "READY_FOR_EXCEL"
+    STATUS_REGISTERED = "REGISTERED"
+    STATUS_CANCELLED = "CANCELLED"
+
+    STATUS_CHOICES = (
+        (STATUS_DRAFT, "Borrador"),
+        (STATUS_READY_FOR_EXCEL, "Listo para Excel"),
+        (STATUS_REGISTERED, "Registrado"),
+        (STATUS_CANCELLED, "Cancelado"),
+    )
+
+    opId = models.BigIntegerField(null=True, blank=True)
+    opDate = models.DateField(null=True, blank=True)
+    opType = models.ForeignKey(TypeOperation, null=True, blank=True, on_delete=models.SET_NULL)
+
+    emitter = models.ForeignKey(Client, null=True, blank=True, on_delete=models.SET_NULL, related_name="massive_drafts_emitter")
+    payer = models.ForeignKey(Client, null=True, blank=True, on_delete=models.SET_NULL, related_name="massive_drafts_payer")
+    emitterBroker = models.ForeignKey(Broker, null=True, blank=True, on_delete=models.SET_NULL)
+
+    currentStep = models.IntegerField(default=0)
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default=STATUS_DRAFT)
+
+    selectedBills = models.JSONField(default=list, blank=True)
+    investorAssignments = models.JSONField(default=list, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+
+    registeredOpId = models.BigIntegerField(null=True, blank=True)
+    expiresAt = models.DateTimeField(null=True, blank=True)
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=[
+                    "state",
+                    "user_created_at",
+                    "status",
+                    "-updated_at",
+                    "-created_at",
+                ],
+                name="massive_draft_list_idx",
+            ),
+        ]

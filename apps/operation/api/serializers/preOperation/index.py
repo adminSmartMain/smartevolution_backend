@@ -29,6 +29,11 @@ from apps.bill.api.models.bill.index import Bill
 from django.conf import settings
 
 
+from rest_framework import serializers
+from apps.operation.api.models.index import MassiveOperationDraft
+
+
+
 # Configurar el logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -305,6 +310,8 @@ class PreOperationSignatureSerializer(serializers.ModelSerializer):
         
 
 
+
+
 class PreOperationByParamsSerializer(serializers.ModelSerializer):
     #bill           = BillSerializer(read_only=True)
     #emitter        = ClientSerializer(read_only=True)
@@ -341,6 +348,81 @@ class PreOperationByParamsSerializer(serializers.ModelSerializer):
         else:
             return False
 
+class MassiveOperationDraftListSerializer(serializers.ModelSerializer):
+    selectedBillsCount = serializers.SerializerMethodField()
+    assignmentsCount = serializers.SerializerMethodField()
 
+    class Meta:
+        model = MassiveOperationDraft
+        fields = [
+            "id",
+            "opId",
+            "opDate",
+            "opTypeId",
+            "emitterId",
+            "payerId",
+            "emitterBrokerId",
+            "currentStep",
+            "status",
+            "expiresAt",
+            "registeredOpId",
+            "created_at",
+            "updated_at",
+            "metadata",
+            "selectedBillsCount",
+            "assignmentsCount",
+        ]
 
+    def get_selectedBillsCount(self, obj):
+        return len(obj.selectedBills or [])
 
+    def get_assignmentsCount(self, obj):
+        return len(obj.investorAssignments or [])
+
+class MassiveOperationDraftSerializer(serializers.ModelSerializer):
+    opTypeId = serializers.CharField(source="opType_id", required=False, allow_null=True)
+    emitterId = serializers.CharField(source="emitter_id", required=False, allow_null=True)
+    payerId = serializers.CharField(source="payer_id", required=False, allow_null=True)
+    emitterBrokerId = serializers.CharField(source="emitterBroker_id", required=False, allow_null=True)
+
+    class Meta:
+        model = MassiveOperationDraft
+        fields = [
+            "id",
+            "opId",
+            "opDate",
+            "opTypeId",
+            "emitterId",
+            "payerId",
+            "emitterBrokerId",
+            "currentStep",
+            "status",
+            "selectedBills",
+            "investorAssignments",
+            "metadata",
+            "registeredOpId",
+            "expiresAt",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "created_at",
+            "updated_at",
+            "registeredOpId",
+        ]
+
+    def create(self, validated_data):
+        # ✅ Generar ID como en PreOperation
+        validated_data["id"] = gen_uuid()
+
+        # ❗ No seteamos created_at ni user aquí porque YA lo haces en la vista
+        # (y tu BaseModel + vista lo manejan correctamente)
+
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        # ❗ Igual que arriba: NO tocar updated_at ni user_updated_at aquí
+        # porque tu vista ya lo maneja correctamente
+
+        return super().update(instance, validated_data)
