@@ -10,10 +10,13 @@ class Command(BaseCommand):
         now = timezone.now()
 
         expired_drafts = MassiveOperationDraft.objects.filter(
-            state=True,
-            status=MassiveOperationDraft.STATUS_DRAFT,
-            expiresAt__lt=now,
-        )
+                state=True,
+                status__in=[
+                    MassiveOperationDraft.STATUS_DRAFT,
+                    MassiveOperationDraft.STATUS_READY_FOR_EXCEL,
+                ],
+                expiresAt__lt=now,
+            )
 
         count = expired_drafts.count()
 

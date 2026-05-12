@@ -97,6 +97,7 @@ from django.db.models import Q, Count
 from rest_framework import serializers
 # Models
 from apps.client.models import Client, RiskProfile, Account, Broker
+from apps.client.api.serializers.index import AccountSerializer
 from apps.operation.models import PreOperation, Receipt, BuyOrder
 from apps.bill.models import Bill
 from apps.misc.models import TypeBill
@@ -2590,6 +2591,20 @@ def get_draft_queryset(request):
         ],
     )
 
+
+def build_client_name(client):
+    if not client:
+        return ""
+
+    if getattr(client, "social_reason", None):
+        return client.social_reason
+
+    first_name = getattr(client, "first_name", "") or ""
+    last_name = getattr(client, "last_name", "") or ""
+
+    return f"{first_name} {last_name}".strip()
+
+DRAFT_EXPIRATION_MINUTES = 10
 class MassiveOperationDraftAV(APIView):
     def get(self, request):
         qs = get_draft_queryset(request)
@@ -2598,6 +2613,9 @@ class MassiveOperationDraftAV(APIView):
         if status_filter:
             qs = qs.filter(status=status_filter)
 
+        # IMPORTANTE:
+        # Se deja la consulta vieja con .values() para no volver pesada la consulta.
+        # No usar select_related aquí porque puede disparar Out of sort memory en MySQL.
         qs = (
             qs.order_by("-updated_at", "-created_at")
             .values(
@@ -2608,26 +2626,104 @@ class MassiveOperationDraftAV(APIView):
             )[:50]
         )
 
+        drafts = list(qs)
+
+        client_ids = set()
+
+        for item in drafts:
+            if item.get("emitter_id"):
+                client_ids.add(item["emitter_id"])
+
+            if item.get("payer_id"):
+                client_ids.add(item["payer_id"])
+
+        clients = Client.objects.filter(id__in=client_ids)
+
+        clients_by_id = {
+            str(client.id): client
+            for client in clients
+        }
+
         data = []
-        for item in qs:
+
+        for item in drafts:
             metadata = item.get("metadata") or {}
+
+            emitter_id = str(item["emitter_id"]) if item.get("emitter_id") else None
+            payer_id = str(item["payer_id"]) if item.get("payer_id") else None
+
+            emitter = clients_by_id.get(emitter_id)
+            payer = clients_by_id.get(payer_id)
+
+            emitter_name = build_client_name(emitter)
+            payer_name = build_client_name(payer)
+
+            
+            now = timezone.now()
+            expires_at = item.get("expiresAt")
+
+            minutes_remaining = None
+            draft_badge_color = "#d32f2f"
+            draft_badge_level = "expired"
+            draft_badge_label = "Expirado"
+
+            if expires_at:
+                delta = expires_at - now
+                minutes_remaining = int(delta.total_seconds() // 60)
+
+                if minutes_remaining >= 8:
+                    draft_badge_color = "#2e7d32"
+                    draft_badge_level = "safe"
+                    draft_badge_label = "Seguro"
+                elif minutes_remaining >= 5:
+                    draft_badge_color = "#fbc02d"
+                    draft_badge_level = "medium"
+                    draft_badge_label = "Medio"
+                elif minutes_remaining >= 1:
+                    draft_badge_color = "#d32f2f"
+                    draft_badge_level = "critical"
+                    draft_badge_label = "Crítico"
+                else:
+                    draft_badge_color = "#d32f2f"
+                    draft_badge_level = "alert"
+                    draft_badge_label = "Menos de 1 min"
             data.append({
                 "id": item["id"],
                 "opId": item["opId"],
                 "opDate": item["opDate"],
                 "opTypeId": item["opType_id"],
+
                 "emitterId": item["emitter_id"],
+                "emitterName": emitter_name,
+
                 "payerId": item["payer_id"],
+                "payerName": payer_name,
+
                 "emitterBrokerId": item["emitterBroker_id"],
+
                 "currentStep": item["currentStep"],
                 "status": item["status"],
                 "expiresAt": item["expiresAt"],
                 "registeredOpId": item["registeredOpId"],
+
                 "created_at": item["created_at"],
                 "updated_at": item["updated_at"],
-                "metadata": metadata,
+
+                "minutesRemaining": minutes_remaining,
+                "draftBadgeColor": draft_badge_color,
+                "draftBadgeLevel": draft_badge_level,
+                "draftBadgeLabel": draft_badge_label,
+
+                "metadata": {
+                    **metadata,
+                    "emitterName": metadata.get("emitterName") or emitter_name,
+                    "payerName": metadata.get("payerName") or payer_name,
+                },
+
                 "selectedBillsCount": metadata.get("selectedBillsCount", 0),
                 "assignmentsCount": metadata.get("assignmentsCount", 0),
+                "canGenerateInvestorsExcel": metadata.get("canGenerateInvestorsExcel", False),
+                "investorsExcelGenerated": metadata.get("investorsExcelGenerated", False),
             })
 
         return Response({"error": False, "data": data}, status=status.HTTP_200_OK)
@@ -2636,7 +2732,9 @@ class MassiveOperationDraftAV(APIView):
         data = request.data.copy()
 
         if not data.get("expiresAt"):
-            data["expiresAt"] = timezone.now() + timedelta(days=10)
+            data["expiresAt"] = timezone.now() + timedelta(
+                minutes=DRAFT_EXPIRATION_MINUTES
+            )
 
         serializer = MassiveOperationDraftSerializer(data=data)
         serializer.is_valid(raise_exception=True)
@@ -2687,7 +2785,9 @@ class MassiveOperationDraftDetailAV(APIView):
         draft = serializer.save(
             user_updated_at=request.user,
             updated_at=timezone.now(),
-            expiresAt=timezone.now() + timedelta(days=10),
+            expiresAt=timezone.now() + timedelta(
+    minutes=DRAFT_EXPIRATION_MINUTES
+),
         )
 
         return Response({
@@ -2964,3 +3064,102 @@ class MassiveOperationDraftMarkRegisteredAV(APIView):
             "message": "Borrador marcado como registrado.",
             "data": MassiveOperationDraftSerializer(draft).data,
         }, status=status.HTTP_200_OK)
+        
+        
+        
+# RECAUDOS
+
+
+#OBTENER OPERACIONES SEGUN EMISOR y PAGADOR
+
+class EmitterRelatedPayerByPreoperation(APIView):
+    def get(self, request):
+        emitter_id = request.query_params.get("emitterId")
+
+        if not emitter_id:
+            return Response(
+                {"error": "Se requiere el parámetro emitterId"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        payer_ids = (
+            PreOperation.objects
+            .filter(emitter_id=emitter_id, status=1, state=1)
+            .order_by()
+            .values_list("payer_id", flat=True)
+            .distinct()
+        )
+
+        return Response(
+            {"error": False, "data": [str(payer_id) for payer_id in payer_ids]},
+            status=status.HTTP_200_OK
+        )
+class EmitterPayerPreoperations(APIView):
+    def get(self, request):
+        emitter_id = request.query_params.get("emitterId")
+        payer_id = request.query_params.get("payerId")
+
+        if not emitter_id or not payer_id:
+            return Response(
+                {"error": "Se requieren los parámetros emitterId y payerId"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        preoperations = (
+            PreOperation.objects
+            .filter(
+                emitter_id=emitter_id,
+                payer_id=payer_id,
+                status=1,
+                state=1
+            )
+            .select_related("bill", "clientAccount")
+            .order_by("bill__billId", "id")
+        )
+
+        data = []
+
+        for op in preoperations:
+            bill = op.bill
+            account = op.clientAccount
+
+            bill_data = BillSerializer(bill).data if bill else None
+            account_data = AccountSerializer(account).data if account else None
+
+            data.append({
+                # ID de la preoperación
+                "id": str(op.id),
+                "preOperationId": str(op.id),
+
+                # Datos de operación
+                "opId": op.opId,
+                "opDate": op.opDate,
+                "amount": op.amount,
+
+                # IDs de factura: NO confundir
+                "billUniqueId": str(bill.id) if bill else None,
+                "billId": bill.billId if bill else None,
+
+                # Campos útiles para pintar la tabla sin depender tanto del serializer
+                "billValue": bill.billValue if bill else None,
+                "currentBalance": bill.currentBalance if bill else None,
+                "expirationDate": bill.expirationDate if bill else None,
+                "dateBill": bill.dateBill if bill else None,
+                "payerId": str(bill.payerId) if bill else str(op.payer_id),
+                "payerName": bill.payerName if bill else None,
+                "emitterId": str(bill.emitterId) if bill else str(op.emitter_id),
+                "emitterName": bill.emitterName if bill else None,
+
+                # Objetos completos por si los necesitas después
+                "bill": bill_data,
+                "clientAccount": account_data,
+            })
+
+        return Response(
+            {
+                "error": False,
+                "count": len(data),
+                "data": data
+            },
+            status=status.HTTP_200_OK
+        )
