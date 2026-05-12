@@ -11,7 +11,7 @@ from apps.base.decorators.index import checkRole
 from django.db.models import Q, Count
 import logging
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal, ROUND_HALF_UP
 from math import pow
 
@@ -281,6 +281,22 @@ def get_receipt_type_key(state_name, canceled):
         return "PARTIAL_EXPIRED"
     return "PARTIAL_CURRENT"
 
+def normalize_to_date(value):
+        if not value:
+            return None
+
+        if isinstance(value, datetime):
+            return value.date()
+
+        if isinstance(value, date):
+            return value
+
+        parsed = parse_date(value)
+
+        if isinstance(parsed, datetime):
+            return parsed.date()
+
+        return parsed
 
 def build_receipt_preview_row(op, application_date, receipt_status_id=None, payed_amount_override=None):
     bill = op.bill
@@ -291,25 +307,24 @@ def build_receipt_preview_row(op, application_date, receipt_status_id=None, paye
 
     investor_client = get_account_client(account)
 
-    op_date = parse_date(getattr(op, "opDate", None))
+    op_date = normalize_to_date(getattr(op, "opDate", None))
 
-    expiration_date = parse_date(
+    expiration_date = normalize_to_date(
         getattr(op, "opExpiration", None)
         or getattr(bill, "expirationDate", None)
         or getattr(op, "expirationDate", None)
         or op_date
     )
 
+    application_date = normalize_to_date(application_date)
+
     if not op_date:
         op_date = application_date
 
-    if application_date < op_date:
-        raise ValueError(
-            f"La fecha de aplicación no puede ser menor a la fecha de inicio de la operación {getattr(op, 'opId', op.id)}."
-        )
-
     if not expiration_date:
         expiration_date = op_date
+
+
 
     current_balance = money(
         getattr(op, "opPendingAmount", None)
@@ -339,12 +354,7 @@ def build_receipt_preview_row(op, application_date, receipt_status_id=None, paye
     investor_tax = to_decimal(get_operation_investor_tax(op))
 
     previous_receipt = get_previous_receipt_data(op)
-    last_date = parse_date(previous_receipt["lastDate"])
-
-    if last_date and application_date < last_date:
-        raise ValueError(
-            f"La fecha de aplicación no puede ser menor a la fecha del recaudo anterior de la operación {getattr(op, 'opId', op.id)}."
-        )
+    last_date = normalize_to_date(previous_receipt.get("lastDate"))
 
     previous_payed_amount = money(previous_receipt["payedAmount"])
     previous_interest = money(previous_receipt["interest"])
