@@ -431,7 +431,72 @@ class ClientRoleViewSet(APIView):
         else:
             return response({'error': True, 'message': serializer.errors}, 400)
     
+class ClientsWithActiveOperationsAV(BaseAV):
+    @checkRole(["admin"])
+    def get(self, request):
+        try:
+            active_operation_exists = Exists(
+                Operation.objects.filter(
+                    status=1
+                ).filter(
+                    Q(emitter_id=OuterRef("pk")) |
+                    Q(payer_id=OuterRef("pk")) |
+                    Q(investor_id=OuterRef("pk"))
+                )
+            )
 
+            clients_qs = (
+                Client.objects
+                .filter(state=1)
+                .annotate(HasActiveOperation=active_operation_exists)
+                .filter(HasActiveOperation=True)
+            )
+
+            q_client = request.query_params.get("client")
+            if q_client:
+                clients_qs = clients_qs.filter(
+                    Q(social_reason__icontains=q_client) |
+                    Q(first_name__icontains=q_client) |
+                    Q(last_name__icontains=q_client)
+                )
+
+            q_intel = request.query_params.get("intelligent_query")
+            if q_intel:
+                clients_qs = clients_qs.filter(
+                    Q(social_reason__icontains=q_intel) |
+                    Q(first_name__icontains=q_intel) |
+                    Q(last_name__icontains=q_intel) |
+                    Q(document_number__icontains=q_intel)
+                )
+
+            q_doc = request.query_params.get("document")
+            if q_doc:
+                clients_qs = clients_qs.filter(document_number__icontains=q_doc)
+
+            clients_qs = clients_qs.distinct().order_by(
+                "social_reason",
+                "first_name",
+                "last_name",
+            )
+
+            serializer = ClientSerializer(clients_qs, many=True)
+
+            return Response(
+                {
+                    "error": False,
+                    "data": serializer.data,
+                },
+                status=200,
+            )
+
+        except Exception as e:
+            return response(
+                {
+                    "error": True,
+                    "message": str(e),
+                },
+                e.status_code if hasattr(e, "status_code") else 500,
+            )
 class ClientRoleAssignmentViewSet(viewsets.ModelViewSet):
     queryset = ClientRoleAssignment.objects.select_related("client", "role").all().order_by("-created_at")
     serializer_class = ClientRoleAssignmentSerializer
@@ -446,4 +511,4 @@ class ClientRoleAssignmentViewSet(viewsets.ModelViewSet):
         if role_id:
             qs = qs.filter(role_id=role_id)
 
-        return qs
+        return qs   
