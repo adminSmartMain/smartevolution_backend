@@ -2775,9 +2775,26 @@ class MassiveOperationDraftDetailAV(APIView):
                 "message": "No se puede modificar un borrador ya registrado.",
             }, status=status.HTTP_400_BAD_REQUEST)
 
+        data = request.data.copy()
+
+        current_step = data.get("currentStep", None)
+
+        if current_step is not None:
+            try:
+                current_step = int(current_step)
+            except Exception:
+                current_step = 0
+
+            current_step = max(0, min(current_step, 10))
+            data["currentStep"] = current_step
+
+            metadata = data.get("metadata") or {}
+            metadata["currentStep"] = current_step
+            data["metadata"] = metadata
+
         serializer = MassiveOperationDraftSerializer(
             draft,
-            data=request.data,
+            data=data,
             partial=True,
         )
         serializer.is_valid(raise_exception=True)
@@ -2786,8 +2803,8 @@ class MassiveOperationDraftDetailAV(APIView):
             user_updated_at=request.user,
             updated_at=timezone.now(),
             expiresAt=timezone.now() + timedelta(
-    minutes=DRAFT_EXPIRATION_MINUTES
-),
+                minutes=DRAFT_EXPIRATION_MINUTES
+            ),
         )
 
         return Response({
@@ -3055,8 +3072,15 @@ class MassiveOperationDraftMarkRegisteredAV(APIView):
 
         draft.status = MassiveOperationDraft.STATUS_REGISTERED
         draft.registeredOpId = registered_op_id
+        draft.currentStep = 3
         draft.user_updated_at = request.user
         draft.updated_at = timezone.now()
+
+        metadata = draft.metadata or {}
+        metadata["currentStep"] = 3
+        metadata["registeredOperationId"] = registered_op_id
+        draft.metadata = metadata
+
         draft.save()
 
         return Response({
@@ -3113,7 +3137,13 @@ class EmitterPayerPreoperations(APIView):
                 status=1,
                 state=1
             )
-            .select_related("bill", "clientAccount")
+            .select_related(
+                "bill",
+                "clientAccount",
+                "investor",
+                "emitter",
+                "payer",
+            )
             .order_by("bill__billId", "id")
         )
 
@@ -3122,9 +3152,19 @@ class EmitterPayerPreoperations(APIView):
         for op in preoperations:
             bill = op.bill
             account = op.clientAccount
+            investor = op.investor
 
             bill_data = BillSerializer(bill).data if bill else None
             account_data = AccountSerializer(account).data if account else None
+
+            investor_name = None
+
+            if investor:
+                investor_name = (
+                    investor.social_reason
+                    or f"{investor.first_name or ''} {investor.last_name or ''}".strip()
+                    or None
+                )
 
             data.append({
                 # ID de la preoperación
@@ -3136,21 +3176,28 @@ class EmitterPayerPreoperations(APIView):
                 "opDate": op.opDate,
                 "amount": op.amount,
 
+                # Inversionista
+                "investorId": str(investor.id) if investor else None,
+                "investorName": investor_name,
+
                 # IDs de factura: NO confundir
                 "billUniqueId": str(bill.id) if bill else None,
                 "billId": bill.billId if bill else None,
-
-                # Campos útiles para pintar la tabla sin depender tanto del serializer
+                "billFraction": op.billFraction,
+                "opPendingAmount":op.opPendingAmount,
+                # Campos útiles para pintar la tabla
                 "billValue": bill.billValue if bill else None,
                 "currentBalance": bill.currentBalance if bill else None,
                 "expirationDate": bill.expirationDate if bill else None,
                 "dateBill": bill.dateBill if bill else None,
+
                 "payerId": str(bill.payerId) if bill else str(op.payer_id),
                 "payerName": bill.payerName if bill else None,
+
                 "emitterId": str(bill.emitterId) if bill else str(op.emitter_id),
                 "emitterName": bill.emitterName if bill else None,
 
-                # Objetos completos por si los necesitas después
+                # Objetos completos
                 "bill": bill_data,
                 "clientAccount": account_data,
             })
