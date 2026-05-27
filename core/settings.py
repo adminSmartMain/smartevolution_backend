@@ -59,7 +59,7 @@ INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_PARTY_APPS
 CSRF_TRUSTED_ORIGINS = [
     'http://3.93.44.58:5000',
     'https://apis.smartevolution.com.co',
-    # Agrega otras URLs de confianza si es necesario
+    'https://devapp.smartevolution.com.co', # Agrega otras URLs de confianza si es necesario
 ]
 
 CRONJOBS = [
