@@ -43,7 +43,8 @@ from datetime import date
 from django.db import transaction
 from datetime import date
 from django.db import transaction
-
+from django.http import Http404
+from rest_framework.exceptions import APIException
 from apps.operation.utils.upload_excel_parser import UploadExcelParser
 from apps.operation.utils.upload_excel_resolver import UploadExcelReferenceResolver
 from apps.operation.utils.upload_excel_calculator import UploadExcelCalculator
@@ -2604,18 +2605,48 @@ def build_client_name(client):
 
     return f"{first_name} {last_name}".strip()
 
-DRAFT_EXPIRATION_MINUTES = 10
+
+DRAFT_EXPIRATION_MINUTES =2
+
+def expire_draft_if_needed(draft):
+    if draft.expiresAt and draft.expiresAt <= timezone.now():
+        draft.state = False
+        draft.status = MassiveOperationDraft.STATUS_CANCELLED
+        draft.user_updated_at = draft.user_created_at
+        draft.updated_at = timezone.now()
+        draft.save(update_fields=[
+            "state",
+            "status",
+            "user_updated_at",
+            "updated_at",
+        ])
+        return True
+
+    return False
+
 class MassiveOperationDraftAV(APIView):
     def get(self, request):
-        qs = get_draft_queryset(request)
+        now = timezone.now()
+
+        MassiveOperationDraft.objects.filter(
+            state=True,
+            user_created_at=request.user,
+            expiresAt__lte=now,
+        ).update(
+            state=False,
+            status=MassiveOperationDraft.STATUS_CANCELLED,
+            user_updated_at=request.user,
+            updated_at=now,
+        )
+
+        qs = get_draft_queryset(request).filter(
+            expiresAt__gt=now
+        )
 
         status_filter = request.query_params.get("status")
         if status_filter:
             qs = qs.filter(status=status_filter)
 
-        # IMPORTANTE:
-        # Se deja la consulta vieja con .values() para no volver pesada la consulta.
-        # No usar select_related aquí porque puede disparar Out of sort memory en MySQL.
         qs = (
             qs.order_by("-updated_at", "-created_at")
             .values(
@@ -2658,18 +2689,18 @@ class MassiveOperationDraftAV(APIView):
             emitter_name = build_client_name(emitter)
             payer_name = build_client_name(payer)
 
-            
-            now = timezone.now()
             expires_at = item.get("expiresAt")
+            seconds_remaining = 0
+            minutes_remaining = 0
 
-            minutes_remaining = None
             draft_badge_color = "#d32f2f"
             draft_badge_level = "expired"
             draft_badge_label = "Expirado"
 
             if expires_at:
                 delta = expires_at - now
-                minutes_remaining = int(delta.total_seconds() // 60)
+                seconds_remaining = max(0, int(delta.total_seconds()))
+                minutes_remaining = max(0, int(delta.total_seconds() // 60))
 
                 if minutes_remaining >= 8:
                     draft_badge_color = "#2e7d32"
@@ -2679,7 +2710,7 @@ class MassiveOperationDraftAV(APIView):
                     draft_badge_color = "#fbc02d"
                     draft_badge_level = "medium"
                     draft_badge_label = "Medio"
-                elif minutes_remaining >= 1:
+                elif seconds_remaining > 60:
                     draft_badge_color = "#d32f2f"
                     draft_badge_level = "critical"
                     draft_badge_label = "Crítico"
@@ -2687,6 +2718,7 @@ class MassiveOperationDraftAV(APIView):
                     draft_badge_color = "#d32f2f"
                     draft_badge_level = "alert"
                     draft_badge_label = "Menos de 1 min"
+
             data.append({
                 "id": item["id"],
                 "opId": item["opId"],
@@ -2709,6 +2741,7 @@ class MassiveOperationDraftAV(APIView):
                 "created_at": item["created_at"],
                 "updated_at": item["updated_at"],
 
+                "secondsRemaining": seconds_remaining,
                 "minutesRemaining": minutes_remaining,
                 "draftBadgeColor": draft_badge_color,
                 "draftBadgeLevel": draft_badge_level,
@@ -2731,10 +2764,9 @@ class MassiveOperationDraftAV(APIView):
     def post(self, request):
         data = request.data.copy()
 
-        if not data.get("expiresAt"):
-            data["expiresAt"] = timezone.now() + timedelta(
-                minutes=DRAFT_EXPIRATION_MINUTES
-            )
+        data["expiresAt"] = timezone.now() + timedelta(
+            minutes=DRAFT_EXPIRATION_MINUTES
+        )
 
         serializer = MassiveOperationDraftSerializer(data=data)
         serializer.is_valid(raise_exception=True)
@@ -2749,13 +2781,38 @@ class MassiveOperationDraftAV(APIView):
             "message": "Borrador creado correctamente",
             "data": MassiveOperationDraftSerializer(draft).data,
         }, status=status.HTTP_201_CREATED)
+class DraftExpiredException(APIException):
+    status_code = status.HTTP_410_GONE
+    default_detail = "El borrador expiró y fue eliminado."
+    default_code = "draft_expired"
+
+
 class MassiveOperationDraftDetailAV(APIView):
     def get_object(self, request, pk):
-        return MassiveOperationDraft.objects.get(
-            id=pk,
-            state=True,
-            user_created_at=request.user,
-        )
+        try:
+            draft = MassiveOperationDraft.objects.get(
+                id=pk,
+                state=True,
+                user_created_at=request.user,
+            )
+        except MassiveOperationDraft.DoesNotExist:
+            raise Http404
+
+        if draft.expiresAt and draft.expiresAt <= timezone.now():
+            draft.state = False
+            draft.status = MassiveOperationDraft.STATUS_CANCELLED
+            draft.user_updated_at = request.user
+            draft.updated_at = timezone.now()
+            draft.save(update_fields=[
+                "state",
+                "status",
+                "user_updated_at",
+                "updated_at",
+            ])
+
+            raise DraftExpiredException()
+
+        return draft
 
     def get(self, request, pk):
         draft = self.get_object(request, pk)
@@ -2843,11 +2900,30 @@ class MassiveOperationDraftValidateAV(APIView):
 
         conflicts = []
 
-        if draft.expiresAt and draft.expiresAt < timezone.now():
-            conflicts.append({
-                "field": "expiresAt",
-                "message": "El borrador expiró. Debe crear una nueva operación.",
-            })
+        if draft.expiresAt and draft.expiresAt <= timezone.now():
+            draft.state = False
+            draft.status = MassiveOperationDraft.STATUS_CANCELLED
+            draft.user_updated_at = request.user
+            draft.updated_at = timezone.now()
+            draft.save(update_fields=[
+                "state",
+                "status",
+                "user_updated_at",
+                "updated_at",
+            ])
+
+            return Response({
+                "error": True,
+                "valid": False,
+                "message": "El borrador expiró y fue eliminado.",
+                "conflicts": [
+                    {
+                        "field": "expiresAt",
+                        "message": "El borrador expiró. Debe crear una nueva operación.",
+                    }
+                ],
+                "data": None,
+            }, status=status.HTTP_410_GONE)
 
         selected_bills = draft.selectedBills or []
         investor_assignments = draft.investorAssignments or []
