@@ -17,7 +17,17 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG =  True if env('DEBUG') == 'True' else False
 
-ALLOWED_HOSTS = ["*"]
+
+# --- SEGURIDAD DE HOSTS ---
+# Solo a dominios oficiales de Smart Evolution
+ALLOWED_HOSTS = [
+    "devapp.smartevolution.com.co", 
+    "app.smartevolution.com.co",
+    "apis.smartevolution.com.co",
+    "localhost",
+    "127.0.0.1",
+    "0.0.0.0", 
+]
 
 # number format
 USE_DECIMAL_SEPARATOR = True
@@ -56,10 +66,12 @@ THIRD_PARTY_APPS = ['rest_framework',
 
 INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_PARTY_APPS
 
+# --- SEGURIDAD CSRF ---
+# Lista de orígenes confiables para el envío de formularios y peticiones de estado
 CSRF_TRUSTED_ORIGINS = [
     'http://3.93.44.58:5000',
     'https://apis.smartevolution.com.co',
-    'https://devapp.smartevolution.com.co', # Agrega otras URLs de confianza si es necesario
+    # Agrega otras URLs de confianza si es necesario
 ]
 
 CRONJOBS = [
@@ -174,9 +186,39 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=73000)
 }
 
-# CORS settings
-CORS_ORIGIN_ALLOW_ALL = True
+# --- CONFIGURACIÓN DE COOKIES Y SEGURIDAD HTTP ---
 
+if not DEBUG:
+    # Fuerza a que las cookies solo se envíen por HTTPS
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # Protecciones adicionales del navegador
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    
+    # HSTS (Seguridad estricta de transporte)
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Asegura que Django confíe en el encabezado X-Forwarded-Proto enviado por Nginx
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# --- CONFIGURACIÓN DE CORS ---
+# Los orígenes que pueden consumir la API
+CORS_ORIGIN_ALLOW_ALL = False
+CORS_ALLOWED_ORIGINS = [
+    "https://devapp.smartevolution.com.co", 
+    "https://app.smartevolution.com.co",
+]
+
+# Para Docker si estamos en modo DEBUG
+if DEBUG:
+    CORS_ALLOWED_ORIGINS += [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
 # SMTP settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = env("EMAIL_HOST")

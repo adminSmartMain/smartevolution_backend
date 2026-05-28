@@ -2606,7 +2606,7 @@ def build_client_name(client):
     return f"{first_name} {last_name}".strip()
 
 
-DRAFT_EXPIRATION_MINUTES =2
+DRAFT_EXPIRATION_MINUTES =3
 
 def expire_draft_if_needed(draft):
     if draft.expiresAt and draft.expiresAt <= timezone.now():
