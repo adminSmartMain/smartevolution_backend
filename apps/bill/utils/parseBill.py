@@ -1,160 +1,284 @@
-import untangle
-
 import logging
+import untangle
 
 # Configurar el logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-# Crear un handler de consola y definir el nivel
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
+# Evita duplicar handlers si Django recarga el módulo
+if not logger.handlers:
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG)
 
-# Crear un formato para los mensajes de log
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-console_handler.setFormatter(formatter)
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    console_handler.setFormatter(formatter)
 
-# Añadir el handler al logger
-logger.addHandler(console_handler)
+    logger.addHandler(console_handler)
 
-def parseBill(file):
+
+def clean_embedded_xml(xml_text):
+    """
+    Limpia XML embebido dentro de CDATA.
+
+    Algunos proveedores envían el Invoice así:
+        <![CDATA[
+            <?xml version="1.0" encoding="UTF-8"?><Invoice...
+        ]]>
+
+    Si hay espacios o saltos de línea antes de <?xml, untangle falla con:
+        XML or text declaration not at start of entity
+
+    Por eso usamos strip().
+    """
+    if xml_text is None:
+        return ""
+
+    return xml_text.strip()
+
+
+def get_tax_total(invoice):
+    """
+    Suma todos los TaxTotal del Invoice.
+    Sirve tanto si cac_TaxTotal viene como lista como si viene como objeto único.
+    """
+    total_tax_amount = 0
+
+    try:
+        if not hasattr(invoice, "cac_TaxTotal"):
+            return 0
+
+        tax_totals = invoice.cac_TaxTotal
+
+        if isinstance(tax_totals, list):
+            for tax in tax_totals:
+                try:
+                    total_tax_amount += float(tax.cbc_TaxAmount.cdata)
+                except Exception as e:
+                    logger.debug(f"No se pudo leer un TaxAmount: {e}")
+        else:
+            total_tax_amount = float(tax_totals.cbc_TaxAmount.cdata)
+
+    except Exception as e:
+        logger.debug(f"Error leyendo impuestos: {e}")
+        total_tax_amount = 0
+
+    return total_tax_amount
+
+
+def extract_ubl_extensions(invoice, parsedXml):
+    """
+    Extrae datos opcionales de UBLExtensions:
+    - prefix
+    - fromAuthorized
+
+    Si no existen, no rompe el proceso.
+    """
+    try:
+        if not hasattr(invoice, "ext_UBLExtensions"):
+            return
+
+        extensions = invoice.ext_UBLExtensions.ext_UBLExtension
+
+        if not isinstance(extensions, list):
+            extensions = [extensions]
+
+        for extension in extensions:
+            if not hasattr(extension, "ext_ExtensionContent"):
+                continue
+
+            content = extension.ext_ExtensionContent
+
+            if not hasattr(content, "sts_DianExtensions"):
+                continue
+
+            dian_ext = content.sts_DianExtensions
+
+            if not hasattr(dian_ext, "sts_InvoiceControl"):
+                continue
+
+            invoice_control = dian_ext.sts_InvoiceControl
+
+            if not hasattr(invoice_control, "sts_AuthorizedInvoices"):
+                continue
+
+            authorized = invoice_control.sts_AuthorizedInvoices
+
+            parsedXml["prefix"] = (
+                authorized.sts_Prefix.cdata
+                if hasattr(authorized, "sts_Prefix")
+                else None
+            )
+
+            parsedXml["fromAuthorized"] = (
+                authorized.sts_From.cdata
+                if hasattr(authorized, "sts_From")
+                else None
+            )
+
+    except Exception as e:
+        logger.debug(f"Error procesando UBLExtensions: {e}")
+
+
+def get_payment_due_date(invoice):
+    """
+    Lee la fecha de pago si existe.
+    """
+    try:
+        return invoice.cac_PaymentMeans.cbc_PaymentDueDate.cdata
+    except Exception:
+        return None
+
+
+def get_expiration_date(invoice):
+    """
+    Lee DueDate si existe.
+    En algunos XML no viene cbc_DueDate, entonces se retorna None.
+    """
+    try:
+        return invoice.cbc_DueDate.cdata
+    except Exception:
+        return None
+
+
+def parse_invoice(invoice):
+    """
+    Recibe directamente el nodo Invoice ya parseado por untangle.
+    Extrae los campos que usa el sistema.
+    """
     parsedXml = {}
 
+    # -------------------- IVA --------------------
+    parsedXml["iva"] = get_tax_total(invoice)
+
+    # -------------------- EXTENSIONES UBL --------------------
+    extract_ubl_extensions(invoice, parsedXml)
+
+    # -------------------- CAMPOS BÁSICOS --------------------
+    parsedXml["billId"] = invoice.cbc_ID.cdata
+
+    parsedXml["emitterName"] = (
+        invoice
+        .cac_AccountingSupplierParty
+        .cac_Party
+        .cac_PartyTaxScheme
+        .cbc_RegistrationName
+        .cdata
+    )
+
+    parsedXml["emitterId"] = (
+        invoice
+        .cac_AccountingSupplierParty
+        .cac_Party
+        .cac_PartyTaxScheme
+        .cbc_CompanyID
+        .cdata
+    )
+
+    parsedXml["payerName"] = (
+        invoice
+        .cac_AccountingCustomerParty
+        .cac_Party
+        .cac_PartyTaxScheme
+        .cbc_RegistrationName
+        .cdata
+    )
+
+    parsedXml["payerId"] = (
+        invoice
+        .cac_AccountingCustomerParty
+        .cac_Party
+        .cac_PartyTaxScheme
+        .cbc_CompanyID
+        .cdata
+    )
+
+    parsedXml["billValue"] = float(
+        invoice.cac_LegalMonetaryTotal.cbc_LineExtensionAmount.cdata
+    )
+
+    parsedXml["subTotal"] = parsedXml["billValue"] + parsedXml["iva"]
+    parsedXml["total"] = parsedXml["subTotal"]
+
+    parsedXml["dateBill"] = invoice.cbc_IssueDate.cdata
+
+    parsedXml["datePayment"] = get_payment_due_date(invoice)
+
+    parsedXml["cufe"] = invoice.cbc_UUID.cdata
+
+    parsedXml["expirationDate"] = get_expiration_date(invoice)
+
+    return parsedXml
+
+
+def parseBill(file):
     try:
         xml = untangle.parse(file)
 
         # ---------------------------------------------------------
         # CASO 1 → El XML viene dentro de AttachedDocument
         # ---------------------------------------------------------
-        if hasattr(xml, 'AttachedDocument') and hasattr(xml.AttachedDocument, 'cac_Attachment'):
+        if hasattr(xml, "AttachedDocument") and hasattr(xml.AttachedDocument, "cac_Attachment"):
 
             try:
-                xml2 = untangle.parse(
-                    xml.AttachedDocument.cac_Attachment.cac_ExternalReference.cbc_Description.cdata
+                description = (
+                    xml
+                    .AttachedDocument
+                    .cac_Attachment
+                    .cac_ExternalReference
+                    .cbc_Description
+                    .cdata
                 )
 
-                # -------------------- IVA --------------------
-                total_tax_amount = 0
-                if hasattr(xml2.Invoice, 'cac_TaxTotal'):
-                    tax_totals = xml2.Invoice.cac_TaxTotal
+                # Corrección importante:
+                # esto permite leer XML internos que vienen con espacios/saltos antes de <?xml
+                description = clean_embedded_xml(description)
 
-                    if isinstance(tax_totals, list):
-                        for t in tax_totals:
-                            total_tax_amount += float(t.cbc_TaxAmount.cdata)
-                    else:
-                        total_tax_amount = float(tax_totals.cbc_TaxAmount.cdata)
+                xml2 = untangle.parse(description)
 
-                parsedXml['iva'] = total_tax_amount
+                if not hasattr(xml2, "Invoice"):
+                    return {
+                        "error": True,
+                        "message": "Invoice no encontrado dentro del AttachedDocument"
+                    }
 
-                # -------------------- CAMPOS BÁSICOS --------------------
-                parsedXml['billId'] = xml2.Invoice.cbc_ID.cdata
-                parsedXml['emitterName'] = xml2.Invoice.cac_AccountingSupplierParty.cac_Party.cac_PartyTaxScheme.cbc_RegistrationName.cdata
-                parsedXml['emitterId'] = xml2.Invoice.cac_AccountingSupplierParty.cac_Party.cac_PartyTaxScheme.cbc_CompanyID.cdata
-                parsedXml['payerName'] = xml2.Invoice.cac_AccountingCustomerParty.cac_Party.cac_PartyTaxScheme.cbc_RegistrationName.cdata
-                parsedXml['payerId'] = xml2.Invoice.cac_AccountingCustomerParty.cac_Party.cac_PartyTaxScheme.cbc_CompanyID.cdata
-
-                parsedXml['billValue'] = float(xml2.Invoice.cac_LegalMonetaryTotal.cbc_LineExtensionAmount.cdata)
-                parsedXml['subTotal'] = parsedXml['billValue'] + parsedXml['iva']
-                parsedXml['total'] = parsedXml['subTotal']
-
-                parsedXml['dateBill'] = xml2.Invoice.cbc_IssueDate.cdata
-
-                try:
-                    parsedXml['datePayment'] = xml2.Invoice.cac_PaymentMeans.cbc_PaymentDueDate.cdata
-                except:
-                    parsedXml['datePayment'] = None
-
-                parsedXml['cufe'] = xml2.Invoice.cbc_UUID.cdata
-
-                try:
-                    parsedXml['expirationDate'] = xml2.Invoice.cbc_DueDate.cdata
-                except:
-                    parsedXml['expirationDate'] = None
-
-                return parsedXml
+                return parse_invoice(xml2.Invoice)
 
             except Exception as e:
-                return {'error': True, 'message': f"Error processing AttachedDocument: {str(e)}"}
+                logger.exception("Error processing AttachedDocument")
+                return {
+                    "error": True,
+                    "message": f"Error processing AttachedDocument: {str(e)}"
+                }
 
         # ---------------------------------------------------------
         # CASO 2 → El XML viene directamente como Invoice
         # ---------------------------------------------------------
-        elif hasattr(xml, 'Invoice'):
+        elif hasattr(xml, "Invoice"):
 
             try:
-                xml2 = xml
-
-                # -------------------- IVA --------------------
-                total_tax_amount = 0
-                if hasattr(xml2.Invoice, 'cac_TaxTotal'):
-                    tax_totals = xml2.Invoice.cac_TaxTotal
-
-                    if isinstance(tax_totals, list):
-                        for t in tax_totals:
-                            total_tax_amount += float(t.cbc_TaxAmount.cdata)
-                    else:
-                        total_tax_amount = float(tax_totals.cbc_TaxAmount.cdata)
-
-                parsedXml['iva'] = total_tax_amount
-
-                # -------------------- EXTRAER EXTENSIONES UBL --------------------
-                try:
-                    for extension in xml2.Invoice.ext_UBLExtensions.ext_UBLExtension:
-                        if hasattr(extension, "ext_ExtensionContent"):
-                            content = extension.ext_ExtensionContent
-
-                            if hasattr(content, "sts_DianExtensions"):
-                                dian_ext = content.sts_DianExtensions
-
-                                if hasattr(dian_ext, "sts_InvoiceControl") and hasattr(dian_ext.sts_InvoiceControl, "sts_AuthorizedInvoices"):
-                                    authorized = dian_ext.sts_InvoiceControl.sts_AuthorizedInvoices
-
-                                    prefix = authorized.sts_Prefix.cdata if hasattr(authorized, "sts_Prefix") else None
-                                    from_value = authorized.sts_From.cdata if hasattr(authorized, "sts_From") else None
-
-                                    parsedXml['prefix'] = prefix
-                                    parsedXml['fromAuthorized'] = from_value
-
-                except Exception as e:
-                    logger.debug(f"Error procesando UBLExtensions: {e}")
-
-                # -------------------- CAMPOS BÁSICOS --------------------
-                parsedXml['billId'] = xml2.Invoice.cbc_ID.cdata
-                parsedXml['emitterName'] = xml2.Invoice.cac_AccountingSupplierParty.cac_Party.cac_PartyTaxScheme.cbc_RegistrationName.cdata
-                parsedXml['emitterId'] = xml2.Invoice.cac_AccountingSupplierParty.cac_Party.cac_PartyTaxScheme.cbc_CompanyID.cdata
-
-                parsedXml['payerName'] = xml2.Invoice.cac_AccountingCustomerParty.cac_Party.cac_PartyTaxScheme.cbc_RegistrationName.cdata
-                parsedXml['payerId'] = xml2.Invoice.cac_AccountingCustomerParty.cac_Party.cac_PartyTaxScheme.cbc_CompanyID.cdata
-
-                parsedXml['billValue'] = float(xml2.Invoice.cac_LegalMonetaryTotal.cbc_LineExtensionAmount.cdata)
-                parsedXml['subTotal'] = parsedXml['billValue'] + parsedXml['iva']
-                parsedXml['total'] = parsedXml['subTotal']
-
-                parsedXml['dateBill'] = xml2.Invoice.cbc_IssueDate.cdata
-
-                try:
-                    parsedXml['datePayment'] = xml2.Invoice.cac_PaymentMeans.cbc_PaymentDueDate.cdata
-                except:
-                    parsedXml['datePayment'] = None
-
-                parsedXml['cufe'] = xml2.Invoice.cbc_UUID.cdata
-
-                try:
-                    parsedXml['expirationDate'] = xml2.Invoice.cbc_DueDate.cdata
-                except:
-                    parsedXml['expirationDate'] = None
-
-                return parsedXml
+                return parse_invoice(xml.Invoice)
 
             except Exception as e:
-                return {'error': True, 'message': f"Error processing Invoice: {str(e)}"}
+                logger.exception("Error processing Invoice")
+                return {
+                    "error": True,
+                    "message": f"Error processing Invoice: {str(e)}"
+                }
 
         # ---------------------------------------------------------
         # SIN AttachedDocument NI Invoice
         # ---------------------------------------------------------
         else:
-            return {'error': True, 'message': 'AttachedDocument o Invoice no encontrados'}
+            return {
+                "error": True,
+                "message": "AttachedDocument o Invoice no encontrados"
+            }
 
     except Exception as e:
-        return {'error': True, 'message': f"Error parsing XML: {str(e)}"}
-
+        logger.exception("Error parsing XML")
+        return {
+            "error": True,
+            "message": f"Error parsing XML: {str(e)}"
+        }
