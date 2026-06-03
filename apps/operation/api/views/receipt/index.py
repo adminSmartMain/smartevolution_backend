@@ -117,14 +117,42 @@ def parse_date(value):
     if not value:
         return None
 
-    if hasattr(value, "date"):
+    if isinstance(value, date) and not isinstance(value, datetime):
+        return value
+
+    if isinstance(value, datetime):
+        if timezone.is_aware(value):
+            return timezone.localtime(value).date()
         return value.date()
 
     if isinstance(value, str):
-        clean = value[:10]
-        return datetime.strptime(clean, "%Y-%m-%d").date()
+        clean = value.strip()
+
+        # Caso seguro: YYYY-MM-DD.
+        # Este es el formato ideal para fechas de negocio.
+        if len(clean) >= 10 and clean[4] == "-" and clean[7] == "-" and "T" not in clean:
+            return datetime.strptime(clean[:10], "%Y-%m-%d").date()
+
+        # Caso ISO con hora/zona: 2026-05-16T00:16:00Z
+        try:
+            iso_value = clean.replace("Z", "+00:00")
+            parsed = datetime.fromisoformat(iso_value)
+
+            if timezone.is_aware(parsed):
+                return timezone.localtime(parsed).date()
+
+            return parsed.date()
+        except Exception:
+            pass
+
+        # Último fallback: tomar solo YYYY-MM-DD
+        return datetime.strptime(clean[:10], "%Y-%m-%d").date()
 
     return value
+
+
+def normalize_to_date(value):
+    return parse_date(value)
 
 
 def format_date(value):
@@ -317,7 +345,15 @@ def build_receipt_preview_row(op, application_date, receipt_status_id=None, paye
     )
 
     application_date = normalize_to_date(application_date)
-
+    logger.warning(
+    "DAYS_DEBUG op_id=%s op_date=%s expiration_date=%s application_date=%s real_days=%s additional_base_days=%s",
+    getattr(op, "opId", None),
+    op_date,
+    expiration_date,
+    application_date,
+    max((application_date - op_date).days, 0),
+    max((application_date - expiration_date).days, 0),
+)
     if not op_date:
         op_date = application_date
 
@@ -586,6 +622,11 @@ class MassiveReceiptPreview(APIView):
 
         try:
             application_date = parse_date(application_date)
+            logger.warning(
+                    "MASSIVE_RECEIPT_PREVIEW application_date parsed=%s raw=%s",
+                    application_date,
+                    request.data.get("applicationDate"),
+                )
         except Exception:
             return Response(
                 {"error": True, "message": "applicationDate inválida"},
