@@ -573,7 +573,15 @@ def build_receipt_preview_row(op, application_date, receipt_status_id=None, paye
         "futureValue": float(money(future_value)),
         "nominalValue": float(money(nominal_value)),
         "currentBalance": float(money(current_balance)),
-        "pending": float(money(pending_after)),
+
+        # Para mostrar en paso 2 y Excel:
+        # debe ser el opPendingAmount actual, sin intereses adicionales.
+        "pending": float(money(current_balance)),
+
+        # Para registrar el recaudo:
+        # saldo posterior luego de descontar el monto aplicado.
+        "pendingAfter": float(money(pending_after)),
+
         "payedAmount": float(money(payed_amount)),
         "toCollect": float(money(to_collect)),
 
@@ -1112,12 +1120,12 @@ class MassiveReceiptUploadExcel(APIView):
 
             if preview_row and not has_errors:
                 normalized_rows.append({
-                    **preview_row,
-                    "rowNumber": parsed.get("rowNumber") or index,
-                    "payedAmount": float(payed_amount),
-                    "calculatedDays": calculated_days,
-                    "receiptTypeLabel": get_receipt_label_from_type_id(preview_row.get("typeReceipt")),
-                })
+                        **preview_row,
+                        "rowNumber": parsed.get("rowNumber") or index,
+                        "payedAmount": float(payed_amount),
+                        "calculatedDays": calculated_days,
+                        "receiptTypeLabel": get_receipt_label_from_type_id(preview_row.get("typeReceipt")),
+                    })
 
         can_register = error_count == 0 and len(normalized_rows) > 0
 
@@ -1253,7 +1261,7 @@ class MassiveReceiptRegister(APIView):
                 "receiptStatus": receipt_status_id,
 
                 "payedAmount": preview_row["payedAmount"],
-                "opPendingAmount": preview_row["pending"],
+                "opPendingAmount": preview_row["pendingAfter"],
                 "operation": preview_row["operation"],
                 "account": preview_row["account"],
 
@@ -1261,7 +1269,7 @@ class MassiveReceiptRegister(APIView):
                 "additionalInterests": preview_row["additionalInterests"],
                 "additionalInterestsSM": preview_row["additionalInterestsSM"],
                 "investorInterests": preview_row["investorInterests"],
-                "tableInterests": preview_row["tableInterests"],
+                "tableInterests": 0,
                 "futureValueRecalculation": preview_row["futureValueRecalculation"],
                 "tableRemaining": preview_row["tableRemaining"],
                 "realDays": preview_row["realDays"],
