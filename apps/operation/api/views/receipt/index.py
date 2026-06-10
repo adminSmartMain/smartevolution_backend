@@ -326,7 +326,7 @@ def normalize_to_date(value):
 
         return parsed
 
-def build_receipt_preview_row(op, application_date, receipt_status_id=None, payed_amount_override=None):
+def build_receipt_preview_row(op, application_date, receipt_status_id=None, payed_amount_override=None, calculated_days_override=None):
     bill = op.bill
     account = op.clientAccount
 
@@ -406,7 +406,20 @@ def build_receipt_preview_row(op, application_date, receipt_status_id=None, paye
     state_name = get_state(application_date, expiration_date)
 
     real_days = max((application_date - op_date).days, 0)
-    calculated_days = real_days
+
+    # Días reales: siempre vienen de fechas.
+    # Días cálculo: pueden venir modificados desde el front o desde el Excel.
+    # Si no vienen, usamos realDays como valor por defecto para generar la plantilla.
+    if calculated_days_override not in [None, ""]:
+        try:
+            calculated_days = int(calculated_days_override)
+        except Exception:
+            raise ValueError("Días cálculo inválido.")
+
+        if calculated_days < 0:
+            raise ValueError("Días cálculo no puede ser negativo.")
+    else:
+        calculated_days = real_days
 
     additional_days = 0
     additional_interests = Decimal("0.00")
@@ -653,6 +666,12 @@ class MassiveReceiptPreview(APIView):
             if item.get("preOperationId") or item.get("id")
         }
 
+        calculated_days_by_operation = {
+            str(item.get("preOperationId") or item.get("id")): item.get("calculatedDays")
+            for item in operations
+            if item.get("preOperationId") or item.get("id")
+        }
+
         preoperations = (
             PreOperation.objects
             .filter(id__in=preoperation_ids, status=1, state=1)
@@ -676,6 +695,7 @@ class MassiveReceiptPreview(APIView):
                     application_date,
                     receipt_status_id=receipt_status_id,
                     payed_amount_override=payed_by_operation.get(str(op.id)),
+                    calculated_days_override=calculated_days_by_operation.get(str(op.id)),
                 )
             except ValueError as error:
                 return Response(
@@ -1040,10 +1060,11 @@ class MassiveReceiptUploadExcel(APIView):
                         application_date,
                         receipt_status_id=receipt_status_id,
                         payed_amount_override=payed_amount,
+                        calculated_days_override=calculated_days,
                     )
 
                     # El usuario puede modificar días cálculo en Excel.
-                    # Si lo modifica, se guarda como calculatedDays.
+                    # Se calcula y se guarda usando ese valor, no realDays.
                     preview_row["calculatedDays"] = calculated_days
 
                 except ValueError as error:
@@ -1226,21 +1247,32 @@ class MassiveReceiptRegister(APIView):
                     "message": "El monto aplicación debe ser mayor a cero",
                 })
                 continue
-            preview_row = build_receipt_preview_row(
-                op,
-                application_date,
-                receipt_status_id=receipt_status_id,
-                payed_amount_override=payed_amount,
-            )
+
+            calculated_days_override = None
             if item.get("calculatedDays") not in [None, ""]:
                 try:
-                    preview_row["calculatedDays"] = int(item.get("calculatedDays"))
+                    calculated_days_override = int(item.get("calculatedDays"))
                 except Exception:
                     errors.append({
                         "operation": op_id,
                         "message": "Días cálculo inválido",
                     })
                     continue
+
+                if calculated_days_override < 0:
+                    errors.append({
+                        "operation": op_id,
+                        "message": "Días cálculo no puede ser negativo",
+                    })
+                    continue
+
+            preview_row = build_receipt_preview_row(
+                op,
+                application_date,
+                receipt_status_id=receipt_status_id,
+                payed_amount_override=payed_amount,
+                calculated_days_override=calculated_days_override,
+            )
             if not preview_row:
                 errors.append({
                     "operation": op_id,
