@@ -1,5 +1,5 @@
 from .broker.index import BrokerAV, BrokerByClientAV
-from .client.index import ClientAV, ClientByTermAV
+from .client.index import ClientAV, ClientByTermAV,ClientsWithActiveOperationsAV
 from .contact.index import ContactAV
 from .account.index import AccountAV, AccountByClientAV
 from .legalRepresentative.index import LegalRepresentativeAV

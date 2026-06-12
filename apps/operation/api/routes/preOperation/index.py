@@ -1,6 +1,6 @@
 # views
 from django.urls import path
-from apps.operation.api.views.index import (PreOperationAV, GetLastOperationAV, 
+from apps.operation.api.views.index import (EmitterRelatedPayerByPreoperation,EmitterPayerPreoperations,PreOperationAV, GetLastOperationAV, 
                                             GetBillFractionAV,GetBillFractionBulkAV, GetOperationByEmitter, 
                                             GetOperationByParams, OperationDetailAV, MassiveOperations,UploadExcel,RegisterOperationFromUpload, ClientsWithAccountsAV,MassiveOperationReceiptPDFAV)
 
@@ -18,4 +18,6 @@ urlpatterns = [
     path('billFractionBulk', GetBillFractionBulkAV.as_view(), name='bill_fraction_bulk'),
     path("clientsWithAccounts", ClientsWithAccountsAV.as_view(), name="clients_with_accounts"),
     path("massive-receipt/<int:op_id>",MassiveOperationReceiptPDFAV.as_view(),name="massive-operation-receipt-pdf",),
+     path("massive-receipt/", EmitterPayerPreoperations.as_view(), name='operation_by_emitter_payer'),
+    path("emitter-related-payers/", EmitterRelatedPayerByPreoperation.as_view(), name='emitter_related_payers_by_preoperation'),
 ]

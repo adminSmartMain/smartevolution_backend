@@ -30,13 +30,13 @@ from django.conf import settings
 import uuid
 from apps.base.utils.index import gen_uuid, PDFBase64File, uploadFileBase64
 from apps.base.utils.s3logging import log_execution_to_s3
-
+from apps.bill.api.serializers.index import BillSerializer
 from django.db.models import Max
 from datetime import date
 from django.db import transaction
 from datetime import date
 from django.db import transaction
-
+from apps.client.api.serializers.index import AccountSerializer
 from apps.operation.utils.upload_excel_parser import UploadExcelParser
 from apps.operation.utils.upload_excel_resolver import UploadExcelReferenceResolver
 from apps.operation.utils.upload_excel_calculator import UploadExcelCalculator
@@ -2433,3 +2433,123 @@ class MassiveOperationReceiptPDFAV(APIView):
             f'attachment; filename="Comprobante_OP_{first.opId}_{timezone.now().strftime("%Y-%m-%d_%H-%M-%S")}.pdf"'
         )
         return response
+    
+# RECAUDOS
+
+
+#OBTENER OPERACIONES SEGUN EMISOR y PAGADOR
+
+class EmitterRelatedPayerByPreoperation(APIView):
+    def get(self, request):
+        emitter_id = request.query_params.get("emitterId")
+
+        if not emitter_id:
+            return Response(
+                {"error": "Se requiere el parámetro emitterId"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        payer_ids = (
+            PreOperation.objects
+            .filter(emitter_id=emitter_id, status=1, state=1)
+            .order_by()
+            .values_list("payer_id", flat=True)
+            .distinct()
+        )
+
+        return Response(
+            {"error": False, "data": [str(payer_id) for payer_id in payer_ids]},
+            status=status.HTTP_200_OK
+        )
+class EmitterPayerPreoperations(APIView):
+    def get(self, request):
+        emitter_id = request.query_params.get("emitterId")
+        payer_id = request.query_params.get("payerId")
+
+        if not emitter_id or not payer_id:
+            return Response(
+                {"error": "Se requieren los parámetros emitterId y payerId"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        preoperations = (
+            PreOperation.objects
+            .filter(
+                emitter_id=emitter_id,
+                payer_id=payer_id,
+                status=1,
+                state=1
+            )
+            .select_related(
+                "bill",
+                "clientAccount",
+                "investor",
+                "emitter",
+                "payer",
+            )
+            .order_by("bill__billId", "id")
+        )
+
+        data = []
+
+        for op in preoperations:
+            bill = op.bill
+            account = op.clientAccount
+            investor = op.investor
+
+            bill_data = BillSerializer(bill).data if bill else None
+            account_data = AccountSerializer(account).data if account else None
+
+            investor_name = None
+
+            if investor:
+                investor_name = (
+                    investor.social_reason
+                    or f"{investor.first_name or ''} {investor.last_name or ''}".strip()
+                    or None
+                )
+
+            data.append({
+                # ID de la preoperación
+                "id": str(op.id),
+                "preOperationId": str(op.id),
+
+                # Datos de operación
+                "opId": op.opId,
+                "opDate": op.opDate,
+                "amount": op.amount,
+
+                # Inversionista
+                "investorId": str(investor.id) if investor else None,
+                "investorName": investor_name,
+
+                # IDs de factura: NO confundir
+                "billUniqueId": str(bill.id) if bill else None,
+                "billId": bill.billId if bill else None,
+                "billFraction": op.billFraction,
+                "opPendingAmount":op.opPendingAmount,
+                # Campos útiles para pintar la tabla
+                "billValue": bill.billValue if bill else None,
+                "currentBalance": bill.currentBalance if bill else None,
+                "expirationDate": bill.expirationDate if bill else None,
+                "dateBill": bill.dateBill if bill else None,
+
+                "payerId": str(bill.payerId) if bill else str(op.payer_id),
+                "payerName": bill.payerName if bill else None,
+
+                "emitterId": str(bill.emitterId) if bill else str(op.emitter_id),
+                "emitterName": bill.emitterName if bill else None,
+
+                # Objetos completos
+                "bill": bill_data,
+                "clientAccount": account_data,
+            })
+
+        return Response(
+            {
+                "error": False,
+                "count": len(data),
+                "data": data
+            },
+            status=status.HTTP_200_OK
+        )

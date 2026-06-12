@@ -10,7 +10,25 @@ from apps.base.utils.index import response, BaseAV
 from apps.client.utils.index import createClient, saveContacts, saveLegalRepresentative, createAccount, genRequest
 # Decorators
 from apps.base.decorators.index import checkRole
-
+from rest_framework.response import Response
+from django.db.models import (
+    Q,
+    F,
+    Value,
+    Count,
+    Sum,
+    Case,
+    When,
+    Exists,
+    OuterRef,
+    Subquery,
+    DecimalField,
+    DateTimeField,
+    IntegerField,
+    ExpressionWrapper,
+)
+from apps.operation.api.models.preOperation.index import PreOperation as Operation
+from django.db.models.functions import Coalesce, Greatest
 
 class ClientAV(BaseAV):
     @checkRole(['admin'])
@@ -146,3 +164,72 @@ class ClientByTermAV(BaseAV):
             return response({'error': False, 'data': serializer.data}, 200)
         except Exception as e:
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
+        
+
+
+class ClientsWithActiveOperationsAV(BaseAV):
+    @checkRole(["admin"])
+    def get(self, request):
+        try:
+            active_operation_exists = Exists(
+                Operation.objects.filter(
+                    status=1
+                ).filter(
+                    Q(emitter_id=OuterRef("pk")) |
+                    Q(payer_id=OuterRef("pk")) |
+                    Q(investor_id=OuterRef("pk"))
+                )
+            )
+
+            clients_qs = (
+                Client.objects
+                .filter(state=1)
+                .annotate(HasActiveOperation=active_operation_exists)
+                .filter(HasActiveOperation=True)
+            )
+
+            q_client = request.query_params.get("client")
+            if q_client:
+                clients_qs = clients_qs.filter(
+                    Q(social_reason__icontains=q_client) |
+                    Q(first_name__icontains=q_client) |
+                    Q(last_name__icontains=q_client)
+                )
+
+            q_intel = request.query_params.get("intelligent_query")
+            if q_intel:
+                clients_qs = clients_qs.filter(
+                    Q(social_reason__icontains=q_intel) |
+                    Q(first_name__icontains=q_intel) |
+                    Q(last_name__icontains=q_intel) |
+                    Q(document_number__icontains=q_intel)
+                )
+
+            q_doc = request.query_params.get("document")
+            if q_doc:
+                clients_qs = clients_qs.filter(document_number__icontains=q_doc)
+
+            clients_qs = clients_qs.distinct().order_by(
+                "social_reason",
+                "first_name",
+                "last_name",
+            )
+
+            serializer = ClientSerializer(clients_qs, many=True)
+
+            return Response(
+                {
+                    "error": False,
+                    "data": serializer.data,
+                },
+                status=200,
+            )
+
+        except Exception as e:
+            return response(
+                {
+                    "error": True,
+                    "message": str(e),
+                },
+                e.status_code if hasattr(e, "status_code") else 500,
+            )
