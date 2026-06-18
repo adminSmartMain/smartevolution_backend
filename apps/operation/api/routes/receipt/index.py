@@ -4,11 +4,17 @@ from apps.operation.api.views.index import (
     MassiveReceiptPreview,
     MassiveReceiptRegister,
     MassiveReceiptUploadExcel,
+    ReceiptVoidAV,
+    ReceiptAdjustAV,
+    ReceiptHistoryAV,
 )
 
 
 urlpatterns = [
     path("", ReceiptAV.as_view(), name="receipt"),
+    path("history/", ReceiptHistoryAV.as_view(), name="receipt_history"),
+    path("<uuid:pk>/void/", ReceiptVoidAV.as_view(), name="receipt_void"),
+    path("<uuid:pk>/adjust/", ReceiptAdjustAV.as_view(), name="receipt_adjust"),
     path("<uuid:pk>", ReceiptAV.as_view(), name="receipt_id"),
 
     path(

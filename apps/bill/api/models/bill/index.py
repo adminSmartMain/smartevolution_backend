@@ -35,3 +35,6 @@ class Bill(BaseModel):
     class Meta:
         db_table = 'bills'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=["emitterId"], name="idx_bill_emitter_id"),
+        ]

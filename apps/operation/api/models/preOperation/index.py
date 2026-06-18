@@ -47,6 +47,14 @@ class PreOperation(BaseModel):
         verbose_name = 'operation'
         verbose_name_plural = 'operations'
         ordering = ['-opDate','-opId']
+        indexes = [
+    models.Index(fields=["emitter", "-created_at"], name="idx_operation_emitter_created"),
+    models.Index(fields=["payer", "-created_at"], name="idx_operation_payer_created"),
+    models.Index(fields=["investor", "-created_at"], name="idx_operation_investor_created"),
+    models.Index(fields=["emitter"], name="idx_operation_emitter"),
+    models.Index(fields=["payer"], name="idx_operation_payer"),
+    models.Index(fields=["investor"], name="idx_operation_investor"),
+]
         
         
 

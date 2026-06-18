@@ -57,6 +57,7 @@ LOCAL_APPS = ['apps.base',
             'apps.administration', ]
 
 THIRD_PARTY_APPS = ['rest_framework',
+                     'drf_spectacular',
                     'rest_framework.authtoken',
                     'corsheaders',
                     'gunicorn',
@@ -177,8 +178,54 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # REST framework settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework_simplejwt.authentication.JWTAuthentication', ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'EXCEPTION_HANDLER': 'apps.base.exceptions.custom_exception_handler',
 }
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Smart Evolution API',
+    'DESCRIPTION': (
+        'Documentación técnica de los endpoints consumidos por el frontend de Smart Evolution. '
+        'La autenticación se realiza con JWT usando el encabezado Authorization: Bearer <token>.'
+    ),
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    # Esquema Bearer para que Swagger muestre el botón Authorize.
+    # Aunque simplejwt suele detectarse, esto lo deja explícito y estable.
+    'APPEND_COMPONENTS': {
+        'securitySchemes': {
+            'BearerAuth': {
+                'type': 'http',
+                'scheme': 'bearer',
+                'bearerFormat': 'JWT',
+            }
+        }
+    },
+    'SECURITY': [{'BearerAuth': []}],
+    'SCHEMA_PATH_PREFIX': '/api',
+    'TAGS': [
+        {'name': 'Autenticación', 'description': 'Inicio de sesión, registro y recuperación de contraseña.'},
+        {'name': 'Usuarios', 'description': 'Administración y roles de usuarios.'},
+        {'name': 'Clientes', 'description': 'Clientes, contactos, representantes, cuentas y perfiles.'},
+        {'name': 'Catálogos', 'description': 'Catálogos base: ciudades, bancos, tipos, CIIU, países y similares.'},
+        {'name': 'Facturas', 'description': 'Gestión y lectura de facturas.'},
+        {'name': 'Operaciones', 'description': 'Preoperaciones, operaciones masivas, borradores y consultas operativas.'},
+        {'name': 'Recaudos', 'description': 'Registro individual, registro masivo, validación Excel e historial de recaudos.'},
+        {'name': 'Administración', 'description': 'Depósitos, egresos, devoluciones y movimientos administrativos.'},
+        {'name': 'Reportes', 'description': 'Órdenes, recibos, resúmenes y documentos generados.'},
+    ],
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': True,
+        'filter': True,
+    },
+    'REDOC_UI_SETTINGS': {
+        'hideDownloadButton': False,
+    },
+}
+
+
 
 # JWT settings
 SIMPLE_JWT = {

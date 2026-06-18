@@ -29,6 +29,27 @@ from django.db.models import (
 from django.db.models.functions import Coalesce
 from django.db import models
 from rest_framework.response import Response
+from django.db.models import (
+    Q,
+    F,
+    Value,
+    Count,
+    Sum,
+    Case,
+    When,
+    Exists,
+    OuterRef,
+    Subquery,
+    DecimalField,
+    DateTimeField,
+    IntegerField,
+    ExpressionWrapper,
+)
+from django.db.models.functions import Coalesce, Greatest
+
+
+
+
 def gen_uuid():
     return uuid.uuid4()
 def normalize_role_ids(value):
@@ -61,165 +82,282 @@ def normalize_role_ids(value):
     return []
 
 class ClientAV(BaseAV):
-    @checkRole(['admin'])
-   
-    def get(self, request, pk=None):
-        try:
-            clients_qs = Client.objects.filter(state=1)
 
-            # =========================
-            # SUBQUERIES
-            # =========================
-
-            # 1) RegisteredAt = created_at de la cuenta (más antigua)
-            account_created_sq = (
-                Account.objects
-                .filter(client_id=OuterRef("pk"))
-                .order_by("created_at")
-                .values("created_at")[:1]
+    def _apply_client_filters(self, request, qs):
+        q_client = request.query_params.get("client")
+        if q_client:
+            qs = qs.filter(
+                Q(social_reason__icontains=q_client) |
+                Q(first_name__icontains=q_client) |
+                Q(last_name__icontains=q_client)
             )
 
-            # 2) SaldoCuenta = balance de la cuenta más antigua
-            saldo_cuenta_sq = (
-                Account.objects
-                .filter(client_id=OuterRef("pk"))
-                .order_by("created_at")
-                .values("balance")[:1]
+        q_intel = request.query_params.get("intelligent_query")
+        if q_intel:
+            qs = qs.filter(
+                Q(social_reason__icontains=q_intel) |
+                Q(first_name__icontains=q_intel) |
+                Q(last_name__icontains=q_intel) |
+                Q(document_number__icontains=q_intel)
             )
 
-            # 3) LastOperationAt = última operación donde participe en cualquier rol
-            last_op_sq = (
-                Operation.objects
-                .filter(
-                    Q(emitter_id=OuterRef("pk")) |
-                    Q(payer_id=OuterRef("pk")) |
-                    Q(investor_id=OuterRef("pk"))
-                )
-                .order_by("-created_at")
-                .values("created_at")[:1]
+        q_doc = request.query_params.get("document")
+        if q_doc:
+            qs = qs.filter(document_number__icontains=q_doc)
+
+        return qs
+
+    def _with_client_metrics(self, qs):
+        money_field = DecimalField(max_digits=20, decimal_places=2)
+        zero_money = Value(0, output_field=money_field)
+
+        account_created_sq = (
+            Account.objects
+            .filter(client_id=OuterRef("pk"))
+            .order_by("created_at")
+            .values("created_at")[:1]
+        )
+
+        saldo_cuenta_sq = (
+            Account.objects
+            .filter(client_id=OuterRef("pk"))
+            .order_by("created_at")
+            .values("balance")[:1]
+        )
+
+        invoices_total_sq = (
+            Bill.objects
+            .filter(emitterId=OuterRef("document_number"))
+            .values("emitterId")
+            .annotate(c=Count("id"))
+            .values("c")[:1]
+        )
+
+        invoices_pending_sq = (
+            Bill.objects
+            .filter(
+                emitterId=OuterRef("document_number"),
+                preOperationsBill__isnull=False
             )
+            .values("emitterId")
+            .annotate(c=Count("id", distinct=True))
+            .values("c")[:1]
+        )
 
-            # 4) InvoicesTotal = total bills donde emitterId = document_number
-            invoices_total_sq = (
-                Bill.objects
-                .filter(emitterId=OuterRef("document_number"))
-                .values("emitterId")
-                .annotate(c=Count("id"))
-                .values("c")[:1]
-            )
+        last_op_emitter_sq = (
+            Operation.objects
+            .filter(emitter_id=OuterRef("pk"))
+            .order_by("-created_at")
+            .values("created_at")[:1]
+        )
 
-            # 5) InvoicesPending = bills del cliente que tienen al menos 1 preoperación
-            # ✅ Optimizado: join directo usando el related_name real -> preOperationsBill
-            invoices_pending_sq = (
-                Bill.objects
-                .filter(emitterId=OuterRef("document_number"), preOperationsBill__isnull=False)
-                .values("emitterId")
-                .annotate(c=Count("id", distinct=True))
-                .values("c")[:1]
-            )
+        last_op_payer_sq = (
+            Operation.objects
+            .filter(payer_id=OuterRef("pk"))
+            .order_by("-created_at")
+            .values("created_at")[:1]
+        )
 
-            # 6) PorCobrar = SUM(opPendingAmount) de operaciones donde el cliente participe
-            # ✅ Optimizado: sin agrupar por emitter_id
-            por_cobrar_sq = (
-                Operation.objects
-                .filter(
-                    Q(emitter_id=OuterRef("pk")) |
-                    Q(payer_id=OuterRef("pk")) |
-                    Q(investor_id=OuterRef("pk"))
-                )
-                .values()  # sin GROUP BY
-                .annotate(s=Coalesce(Sum("opPendingAmount"), Value(0.0)))
-                .values("s")[:1]
-            )
+        last_op_investor_sq = (
+            Operation.objects
+            .filter(investor_id=OuterRef("pk"))
+            .order_by("-created_at")
+            .values("created_at")[:1]
+        )
 
-            # 7) IsInvestor (más rápido que Count)
-            is_investor_sq = Exists(
-                ClientRoleAssignment.objects.filter(
-                    client_id=OuterRef("pk"),
-                    role__name__iexact="Inversionista"
-                )
-            )
-
-            money_field = DecimalField(max_digits=20, decimal_places=2)
-
-            # =========================
-            # ANNOTATES
-            # =========================
-            clients_qs = clients_qs.annotate(
-                RegisteredAt=Subquery(account_created_sq, output_field=DateTimeField()),
-                LastOperationAt=Subquery(last_op_sq, output_field=DateTimeField()),
-
-                InvoicesTotal=Coalesce(Subquery(invoices_total_sq, output_field=IntegerField()), Value(0)),
-                InvoicesPending=Coalesce(Subquery(invoices_pending_sq, output_field=IntegerField()), Value(0)),
-
-                SaldoCuenta=Coalesce(
-                    Subquery(saldo_cuenta_sq, output_field=money_field),
-                    Value(0, output_field=money_field),
-                ),
-                PorCobrar=Coalesce(
-                    Subquery(por_cobrar_sq, output_field=money_field),
-                    Value(0, output_field=money_field),
-                ),
-
-                IsInvestor=is_investor_sq,
-            ).annotate(
-                TotalPortafolio=Case(
-                    When(IsInvestor=True, then=F("PorCobrar") + F("SaldoCuenta")),
-                    default=F("PorCobrar"),
+        por_cobrar_emitter_sq = (
+            Operation.objects
+            .filter(emitter_id=OuterRef("pk"))
+            .values("emitter_id")
+            .annotate(
+                s=Coalesce(
+                    Sum("opPendingAmount", output_field=money_field),
+                    zero_money,
                     output_field=money_field,
                 )
             )
+            .values("s")[:1]
+        )
 
-            # =========================
-            # FILTROS
-            # =========================
-            q_client = request.query_params.get("client")
-            if q_client:
-                clients_qs = clients_qs.filter(
-                    Q(social_reason__icontains=q_client) |
-                    Q(first_name__icontains=q_client) |
-                    Q(last_name__icontains=q_client)
+        por_cobrar_payer_sq = (
+            Operation.objects
+            .filter(payer_id=OuterRef("pk"))
+            .values("payer_id")
+            .annotate(
+                s=Coalesce(
+                    Sum("opPendingAmount", output_field=money_field),
+                    zero_money,
+                    output_field=money_field,
                 )
+            )
+            .values("s")[:1]
+        )
 
-            q_intel = request.query_params.get("intelligent_query")
-            if q_intel:
-                clients_qs = clients_qs.filter(
-                    Q(social_reason__icontains=q_intel) |
-                    Q(first_name__icontains=q_intel) |
-                    Q(last_name__icontains=q_intel) |
-                    Q(document_number__icontains=q_intel)
+        por_cobrar_investor_sq = (
+            Operation.objects
+            .filter(investor_id=OuterRef("pk"))
+            .values("investor_id")
+            .annotate(
+                s=Coalesce(
+                    Sum("opPendingAmount", output_field=money_field),
+                    zero_money,
+                    output_field=money_field,
                 )
+            )
+            .values("s")[:1]
+        )
 
-            q_doc = request.query_params.get("document")
-            if q_doc:
-                clients_qs = clients_qs.filter(document_number__icontains=q_doc)
+        is_investor_sq = Exists(
+            ClientRoleAssignment.objects.filter(
+                client_id=OuterRef("pk"),
+                role__name__iexact="Inversionista"
+            )
+        )
 
-            # =========================
-            # PK / LIST
-            # =========================
+        qs = qs.annotate(
+            RegisteredAt=Subquery(
+                account_created_sq,
+                output_field=DateTimeField()
+            ),
+
+            LastOperationEmitterAt=Subquery(
+                last_op_emitter_sq,
+                output_field=DateTimeField()
+            ),
+            LastOperationPayerAt=Subquery(
+                last_op_payer_sq,
+                output_field=DateTimeField()
+            ),
+            LastOperationInvestorAt=Subquery(
+                last_op_investor_sq,
+                output_field=DateTimeField()
+            ),
+
+            InvoicesTotal=Coalesce(
+                Subquery(invoices_total_sq, output_field=IntegerField()),
+                Value(0),
+                output_field=IntegerField(),
+            ),
+
+            InvoicesPending=Coalesce(
+                Subquery(invoices_pending_sq, output_field=IntegerField()),
+                Value(0),
+                output_field=IntegerField(),
+            ),
+
+            SaldoCuenta=Coalesce(
+                Subquery(saldo_cuenta_sq, output_field=money_field),
+                zero_money,
+                output_field=money_field,
+            ),
+
+            PorCobrarEmitter=Coalesce(
+                Subquery(por_cobrar_emitter_sq, output_field=money_field),
+                zero_money,
+                output_field=money_field,
+            ),
+
+            PorCobrarPayer=Coalesce(
+                Subquery(por_cobrar_payer_sq, output_field=money_field),
+                zero_money,
+                output_field=money_field,
+            ),
+
+            PorCobrarInvestor=Coalesce(
+                Subquery(por_cobrar_investor_sq, output_field=money_field),
+                zero_money,
+                output_field=money_field,
+            ),
+
+            IsInvestor=is_investor_sq,
+        ).annotate(
+            LastOperationAt=Greatest(
+                "LastOperationEmitterAt",
+                "LastOperationPayerAt",
+                "LastOperationInvestorAt",
+                output_field=DateTimeField(),
+            ),
+            PorCobrar=ExpressionWrapper(
+                F("PorCobrarEmitter") + F("PorCobrarPayer") + F("PorCobrarInvestor"),
+                output_field=money_field,
+            ),
+        ).annotate(
+            TotalPortafolio=Case(
+                When(
+                    IsInvestor=True,
+                    then=ExpressionWrapper(
+                        F("PorCobrar") + F("SaldoCuenta"),
+                        output_field=money_field,
+                    )
+                ),
+                default=F("PorCobrar"),
+                output_field=money_field,
+            )
+        )
+
+        return qs
+
+    @checkRole(['admin'])
+    def get(self, request, pk=None):
+        try:
+            base_qs = Client.objects.filter(state=1).order_by("-created_at")
+
+            base_qs = self._apply_client_filters(request, base_qs)
+
             if pk:
                 if pk == "all":
+                    clients_qs = self._with_client_metrics(base_qs)
                     serializer = ClientSerializer(clients_qs, many=True)
                     return Response({"error": False, "data": serializer.data}, status=200)
 
-                client = clients_qs.filter(id=pk).first()
+                client_qs = self._with_client_metrics(base_qs.filter(id=pk))
+                client = client_qs.first()
+
                 if not client:
-                    return Response({"error": True, "message": "Clientes no encontrados"}, status=404)
+                    return Response(
+                        {"error": True, "message": "Clientes no encontrados"},
+                        status=404
+                    )
 
                 serializer = ClientByIdSerializer(client)
                 return Response({"error": False, "data": serializer.data}, status=200)
 
-            page = self.paginate_queryset(clients_qs)
+            page = self.paginate_queryset(base_qs)
+
             if page is not None:
-                serializer = ClientReadOnlySerializer(page, many=True)
+                page_ids = [obj.pk for obj in page]
+
+                preserved_order = Case(
+                    *[
+                        When(pk=client_id, then=position)
+                        for position, client_id in enumerate(page_ids)
+                    ],
+                    output_field=IntegerField()
+                )
+
+                clients_page_qs = (
+                    Client.objects
+                    .filter(pk__in=page_ids)
+                    .order_by(preserved_order)
+                )
+
+                clients_page_qs = self._with_client_metrics(clients_page_qs)
+
+                serializer = ClientReadOnlySerializer(clients_page_qs, many=True)
                 return self.get_paginated_response(serializer.data)
 
+            clients_qs = self._with_client_metrics(base_qs)
             serializer = ClientReadOnlySerializer(clients_qs, many=True)
             return Response({"error": False, "data": serializer.data}, status=200)
 
         except Exception as e:
             import traceback
             traceback.print_exc()
+
+            return Response(
+                {"error": True, "message": str(e)},
+                status=getattr(e, "status_code", 500)
+            )
 
         
     @checkRole(['admin'])

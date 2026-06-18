@@ -34,6 +34,13 @@ class Client(BaseModel):
         verbose_name = 'clients'
         verbose_name_plural = 'clients'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=["state", "-created_at"], name="idx_client_state_created"),
+            models.Index(fields=["document_number"], name="idx_client_document"),
+            models.Index(fields=["social_reason"], name="idx_client_social_reason"),
+            models.Index(fields=["first_name"], name="idx_client_first_name"),
+            models.Index(fields=["last_name"], name="idx_client_last_name"),
+        ]
 
 
 class ClientRole(BaseModel):
@@ -47,6 +54,10 @@ class ClientRole(BaseModel):
         verbose_name = "clientRole"
         verbose_name_plural = "clientRoles"
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["state", "name"], name="idx_clientrole_state_name"),
+            models.Index(fields=["name"], name="idx_clientrole_name"),
+        ]
 
     def __str__(self):
         return f"{self.code} - {self.name}"
@@ -67,6 +78,11 @@ class ClientRoleAssignment(BaseModel):
         constraints = [
             models.UniqueConstraint(fields=["client", "role"], name="uniq_client_role_assignment")
         ]
+        indexes = [
+    models.Index(fields=["client", "role"], name="idx_roleassign_client_role"),
+    models.Index(fields=["client"], name="idx_roleassign_client"),
+    models.Index(fields=["role"], name="idx_roleassign_role"),
+]
 
     def __str__(self):
         return f"{self.client_id} -> {self.role_id}"

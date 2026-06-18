@@ -1,4 +1,4 @@
 from .preOperation.index import EmitterRelatedPayerByPreoperation,EmitterPayerPreoperations,BillsByOpId,PreOperationAV, GetLastOperationAV, GetBillFractionAV, GetOperationByEmitter, GetOperationByParams, OperationDetailAV, MassiveOperations,UploadExcel,RegisterOperationFromUpload,GetBillFractionBulkAV,ClientsWithAccountsAV,MassiveOperationReceiptPDFAV,MassiveOperationDraftMarkRegisteredAV,MassiveOperationDraftValidateAV,MassiveOperationDraftDetailAV,MassiveOperationDraftAV
-from .receipt.index      import MassiveReceiptUploadExcel,MassiveReceiptPreview,MassiveReceiptRegister,ReceiptAV
+from .receipt.index      import MassiveReceiptUploadExcel,MassiveReceiptPreview,MassiveReceiptRegister,ReceiptAV,ReceiptVoidAV,ReceiptAdjustAV,ReceiptHistoryAV
 from .buyOrder.index     import BuyOrderAV, BuyOrderWebhookAV
 from .integration.index  import OperationIntegrationAV
