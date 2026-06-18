@@ -260,6 +260,8 @@ CORS_ALLOWED_ORIGINS = [
     "https://app.smartevolution.com.co",
 ]
 
+
+
 # Para Docker si estamos en modo DEBUG
 if DEBUG:
     CORS_ALLOWED_ORIGINS += [
