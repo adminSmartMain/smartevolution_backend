@@ -84,6 +84,43 @@ def is_last_active_receipt(receipt):
     return str(last_receipt.id) == str(receipt.id)
 
 
+def get_receipt_bill(receipt):
+    operation = getattr(receipt, "operation", None)
+    return getattr(operation, "bill", None) if operation else None
+
+
+def get_receipt_fraction(receipt):
+    operation = getattr(receipt, "operation", None)
+    bill = get_receipt_bill(receipt)
+
+    return (
+        getattr(operation, "billFraction", None)
+        or getattr(operation, "fraction", None)
+        or getattr(bill, "fraction", None)
+        or 1
+    )
+
+
+def get_receipt_investor_name(receipt):
+    operation = getattr(receipt, "operation", None)
+    account = getattr(receipt, "account", None) or getattr(operation, "clientAccount", None)
+    client = getattr(account, "client", None)
+
+    if not client:
+        client = getattr(operation, "investor", None)
+
+    if not client:
+        return ""
+
+    full_name = f"{getattr(client, 'first_name', '') or ''} {getattr(client, 'last_name', '') or ''}".strip()
+    return (
+        getattr(client, "social_reason", None)
+        or full_name
+        or getattr(client, "document_number", None)
+        or ""
+    )
+
+
 def validate_receipt_date_order(operation_id, receipt_date):
     last_receipt = get_last_active_receipt(operation_id)
 
@@ -251,6 +288,10 @@ class ReceiptReadOnlySerializer(serializers.ModelSerializer):
     typeReceipt = TypeReceiptSerializer(read_only=True)
     account = AccountSerializer(read_only=True)
     receiptStatus = ReceiptStatusSerializer(read_only=True)
+    billId = serializers.SerializerMethodField()
+    billUniqueId = serializers.SerializerMethodField()
+    fraction = serializers.SerializerMethodField()
+    investorName = serializers.SerializerMethodField()
     canEdit = serializers.SerializerMethodField()
     canVoid = serializers.SerializerMethodField()
     blockReason = serializers.SerializerMethodField()
@@ -258,6 +299,23 @@ class ReceiptReadOnlySerializer(serializers.ModelSerializer):
     class Meta:
         model = Receipt
         fields = '__all__'
+
+    def get_billId(self, obj):
+        bill = get_receipt_bill(obj)
+        return getattr(bill, "billId", "") or ""
+
+    def get_billUniqueId(self, obj):
+        bill = get_receipt_bill(obj)
+        return str(getattr(bill, "id", "") or "")
+
+    def get_fraction(self, obj):
+        try:
+            return int(get_receipt_fraction(obj) or 1)
+        except Exception:
+            return 1
+
+    def get_investorName(self, obj):
+        return get_receipt_investor_name(obj)
 
     def get_canEdit(self, obj):
         return is_last_active_receipt(obj)

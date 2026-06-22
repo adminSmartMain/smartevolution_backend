@@ -156,9 +156,17 @@ def receipt_history_fraction(receipt):
 def receipt_history_group_key(receipt):
     operation = getattr(receipt, "operation", None)
     bill = getattr(operation, "bill", None) if operation else None
+    account = getattr(receipt, "account", None) or getattr(operation, "clientAccount", None)
+    investor = getattr(account, "client", None) or getattr(operation, "investor", None)
     fraction = receipt_history_fraction(receipt)
 
-    return f"{getattr(operation, 'id', '')}-{getattr(bill, 'id', '')}-{fraction}"
+    return (
+        f"{getattr(operation, 'id', '')}-"
+        f"{getattr(bill, 'id', '')}-"
+        f"{fraction}-"
+        f"{getattr(account, 'id', '')}-"
+        f"{getattr(investor, 'id', '')}"
+    )
 
 
 def build_receipt_change_event(receipt):
@@ -1867,6 +1875,76 @@ class ReceiptAdjustAV(APIView):
             return response({"error": True, "message": str(e)}, getattr(e, "status_code", 500))
 
 
+class ReceiptOperationHistoryAV(BaseAV):
+    @extend_schema(
+        tags=["Recaudos"],
+        summary="Historial de recaudos de la operación exacta",
+        description=(
+            "Devuelve solo los recaudos vigentes asociados a la misma PreOperation del recaudo indicado. "
+            "No filtra por opId de negocio; usa el ID interno de la operación, por eso separa correctamente "
+            "casos con el mismo opId/factura pero distinta fracción o inversionista."
+        ),
+        parameters=[
+            OpenApiParameter("page", OpenApiTypes.INT, OpenApiParameter.QUERY, required=False),
+        ],
+        responses={200: ReceiptReadOnlySerializer},
+    )
+    @checkRole(['admin'])
+    def get(self, request, pk):
+        try:
+            selected_receipt = (
+                Receipt.objects
+                .select_related("operation", "operation__bill", "account", "account__client")
+                .get(pk=pk)
+            )
+
+            operation = getattr(selected_receipt, "operation", None)
+
+            if not operation:
+                return response({"error": True, "message": "El recaudo no tiene operación asociada."}, 400)
+
+            receipts = (
+                receipt_active_queryset()
+                .filter(operation_id=operation.id)
+                .select_related(
+                    "operation",
+                    "operation__bill",
+                    "account",
+                    "account__client",
+                    "typeReceipt",
+                    "receiptStatus",
+                    "originalReceipt",
+                    "replacedBy",
+                )
+                .order_by("-date", "-created_at", "-dId", "-id")
+            )
+
+            page = self.paginate_queryset(receipts)
+            serializer = ReceiptReadOnlySerializer(page if page is not None else receipts, many=True)
+
+            payload = {
+                "error": False,
+                "operationId": str(operation.id),
+                "opId": getattr(operation, "opId", None),
+                "billId": getattr(getattr(operation, "bill", None), "billId", "") or "",
+                "billUniqueId": str(getattr(getattr(operation, "bill", None), "id", "") or ""),
+                "fraction": int(receipt_history_fraction(selected_receipt) or 1),
+                "accountId": str(getattr(getattr(selected_receipt, "account", None), "id", "") or getattr(getattr(operation, "clientAccount", None), "id", "") or ""),
+            }
+
+            if page is not None:
+                paginated = self.get_paginated_response(serializer.data)
+                paginated.data.update(payload)
+                return paginated
+
+            payload["data"] = serializer.data
+            return response(payload, 200)
+        except Receipt.DoesNotExist:
+            return response({"error": True, "message": "Recaudo no encontrado"}, 404)
+        except Exception as e:
+            return response({"error": True, "message": str(e)}, getattr(e, "status_code", 500))
+
+
 class ReceiptHistoryAV(BaseAV):
     @extend_schema(
         tags=["Recaudos"],
@@ -1960,6 +2038,8 @@ class ReceiptHistoryAV(BaseAV):
                         "billUniqueId": str(getattr(bill, "id", "") or ""),
                         "billId": getattr(bill, "billId", None) or "",
                         "fraction": fraction,
+                        "accountId": str(getattr(account, "id", "") or ""),
+                        "investorId": str(getattr(investor_client, "id", "") or ""),
                         "investorName": get_client_name(investor_client),
                         "payerName": getattr(bill, "payerName", None) or "",
                         "emitterName": getattr(bill, "emitterName", None) or "",
