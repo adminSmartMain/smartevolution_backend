@@ -1521,7 +1521,7 @@ class GetOperationByParams(BaseAV):
             if riskProfile != None:
                 #calc retIca
                 if riskProfile.ica == True:
-                    data['retIca'] = data['commission'] * 0.00966
+                    data['retIca'] = data['commission'] * 0.005
 
                 #calc retIva
                 if riskProfile.iva == True:

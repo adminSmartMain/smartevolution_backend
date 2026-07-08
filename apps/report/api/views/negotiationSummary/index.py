@@ -115,7 +115,7 @@ class NegotiationSummaryAV(BaseAV):
                 if riskProfile.iva:
                     data['operation']['retIva'] = round(data['operation']['iva'] * 0.15)
                 if riskProfile.ica:
-                    data['operation']['retIca'] = round(data['operation']['tableCommission'] * 0.00966)
+                    data['operation']['retIca'] = round(data['operation']['tableCommission'] * 0.005)
 
                 if data['emitter']['typeClient'] == '21cf32d9-522c-43ac-b41c-4dfdf832a7b8':
                     data['operation']['retFte'] = round(data['operation']['tableCommission'] * 0.11)
