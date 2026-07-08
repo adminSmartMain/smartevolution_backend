@@ -74,9 +74,9 @@ class NegotiationSummaryReadOnlySerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         #accountingControl = []
         data = super().to_representation(instance)
-        logger.debug('aqui se trae pendingAccounts')
+       
         data['pendingAccounts']  = PendingAccountSerializer(PendingAccount.objects.filter(opId=instance.opId), many=True).data
-        logger.debug(data['pendingAccounts'])
+        
      
         data['emitterDeposits']  = EmitterDepositSerializer(EmitterDeposit.objects.filter(operation__opId=instance.opId), many=True).data
         

@@ -3,11 +3,9 @@ import json
 import PyPDF2
 import base64
 from io import BytesIO
-from apps.base.utils.index import sendEmail
 
 
 def pdfToBase64(html):
-    # 👇 NUEVO: soportar dict o string
     if isinstance(html, dict):
         input_data = json.dumps(html)
     else:
@@ -22,10 +20,28 @@ def pdfToBase64(html):
 
     stdout, stderr = process.communicate(input=input_data.encode('utf-8'))
 
-    response = json.loads(stdout.decode('utf-8'))
+    stdout_text = stdout.decode('utf-8', errors='replace').strip()
+    stderr_text = stderr.decode('utf-8', errors='replace').strip()
+
+    if process.returncode != 0:
+        raise Exception(
+            f"Node terminó con código {process.returncode}. STDERR: {stderr_text}. STDOUT: {stdout_text}"
+        )
+
+    try:
+        response = json.loads(stdout_text)
+    except Exception:
+        raise Exception(
+            f"Node no devolvió JSON válido. STDERR: {stderr_text}. STDOUT: {stdout_text}"
+        )
+
+    if response.get('status') != 'success' or 'pdf' not in response:
+        raise Exception(
+            f"Puppeteer no generó PDF. Respuesta Node: {response}. STDERR: {stderr_text}"
+        )
 
     pdfBytes = base64.b64decode(response['pdf'])
-    pdfFile  = BytesIO(pdfBytes)
+    pdfFile = BytesIO(pdfBytes)
     pdfReader = PyPDF2.PdfReader(pdfFile)
 
     return {

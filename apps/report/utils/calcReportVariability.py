@@ -83,7 +83,7 @@ def calcReportVariability(emitter, payer, client=None):
                     }
                     for index, period in enumerate([period_1]):
                         # Calc activity efficiency
-                        logger.debug(f"calcActivityEfficiency: {calcActivityEfficiency(indicators, index, period)}")
+                       
                         indicators.update(calcActivityEfficiency(indicators, index, period))
                         # Calc rentability
                         indicators.update(calcRentability(indicators, index, period))
@@ -94,7 +94,7 @@ def calcReportVariability(emitter, payer, client=None):
 
                     # Calc variability
                     indicators.update(calcVariability(indicators, period_1))
-                    logger.debug(f"calcVariability: {calcVariability(indicators, period_1)}")
+                   
 
                 elif length == 2:
                     match(serializer.data[1]['typePeriod']):
@@ -149,7 +149,7 @@ def calcReportVariability(emitter, payer, client=None):
                         # Calc variability
                         indicators.update(calcVariability(indicators, period_1, period_2))
                 elif length == 3:
-                    logger.debug(f"serializer.data[0]['stateOfResult']: {serializer.data[0]['stateOfResult']}")
+                    
                     match(serializer.data[2]['typePeriod']):
                         case 'a12eec8b-06e1-4fbc-a888-d33364032151':
                             periodDays = serializer.data[2]['periodDays']
@@ -207,21 +207,20 @@ def calcReportVariability(emitter, payer, client=None):
                     for index, period in enumerate([period_1, period_2, period_3]):
                         # Calc activity efficiency
                         indicators.update(calcActivityEfficiency(indicators, index, period))
-                        logger.debug(f"calcActivityEfficiency: {calcActivityEfficiency(indicators, index, period)}")
-                        logger.debug(f"serializer.data[2]['stateOfResult']: {serializer.data[2]['stateOfResult']}")
+                        
                         # Calc rentability
                         indicators.update(calcRentability(indicators, index, period))
                         # calc financial risk
                         indicators.update(calcFinancialRisk(indicators, index, period))
                         # calc results
-                        logger.debug(f"entro a calcResults")
+                  
                         indicators.update(calcResults(indicators, index, period))
-                        logger.debug(f"salgo entro a calcResults")        
+                             
                         # Calc variability
-                        logger.debug(f"entro a calc variability")       
+                             
                         indicators.update(calcVariability(indicators, period_1, period_2, period_3))
-                        logger.debug(f"salgo a calc variability")      
-                        logger.debug(f"calcVariability: {calcVariability(indicators, period_1, period_2, period_3)}")
+                
+                      
             else:
                 dataReport = {
                     'emitter': {},
@@ -230,20 +229,18 @@ def calcReportVariability(emitter, payer, client=None):
 
                 # calc emitter
                 if emitter != "":
-                    logger.debug(f"entramos a emitter")
+                   
                     financialProfile = FinancialProfile.objects.filter(client=emitter).order_by('-period')[:3]
                     serializer       = FinancialProfilePeriodSerializer(financialProfile, many=True)
                     # check the number of periods
                     length = len(serializer.data)
                     if length == 0:
-                        logger.debug(f"llenamos emitter de dataReport")
+                        
                         dataReport['emitter']= indicators
                     if length == 1:
-                        logger.debug(f"emisor length == 1")
+                        
                         try:
-                            logger.debug(f"serializer.data {serializer.data}")
-                            logger.debug(f"primer periodo {serializer.data[0]}")
-                            logger.debug(f"caso un periodo")
+                          
                             
                             match(serializer.data[0]['typePeriod']):
                                 case 'a12eec8b-06e1-4fbc-a888-d33364032151':
@@ -254,7 +251,7 @@ def calcReportVariability(emitter, payer, client=None):
                                     periodDays = 180
                                 case 'e7b663d7-5cc3-4a9f-b288-95ce38c1ccfd':
                                     periodDays = 90
-                            logger.debug(f"creacion periodo 1")
+                           
                             period_1 = {
                                 'period'       : serializer.data[0]['period'],
                                 'typePeriod'   : serializer.data[0]['typePeriod'],
@@ -264,33 +261,30 @@ def calcReportVariability(emitter, payer, client=None):
                                 'patrimony'    : serializer.data[0]['patrimony'],
                                 'stateOfResult': serializer.data[0]['stateOfResult']
                             }
-                            logger.debug(f"periodo 1 creado")
-                            logger.debug(f"está entrando al try antes de calcular acrividad eficiencia")
+                            
                             for index, period in enumerate([period_1]):
-                                logger.debug(f"Calc activity efficiency")
+                              
                                 # Calc activity efficiency
                                 indicators.update(calcActivityEfficiency(indicators, index, period))
-                                logger.debug(f"calculado activity efficiency")
+                                
                                 # Calc rentability
                                 indicators.update(calcRentability(indicators, index, period))
-                                logger.debug(f"calculado Rentability")
+                               
                                 # calc financial risk
                                 indicators.update(calcFinancialRisk(indicators, index, period))
-                                logger.debug(f"calculado FinancialRIsk")
+                          
                                 # calc results
                                 indicators.update(calcResults(indicators, index, period))
-                                logger.debug(f"calculado calcResults")
-                                logger.debug(f"index + 1 {index + 1}")
+                              
                                 dataReport['emitter'][f'period_{index + 1}'] = period
                                 dataReport['emitter'][f'period_{index + 1}']['activityEfficiency'] = indicators['activityEfficiency'][f'period_{index + 1}']
                                 dataReport['emitter'][f'period_{index + 1}']['rentability'] = indicators['rentability'][f'period_{index + 1}']
                                 dataReport['emitter'][f'period_{index + 1}']['financialRisk'] = indicators['financialRisk'][f'period_{index + 1}']
                                 dataReport['emitter'][f'period_{index + 1}']['results'] = indicators['results'][f'period_{index + 1}']    
                                 # Calc variability
-                            logger.debug(f"calculando calcVariability")
+                            
                             indicators.update(calcVariability(indicators, period_1))
-                            logger.debug(f"calculado calcVariability")
-                            logger.debug(f"calculado calcVariability {indicators['variability']}")
+                            
                             
                             
                             dataReport['emitter']['variability'] = indicators['variability']
@@ -298,7 +292,7 @@ def calcReportVariability(emitter, payer, client=None):
                         except Exception as e:
                             logger.error(f"Unexpected error: {e}")
                     elif length == 2:
-                        logger.debug(f"caso dos periodo")
+                       
                         match(serializer.data[1]['typePeriod']):
                             case 'a12eec8b-06e1-4fbc-a888-d33364032151':
                                 periodDays = serializer.data[1]['periodDays']
@@ -337,8 +331,7 @@ def calcReportVariability(emitter, payer, client=None):
                             'stateOfResult': serializer.data[0]['stateOfResult']
                         }
                         for index, period in enumerate([period_1, period_2]):
-                            logger.debug(f"serializer : {serializer}")
-                            logger.debug(f"serializer periodo 3: {serializer.data[1]['stateOfResult']}")
+                            
                             # Calc activity efficiency
                             indicators.update(calcActivityEfficiency(indicators, index, period))
                             # Calc rentability
@@ -357,7 +350,7 @@ def calcReportVariability(emitter, payer, client=None):
                         dataReport['emitter']['variability'] = indicators['variability']
                             # Calc variability
                     elif length == 3:
-                        logger.debug(f"caso tres periodo")
+                        
                         match(serializer.data[2]['typePeriod']):
                             case 'a12eec8b-06e1-4fbc-a888-d33364032151':
                                 periodDays = serializer.data[2]['periodDays']
@@ -415,11 +408,7 @@ def calcReportVariability(emitter, payer, client=None):
                         for index, period in enumerate([period_1, period_2, period_3]):
                             # Calc activity efficiency
                             indicators.update(calcActivityEfficiency(indicators, index, period))
-                            logger.debug(f"serializer: {serializer.data}")
-                            logger.debug(f"serializer periodo 3: {serializer.data[2]['stateOfResult']}")
-                            logger.debug(f"serializer periodo 2: {serializer.data[1]['stateOfResult']}")
-                            logger.debug(f"serializer periodo 1: {serializer.data[0]['stateOfResult']}")
-                            logger.debug(f"calcActivityEfficiency: {calcActivityEfficiency(indicators, index, period)}")
+                            
                             # Calc rentability
                             indicators.update(calcRentability(indicators, index, period))
                             # calc financial risk
@@ -431,16 +420,16 @@ def calcReportVariability(emitter, payer, client=None):
                             dataReport['emitter'][f'period_{index + 1}']['rentability'] = indicators['rentability'][f'period_{index + 1}']
                             dataReport['emitter'][f'period_{index + 1}']['financialRisk'] = indicators['financialRisk'][f'period_{index + 1}']
                             dataReport['emitter'][f'period_{index + 1}']['results'] = indicators['results'][f'period_{index + 1}'] 
-                            logger.debug(f"aqui termina el bucle")  
+                            
                         # Calc variability
                         indicators.update(calcVariability(indicators, period_1, period_2, period_3))
-                        logger.debug(f"calcVariability: {calcVariability(indicators, period_1, period_2, period_3)}")
+                        
                         dataReport['emitter']['variability'] = indicators['variability']
                         
-                        logger.debug(f"variability: {dataReport['emitter']['variability']}")
+                       
                 # calc payer/s indicators
                 if payer != "":
-                    logger.debug(f"entramos a pagadores")
+                    
                     financialProfile = FinancialProfile.objects.filter(client=payer).order_by('-period')[:3]
                     serializer       = FinancialProfilePeriodSerializer(financialProfile, many=True)
                     # check the number of periods
@@ -449,7 +438,7 @@ def calcReportVariability(emitter, payer, client=None):
                         dataReport['payer'] = indicators
 
                     elif length == 1:
-                        logger.debug(f"caso lenght ==1 en pagador")
+                        
                         try:
                             match(serializer.data[0]['typePeriod']):
                                 case 'a12eec8b-06e1-4fbc-a888-d33364032151':
@@ -492,7 +481,7 @@ def calcReportVariability(emitter, payer, client=None):
                             
 
                     elif length == 2:
-                        logger.debug(f"caso lenght ==2 en pagador")
+                        
                         match(serializer.data[1]['typePeriod']):
                             case 'a12eec8b-06e1-4fbc-a888-d33364032151':
                                 periodDays = serializer.data[1]['periodDays']
@@ -549,7 +538,7 @@ def calcReportVariability(emitter, payer, client=None):
                         indicators.update(calcVariability(indicators, period_1, period_2))
                         dataReport['payer']['variability'] = indicators['variability']
                     elif length == 3:
-                        logger.debug(f"caso lenght ==3 en pagador")
+                        
                         match(serializer.data[2]['typePeriod']):
                             case 'a12eec8b-06e1-4fbc-a888-d33364032151':
                                 periodDays = serializer.data[2]['periodDays']
@@ -559,7 +548,7 @@ def calcReportVariability(emitter, payer, client=None):
                                 periodDays = 180
                             case 'e7b663d7-5cc3-4a9f-b288-95ce38c1ccfd':
                                 periodDays = 90
-                        logger.debug(f"creacion periodo1 caso 3 pagador")
+                        
                         period_1 = {
                             'period'       : serializer.data[2]['period'],
                             'typePeriod'   : serializer.data[2]['typePeriod'],
@@ -578,7 +567,7 @@ def calcReportVariability(emitter, payer, client=None):
                                 periodDays2 = 180
                             case 'e7b663d7-5cc3-4a9f-b288-95ce38c1ccfd':
                                 periodDays2 = 90
-                        logger.debug(f"creacion periodo2 caso 3 pagador")
+                        
                         period_2 = {
                             'period'       : serializer.data[1]['period'],
                             'typePeriod'   : serializer.data[1]['typePeriod'],
@@ -597,7 +586,7 @@ def calcReportVariability(emitter, payer, client=None):
                                 periodDays3 = 180
                             case 'e7b663d7-5cc3-4a9f-b288-95ce38c1ccfd':
                                 periodDays3 = 90
-                        logger.debug(f"creacion periodo3 caso 3 pagador")
+                        
                         period_3 = {
                             'period'       : serializer.data[0]['period'],
                             'typePeriod'   : serializer.data[0]['typePeriod'],
@@ -608,21 +597,21 @@ def calcReportVariability(emitter, payer, client=None):
                             'stateOfResult': serializer.data[0]['stateOfResult']
                         }
                         for index, period in enumerate([period_1, period_2, period_3]):
-                            logger.debug(f"for ,{period}")
+                            
                             # Calc activity efficiency
-                            logger.debug(f"for  Calc activity efficiency,{period}")
+                           
                             indicators.update(calcActivityEfficiency(indicators, index, period))
                             # Calc rentability
-                            logger.debug(f"for Calc rentability,{period}")
+                           
                             indicators.update(calcRentability(indicators, index, period))
                             # calc financial risk
-                            logger.debug(f"for calc financial risk,")
+                            
                             indicators.update(calcFinancialRisk(indicators, index, period))
                             # calc results
                             
-                            logger.debug(f"for calc results,{period}")
+                           
                             indicators.update(calcResults(indicators, index, period))
-                            logger.debug(f"for dataReport,{period}")
+                           
                             dataReport['payer'][f'period_{index + 1}'] = period
                             dataReport['payer'][f'period_{index + 1}']['activityEfficiency'] = indicators['activityEfficiency'][f'period_{index + 1}']
                             dataReport['payer'][f'period_{index + 1}']['rentability'] = indicators['rentability'][f'period_{index + 1}']

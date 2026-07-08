@@ -2,17 +2,18 @@ services:
   web:
     build:
       context: .
-    command: gunicorn -c gunicorn.conf.py core.wsgi:application
-    volumes:
-      - .:/app
-      - ./logs:/app/logs
+    container_name: backend_smart_evolution
+    shm_size: "1gb"
     ports:
       - "${DJANGO_PORT:-8000}:${DJANGO_PORT:-8000}"
     environment:
       - DJANGO_PORT=${DJANGO_PORT:-8000}
+      - XDG_RUNTIME_DIR=/tmp
+      - PUPPETEER_CACHE_DIR=/root/.cache/puppeteer
     env_file:
       - docker.env
-    container_name: backend_smart_evolution
+    volumes:
+      - ./logs:/app/logs
     logging:
       driver: "json-file"
       options:
@@ -21,8 +22,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1.0"
-          memory: "1G"
+          cpus: "1.5"
+          memory: "2G"
     networks:
       - smartevolutionbackend_smartevolution_network
 
