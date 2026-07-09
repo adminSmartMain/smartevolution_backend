@@ -1,6 +1,6 @@
 # Django
 from multiprocessing import context
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.contrib.sites.shortcuts import get_current_site
@@ -26,6 +26,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.utils import timezone
+from apps.authentication.access import get_access_profile
+from django.conf import settings
 
 
 # Custom JWT Login View
@@ -40,16 +42,17 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
                 token        = super().get_token(user)
                 is_superuser = user.is_superuser
 
-                # Get User Roles
+                profile = get_access_profile(user)
+                roles = profile['roles']
                 roles.append('superuser') if is_superuser else None
-                userRoles = UserRoleSerializer.Meta.model.objects.filter(user=user)
-                for role in userRoles:
-                    roles.append(role.role.description)
-                # get client information
-                client = Client.objects.filter(user=user).first()
+                client = Client.objects.filter(pk=profile['client']).first() if profile['client'] else Client.objects.filter(user=user).first()
                 # Set JWT Payload
                 token['name']         = f'{user.first_name} {user.last_name}'
                 token['roles']        = roles
+                token['permissions']  = profile['permissions']
+                token['account_scope'] = profile['account_scope']
+                token['client_access_status'] = profile['client_access_status']
+                token['client_portal_enabled'] = profile['client_portal_enabled']
                 token['is_superuser'] = is_superuser
                 if is_superuser == False and client:
                     # get client information
@@ -96,56 +99,33 @@ class ForgotPasswordAV(APIView):
     '''
     def post(self, request):
         try:
-            # Validar que el email esté presente en el request
-            if 'email' not in request.data or not request.data['email']:
+            email = str(request.data.get('email', '')).strip().lower()
+            if not email:
                 raise ValidationError("El campo 'email' es obligatorio.")
-
-            # Buscar el usuario por correo
-            user = User.objects.get(email=request.data['email'])
-            
-            
-             # Eliminar cualquier token anterior asociado al usuario
-            Token.objects.filter(user=user).delete()
-
-            # Generar un nuevo token
-            token_obj = Token.objects.create(user=user)
-            token_obj.created = timezone.now()  # Actualizar la fecha de creación
-            token_obj.save()
-            
-           
-            # Generar URL de restablecimiento
+            user = User.objects.filter(email__iexact=email, is_active=True).first()
+            if not user:
+                return Response({'error': False, 'message': 'Si el correo está registrado, recibirás un enlace de recuperación.'}, status=200)
             uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
-            reset_url = f'https://devapp.smartevolution.com.co/auth/resetPassword?uidb64={uidb64}&token={token_obj.key}'
-
-            
-            # Renderizar el mensaje HTML
+            token = default_token_generator.make_token(user)
+            reset_url = f'{settings.FRONTEND_URL}/auth/resetPassword?uidb64={uidb64}&token={token}'
             html_message = render_to_string('reset_password_email.html', {
                 'user': user,
                 'reset_url': reset_url,
             })
-            
-            # Enviar el correo
-            sendEmail(
+            sent = sendEmail(
                 subject='Recuperar Contraseña',
                 message='Este es un correo de recuperación de contraseña.',
-                email=request.data['email'],
+                email=user.email,
                 html_message=html_message
             )
-            
-            # Respuesta exitosa
-            return Response({'error': False, 'message': 'Correo enviado correctamente'}, status=200)
-        
-        except ObjectDoesNotExist:
-            # Manejar el caso de que el correo no esté en la base de datos
-            return Response({'error': True, 'message': 'El correo no se encuentra registrado'}, status=404)
-        
+            if sent != 1:
+                raise RuntimeError('El servidor SMTP no confirmó el envío.')
+            return Response({'error': False, 'message': 'Si el correo está registrado, recibirás un enlace de recuperación.'}, status=200)
         except ValidationError as ve:
-            # Manejar validaciones específicas
             return Response({'error': True, 'message': str(ve)}, status=400)
-        
         except Exception as e:
-            # Manejar errores no previstos
-            return Response({'error': True, 'message': 'Error interno del servidor'}, status=500)
+            logger.exception('No fue posible enviar el correo de recuperación: %s', e)
+            return Response({'error': True, 'message': 'No fue posible enviar el correo. Intenta nuevamente o contacta al administrador.'}, status=503)
 
 
 class CheckPasswordTokenAV(APIView):
@@ -163,18 +143,8 @@ class CheckPasswordTokenAV(APIView):
                 return Response({'error': True, 'message': 'UID inválido o usuario no encontrado'}, status=404)
 
             
-            # Verificar si el token existe en la base de datos
-            try:
-                token_obj = Token.objects.get(key=token, user=user)
-            except Token.DoesNotExist:
-                return Response({'error': True, 'message': 'Token inválido o no encontrado'}, status=404)
-
-           # Verificar si el token ha expirado (1 hora)
-            expiration_time = token_obj.created + timezone.timedelta(hours=1)
-            if timezone.now() > expiration_time:
-                token_obj.delete()  # Invalidar el token expirado
-                return Response({'error': True, 'message': 'Token expirado'}, status=401)
-
+            if not default_token_generator.check_token(user, token):
+                return Response({'error': True, 'message': 'El enlace no es válido o ha expirado.'}, status=400)
             return Response({'error': False, 'message': 'Token válido'}, status=200)
 
         except Exception as e:
@@ -205,33 +175,19 @@ class ResetPasswordAV(APIView):
     '''
     def patch(self, request):
         try:
-            
             serializer = UpdatePasswordSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-              # Buscar el usuario por correo
-            
-            token=Token.objects.filter(key=request.data['token']).first() 
-            
-            user_token=User.objects.filter(id=token.user_id).first() 
-            
+            user = serializer.save()
             html_message = render_to_string('succesful_reset_password.html', {
-                'user': user_token,
-               
+                'user': user,
             })
-            
-            # Enviar el correo
-            sendEmail(
-                subject='Recuperación de contraseña exitosa',
-                message='Esto es un correo de confirmación de recuperacion de contraseña',
-                email= user_token.email,
-                html_message=html_message
-            )
-             # Eliminar cualquier token anterior asociado al usuario
-            Token.objects.filter(key=request.data['token']).delete()
-             # Renderizar el mensaje HTML
-               # Buscar el usuario por correo
-          
-            
-            return response({ 'error': False, 'message': 'actualización de contraseña exitosa'}, 200)
+            try:
+                sendEmail(subject='Contraseña actualizada', message='Tu contraseña fue actualizada correctamente.', email=user.email, html_message=html_message)
+            except Exception:
+                logger.exception('La contraseña cambió, pero falló el correo de confirmación para el usuario %s', user.pk)
+            return response({'error': False, 'message': 'Contraseña actualizada correctamente.'}, 200)
+        except ValidationError as e:
+            return response({'error': True, 'message': e.detail}, 400)
         except Exception as e:
-            return response({ 'error': True, 'message': str(e)}, 500)
+            logger.exception('Error al actualizar contraseña: %s', e)
+            return response({'error': True, 'message': 'No fue posible actualizar la contraseña.'}, 500)

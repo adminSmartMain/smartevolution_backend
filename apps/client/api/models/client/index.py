@@ -86,3 +86,36 @@ class ClientRoleAssignment(BaseModel):
 
     def __str__(self):
         return f"{self.client_id} -> {self.role_id}"
+
+
+class ClientAccess(BaseModel):
+    STATUS_PENDING = "PENDING"
+    STATUS_ACTIVE = "ACTIVE"
+    STATUS_BLOCKED = "BLOCKED"
+    STATUS_DISABLED = "DISABLED"
+    STATUS_CHOICES = (
+        (STATUS_PENDING, "Pending"),
+        (STATUS_ACTIVE, "Active"),
+        (STATUS_BLOCKED, "Blocked"),
+        (STATUS_DISABLED, "Disabled"),
+    )
+
+    client = models.OneToOneField(Client, on_delete=models.CASCADE, related_name="access_account")
+    user = models.OneToOneField("authentication.User", on_delete=models.CASCADE, related_name="client_access")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    activated_at = models.DateTimeField(null=True, blank=True)
+    blocked_at = models.DateTimeField(null=True, blank=True)
+    blocked_reason = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = "client_access"
+        verbose_name = "client_access"
+        verbose_name_plural = "client_access"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status", "state"], name="idx_client_access_status"),
+            models.Index(fields=["created_at"], name="idx_client_access_created"),
+        ]
+
+    def __str__(self):
+        return f"{self.client_id} -> {self.user_id}"

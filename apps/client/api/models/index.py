@@ -1,5 +1,5 @@
 from .broker.index import Broker
-from .client.index import Client
+from .client.index import Client, ClientAccess
 from .contact.index import Contact
 from .legalRepresentative.index import LegalRepresentative
 from .account.index import Account, AccountBalanceHistory

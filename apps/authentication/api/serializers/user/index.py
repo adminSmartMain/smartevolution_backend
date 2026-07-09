@@ -1,5 +1,6 @@
 # Django
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.password_validation import validate_password
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from django.template.loader import render_to_string
@@ -142,19 +143,21 @@ class UpdatePasswordSerializer(serializers.Serializer):
         fields = ['token', 'uidb64', 'new_password', 'new_password2']
 
     def validate(self, data):
+        if data['new_password'] != data['new_password2']:
+            raise serializers.ValidationError({'new_password2': 'Las contraseñas no coinciden.'})
         try:
-            if data['new_password'] != data['new_password2']:
-                raise HttpException(400, 'Las contraseñas no coinciden')
+            user_id = force_str(urlsafe_base64_decode(data['uidb64']))
+            user = User.objects.get(pk=user_id)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            raise serializers.ValidationError({'token': 'El enlace no es válido o ha expirado.'})
+        if not default_token_generator.check_token(user, data['token']):
+            raise serializers.ValidationError({'token': 'El enlace no es válido o ha expirado.'})
+        validate_password(data['new_password'], user=user)
+        data['user'] = user
+        return data
 
-            id   = force_str(urlsafe_base64_decode(data['uidb64']))
-            user = User.objects.get(pk=id)
-
-           # Validar el token usando la tabla authtoken_token
-            if not Token.objects.filter(user=user, key=data['token']).exists():
-                raise ValidationError("El link no es válido o ha expirado.")
-
-            user.set_password(data['new_password'])
-            user.save()
-            return data
-        except Exception as e:
-            raise HttpException(500, str(e))
+    def create(self, validated_data):
+        user = validated_data['user']
+        user.set_password(validated_data['new_password'])
+        user.save(update_fields=['password'])
+        return user
