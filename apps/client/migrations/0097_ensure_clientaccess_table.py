@@ -13,10 +13,12 @@ def create_client_access_table_if_missing(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
+    atomic = False
+
     dependencies = [
         ("client", "0096_clientaccess"),
     ]
 
     operations = [
-        migrations.RunPython(create_client_access_table_if_missing, migrations.RunPython.noop),
+        migrations.RunPython(create_client_access_table_if_missing, migrations.RunPython.noop, atomic=False),
     ]
