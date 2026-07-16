@@ -40,6 +40,7 @@ class User(AbstractUser):
     email       = models.EmailField(max_length=255, verbose_name='Email', unique=True)
     password    = models.CharField(max_length=255, verbose_name='password')
     phone_number = models.CharField(max_length=255, blank=True, null=True, unique=False)
+    profile_photo = models.URLField(max_length=1024, blank=True, null=True)
     code        = models.CharField(max_length=255, blank=True, null=True)
     
     objects = UserManager()

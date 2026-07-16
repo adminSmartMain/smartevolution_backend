@@ -1,14 +1,44 @@
 from django.db import transaction
 from django.utils import timezone
+from django.conf import settings
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
+from base64 import b64decode
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from apps.base.utils.index import gen_uuid
+from apps.base.utils.getContentInfo import get_content_info
+from apps.base.utils.uploadBase64File import BucketS3
 from apps.authentication.access import get_access_profile, permission_required, user_has_permission
 from apps.authentication.models import User, Role, UserRole, Permission, RolePermission, AccessAudit
 from apps.client.api.models.client.index import Client, ClientAccess
 import secrets
+
+USER_PROFILE_PHOTO_FOLDER = 'user-profiles'
+ALLOWED_PROFILE_IMAGE_TYPES = {'png', 'jpg', 'jpeg', 'webp'}
+
+def upload_user_profile_photo(user_id, data_url):
+    if not data_url:
+        return None
+    if isinstance(data_url, str) and data_url.startswith('http'):
+        return data_url
+    try:
+        file_content = get_content_info(data_url)
+    except Exception as exc:
+        raise serializers.ValidationError({'profile_photo': 'La foto de perfil no tiene un formato válido.'}) from exc
+    extension = file_content['file_format'].lower()
+    if extension not in ALLOWED_PROFILE_IMAGE_TYPES:
+        raise serializers.ValidationError({'profile_photo': 'La foto de perfil debe ser una imagen PNG, JPG, JPEG o WEBP.'})
+    content_type = f"image/{'jpeg' if extension == 'jpg' else extension}"
+    try:
+        file_bytes = b64decode(file_content['content'], validate=True)
+    except Exception as exc:
+        raise serializers.ValidationError({'profile_photo': 'No fue posible leer la imagen enviada.'}) from exc
+    key = f'{USER_PROFILE_PHOTO_FOLDER}/{user_id}/{gen_uuid()}.{extension}'
+    BucketS3().upload_file(file=file_bytes, file_path=key, content_type=content_type)
+    return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{key}"
 
 def audit(request, action, target_type, target_id=None, details=None):
     AccessAudit.objects.create(id=gen_uuid(),actor=request.user,action=action,target_type=target_type,target_id=str(target_id) if target_id else None,details=details or {},ip_address=request.META.get('REMOTE_ADDR'))
@@ -26,7 +56,7 @@ class RoleAdminSerializer(serializers.ModelSerializer):
 class UserAdminSerializer(serializers.ModelSerializer):
     roles = serializers.SerializerMethodField()
     client_access = serializers.SerializerMethodField()
-    class Meta: model = User; fields = ('id','first_name','last_name','email','phone_number','is_active','is_staff','is_superuser','last_login','date_joined','roles','client_access')
+    class Meta: model = User; fields = ('id','first_name','last_name','email','phone_number','profile_photo','is_active','is_staff','is_superuser','last_login','date_joined','roles','client_access')
     def get_roles(self, obj): return list(UserRole.objects.filter(user=obj,state=True).values_list('role__code',flat=True))
     def get_client_access(self, obj):
         access = getattr(obj,'client_access',None)
@@ -46,6 +76,46 @@ class MeAV(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
         return Response({'error':False,'data':get_access_profile(request.user)})
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id','first_name','last_name','email','phone_number','profile_photo','last_login','date_joined')
+        read_only_fields = ('id','email','last_login','date_joined')
+
+class ProfileAV(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        return Response({'error': False, 'data': ProfileSerializer(request.user).data})
+
+    @transaction.atomic
+    def patch(self, request):
+        user = request.user
+        update_fields = []
+        for field in ('first_name', 'last_name', 'phone_number'):
+            if field in request.data:
+                setattr(user, field, request.data.get(field) or '')
+                update_fields.append(field)
+        if 'profile_photo' in request.data:
+            user.profile_photo = upload_user_profile_photo(user.id, request.data.get('profile_photo'))
+            update_fields.append('profile_photo')
+        current_password = request.data.get('current_password')
+        new_password = request.data.get('new_password')
+        confirm_password = request.data.get('confirm_password')
+        if new_password or confirm_password or current_password:
+            if not current_password or not user.check_password(current_password):
+                return Response({'error': True, 'message': 'La contraseña actual no es correcta.'}, status=400)
+            if new_password != confirm_password:
+                return Response({'error': True, 'message': 'Las contraseñas no coinciden.'}, status=400)
+            try:
+                validate_password(new_password, user=user)
+            except DjangoValidationError as exc:
+                return Response({'error': True, 'message': list(exc.messages)}, status=400)
+            user.set_password(new_password)
+            update_fields.append('password')
+        if update_fields:
+            user.save(update_fields=list(dict.fromkeys(update_fields)))
+        return Response({'error': False, 'data': ProfileSerializer(user).data})
 
 class PermissionListAV(APIView):
     permission_classes = [IsAuthenticated]
@@ -100,8 +170,12 @@ class UserAdminAV(APIView):
         if User.objects.filter(email__iexact=request.data['email']).exists():
             return Response({'error':True,'message':'El correo ya está registrado.'},status=400)
         temporary_password=request.data.get('password') or secrets.token_urlsafe(10)
-        user=User(id=gen_uuid(),email=request.data['email'].lower(),first_name=request.data.get('first_name',''),last_name=request.data.get('last_name',''),is_active=True)
+        user=User(id=gen_uuid(),email=request.data['email'].lower(),first_name=request.data.get('first_name',''),last_name=request.data.get('last_name',''),phone_number=request.data.get('phone_number') or None,is_active=True)
         user.set_password(temporary_password); user.save()
+        profile_photo = upload_user_profile_photo(user.id, request.data.get('profile_photo'))
+        if profile_photo:
+            user.profile_photo = profile_photo
+            user.save(update_fields=['profile_photo'])
         for role in Role.objects.filter(code__in=request.data.get('roles',[]),state=True):
             UserRole.objects.create(id=gen_uuid(),user=user,role=role,user_created_at=request.user)
         audit(request,'USER_CREATED','user',user.id,{'email':user.email,'roles':request.data.get('roles',[])})
@@ -116,7 +190,18 @@ class UserAdminDetailAV(APIView):
         user=User.objects.get(pk=pk)
         if user == request.user and request.data.get('is_active') is False:
             return Response({'error':True,'message':'No puede bloquear su propia cuenta.'},status=400)
-        if 'is_active' in request.data: user.is_active=request.data['is_active']; user.save(update_fields=['is_active'])
+        update_fields = []
+        if 'is_active' in request.data:
+            user.is_active=request.data['is_active']
+            update_fields.append('is_active')
+        for field in ('first_name','last_name','phone_number'):
+            if field in request.data:
+                setattr(user, field, request.data.get(field) or '')
+                update_fields.append(field)
+        if 'profile_photo' in request.data:
+            user.profile_photo = upload_user_profile_photo(user.id, request.data.get('profile_photo'))
+            update_fields.append('profile_photo')
+        if update_fields: user.save(update_fields=update_fields)
         if 'roles' in request.data:
             UserRole.objects.filter(user=user).delete()
             for role in Role.objects.filter(code__in=request.data['roles'],state=True):

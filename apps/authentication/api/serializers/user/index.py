@@ -41,7 +41,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name','email','role', 'description', 'phone_number']
+        fields = ['first_name', 'last_name','email','role', 'description', 'phone_number', 'profile_photo']
         extra_kwargs = {
             'email'     : {'required': True},
             'first_name': {'required': True},
@@ -70,6 +70,7 @@ class UserSerializer(serializers.ModelSerializer):
 
         account = User(id=gen_uuid(),email=self.validated_data['email'],first_name=self.validated_data['first_name'],
                         last_name=self.validated_data['last_name'], description=description,phone_number=self.validated_data['phone_number'],
+                        profile_photo=self.validated_data.get('profile_photo'),
                         code=code)
         account.set_password(code)
         account.save()
@@ -103,8 +104,8 @@ class UserSerializer(serializers.ModelSerializer):
 class UserReadOnlySerializer(serializers.ModelSerializer):
     class Meta:
         model  = User
-        fields = ['id', 'first_name', 'last_name', 'email']
-        read_only_fields = ['id', 'first_name', 'last_name', 'email']
+        fields = ['id', 'first_name', 'last_name', 'email', 'profile_photo']
+        read_only_fields = ['id', 'first_name', 'last_name', 'email', 'profile_photo']
 
 class UpdateUserSerializer(serializers.ModelSerializer):
     old_password     = serializers.CharField(style={'input_type': 'password'}, write_only=True, required=False)
@@ -112,7 +113,7 @@ class UpdateUserSerializer(serializers.ModelSerializer):
     confirm_password = serializers.CharField(style={'input_type': 'password'}, write_only=True, required=False)
     class Meta:
         model = User
-        fields = ['first_name', 'last_name','email','old_password','new_password','confirm_password']
+        fields = ['first_name', 'last_name','email','profile_photo','old_password','new_password','confirm_password']
 
 
     def update(self, instance, validated_data):

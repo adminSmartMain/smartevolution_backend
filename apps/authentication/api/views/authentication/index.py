@@ -53,6 +53,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
                 token['account_scope'] = profile['account_scope']
                 token['client_access_status'] = profile['client_access_status']
                 token['client_portal_enabled'] = profile['client_portal_enabled']
+                token['profile_photo'] = profile.get('profile_photo')
                 token['is_superuser'] = is_superuser
                 if is_superuser == False and client:
                     # get client information

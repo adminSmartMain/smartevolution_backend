@@ -24,6 +24,7 @@ def required_permission_for_request(request):
     if path.startswith(PUBLIC_PREFIXES): return None
     if path.startswith('/api/dashboard'): return None
     if path.startswith('/api/access-control/me'): return None
+    if path.startswith('/api/access-control/profile'): return None
     if path.startswith('/api/access-control/permissions') or path.startswith('/api/access-control/roles'): return 'roles.manage'
     if path.startswith('/api/access-control/users') or path.startswith('/api/access-control/client-access'): return 'users.view' if request.method == 'GET' else 'users.manage'
     module = 'catalogs' if path.startswith(CATALOG_PREFIXES) else next((m for prefix,m in PREFIX_MODULES if path.startswith(prefix)), None)
@@ -64,7 +65,7 @@ class PlatformPermission(BasePermission):
 def get_access_profile(user):
     from apps.authentication.api.models.userRole.index import UserRole
     if not user or not user.is_authenticated:
-        return {'roles': [], 'permissions': [], 'client': None, 'client_roles': [], 'account_scope': None, 'client_access_status': None}
+        return {'roles': [], 'permissions': [], 'client': None, 'client_roles': [], 'account_scope': None, 'client_access_status': None, 'profile_photo': None}
     assignments = UserRole.objects.filter(user=user, state=True, role__state=True).select_related('role')
     roles = list(assignments.values_list('role__code', flat=True))
     legacy_roles = list(assignments.values_list('role__description', flat=True))
@@ -84,7 +85,7 @@ def get_access_profile(user):
         # Never expose internal permissions to a client identity, even if a
         # role was assigned by mistake.
         permissions = {p for p in permissions if p.startswith('client_portal.')} if getattr(settings,'CLIENT_PORTAL_ENABLED',False) else set()
-    return {'roles': sorted(set(filter(None, roles + legacy_roles))), 'permissions': sorted(permissions), 'client': client_id, 'client_roles': client_roles, 'account_scope': account_scope, 'client_access_status': client_access_status, 'client_portal_enabled': bool(getattr(settings,'CLIENT_PORTAL_ENABLED',False))}
+    return {'roles': sorted(set(filter(None, roles + legacy_roles))), 'permissions': sorted(permissions), 'client': client_id, 'client_roles': client_roles, 'account_scope': account_scope, 'client_access_status': client_access_status, 'client_portal_enabled': bool(getattr(settings,'CLIENT_PORTAL_ENABLED',False)), 'profile_photo': getattr(user, 'profile_photo', None)}
 
 
 def user_has_permission(user, code):
