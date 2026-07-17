@@ -123,23 +123,52 @@ def extract_ubl_extensions(invoice, parsedXml):
 
 def get_payment_due_date(invoice):
     """
-    Lee la fecha de pago si existe.
+    Obtiene la fecha de vencimiento desde cac:PaymentMeans/cbc:PaymentDueDate.
+
+    Untangle devuelve una lista cuando el XML contiene varios PaymentMeans.
+    Por eso se normaliza el valor a lista y se toma la primera fecha válida.
     """
-    try:
-        return invoice.cac_PaymentMeans.cbc_PaymentDueDate.cdata
-    except Exception:
+    payment_means = getattr(invoice, "cac_PaymentMeans", None)
+
+    if payment_means is None:
         return None
+
+    if not isinstance(payment_means, list):
+        payment_means = [payment_means]
+
+    due_dates = []
+
+    for payment_mean in payment_means:
+        due_date_node = getattr(payment_mean, "cbc_PaymentDueDate", None)
+        due_date = getattr(due_date_node, "cdata", None)
+
+        if due_date:
+            due_dates.append(due_date.strip())
+
+    unique_due_dates = list(dict.fromkeys(due_dates))
+
+    if len(unique_due_dates) > 1:
+        logger.warning(
+            "La factura contiene varias fechas de vencimiento: %s. "
+            "Se utilizará la primera.",
+            unique_due_dates,
+        )
+
+    return unique_due_dates[0] if unique_due_dates else None
 
 
 def get_expiration_date(invoice):
     """
-    Lee DueDate si existe.
-    En algunos XML no viene cbc_DueDate, entonces se retorna None.
+    Intenta leer cbc:DueDate y, si no existe, usa PaymentDueDate.
+    En las facturas DIAN analizadas la fecha suele venir en PaymentMeans.
     """
-    try:
-        return invoice.cbc_DueDate.cdata
-    except Exception:
-        return None
+    due_date_node = getattr(invoice, "cbc_DueDate", None)
+    due_date = getattr(due_date_node, "cdata", None)
+
+    if due_date:
+        return due_date.strip()
+
+    return get_payment_due_date(invoice)
 
 
 def parse_invoice(invoice):
