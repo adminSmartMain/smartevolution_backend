@@ -455,7 +455,8 @@ def get_previous_receipt_data(op):
     receipts = Receipt.objects.filter(
         operation_id=op.id,
         state=1,
-    ).order_by("-date", "-created_at")
+        controlStatus=Receipt.CONTROL_ACTIVE,
+    ).order_by("-date", "-created_at", "-dId", "-id")
 
     last_receipt = receipts.first()
 
@@ -1802,17 +1803,23 @@ class ReceiptAdjustAV(APIView):
             if payed_amount <= Decimal("0.00"):
                 return response({"error": True, "message": "El monto aplicación debe ser mayor a cero."}, 400)
 
-            calculated_days_override = None
-            if request.data.get("calculatedDays") not in [None, ""]:
-                try:
-                    calculated_days_override = int(request.data.get("calculatedDays"))
-                except Exception:
-                    return response({"error": True, "message": "Días cálculo inválido."}, 400)
+            # Si cambia la fecha de aplicación, los días cálculo deben seguir la fecha
+            # automáticamente. build_receipt_preview_row usa realDays cuando no recibe override.
+            original_application_date = normalize_to_date(receipt.date)
+            date_changed = application_date != original_application_date
 
-                if calculated_days_override < 0:
-                    return response({"error": True, "message": "Días cálculo no puede ser negativo."}, 400)
-            else:
-                calculated_days_override = receipt.calculatedDays
+            calculated_days_override = None
+            if not date_changed:
+                if request.data.get("calculatedDays") not in [None, ""]:
+                    try:
+                        calculated_days_override = int(request.data.get("calculatedDays"))
+                    except Exception:
+                        return response({"error": True, "message": "Días cálculo inválido."}, 400)
+
+                    if calculated_days_override < 0:
+                        return response({"error": True, "message": "Días cálculo no puede ser negativo."}, 400)
+                else:
+                    calculated_days_override = receipt.calculatedDays
 
             # Primero se revierte el movimiento original, para recalcular desde el saldo correcto.
             restore_receipt_financial_effects(receipt, request.user)
@@ -2094,6 +2101,7 @@ class ReceiptAV(BaseAV):
         parameters=[
             OpenApiParameter("id", OpenApiTypes.UUID, OpenApiParameter.QUERY, required=False),
             OpenApiParameter("opId", OpenApiTypes.STR, OpenApiParameter.QUERY, required=False),
+            OpenApiParameter("operationId", OpenApiTypes.UUID, OpenApiParameter.QUERY, required=False, description="ID interno exacto de la PreOperation"),
             OpenApiParameter("opId_billId", OpenApiTypes.STR, OpenApiParameter.QUERY, required=False),
             OpenApiParameter("statusReceipt", OpenApiTypes.UUID, OpenApiParameter.QUERY, required=False),
             OpenApiParameter("startDate", OpenApiTypes.DATE, OpenApiParameter.QUERY, required=False),
@@ -2118,6 +2126,7 @@ class ReceiptAV(BaseAV):
             receipts = base_receipts
 
             receipt_id = request.query_params.get('id')
+            operation_id = request.query_params.get('operationId')
             op_id = request.query_params.get('opId')
             search_value = (request.query_params.get('opId_billId') or '').strip()
             status_receipt = request.query_params.get('statusReceipt')
@@ -2127,7 +2136,11 @@ class ReceiptAV(BaseAV):
             if receipt_id not in [None, '']:
                 receipts = receipts.filter(id=receipt_id)
 
-            if op_id not in [None, '']:
+            # Cuando se conoce la PreOperation, filtrar por su UUID interno.
+            # opId es un identificador de negocio y puede repetirse entre fracciones/inversionistas.
+            if operation_id not in [None, '']:
+                receipts = receipts.filter(operation_id=operation_id)
+            elif op_id not in [None, '']:
                 receipts = receipts.filter(operation__opId=op_id)
 
             if search_value:

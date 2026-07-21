@@ -563,7 +563,17 @@ class PreOperationAV(BaseAV):
                     
                     preOperation  = PreOperation.objects.get(pk=pk)
                     serializer    = PreOperationReadOnlySerializer(preOperation)
-                    receipts      = Receipt.objects.filter(operation=pk).order_by('-date')
+                    # Solo los recaudos vigentes afectan los acumulados y la referencia
+                    # del formulario. Los anulados/ajustados permanecen únicamente para trazabilidad.
+                    receipts = (
+                        Receipt.objects
+                        .filter(
+                            operation=pk,
+                            state=1,
+                            controlStatus=Receipt.CONTROL_ACTIVE,
+                        )
+                        .order_by('-date', '-created_at', '-dId', '-id')
+                    )
                     receipts_data = ReceiptSerializer(receipts, many=True)
                     calcs = {
                         'lastDate': receipts_data.data[0]['date'] if len(receipts_data.data) > 0 else None,
@@ -573,6 +583,16 @@ class PreOperationAV(BaseAV):
                     for x in receipts_data.data:
                         calcs['payedAmount'] += x['payedAmount']
                         calcs['interest'] += x['additionalInterests']
+
+                    # Saldo de referencia reconstruido únicamente con recaudos vigentes.
+                    # Esto también corrige operaciones antiguas donde un recaudo quedó state=0
+                    # pero opPendingAmount no fue restaurado por el flujo histórico de eliminación.
+                    active_net_paid = calcs['payedAmount'] - calcs['interest']
+                    calcs['pendingAmount'] = max(
+                        round(float(preOperation.payedAmount or 0) - float(active_net_paid or 0), 2),
+                        0,
+                    )
+
                     return response({'error': False, 'data': serializer.data, 'receipts':calcs}, 200)
 
             if len(request.query_params) > 0:
