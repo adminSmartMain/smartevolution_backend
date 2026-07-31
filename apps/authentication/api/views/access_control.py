@@ -3,7 +3,12 @@ from django.utils import timezone
 from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import validate_email
+from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from base64 import b64decode
+from urllib.parse import urlparse
+import json
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -18,27 +23,98 @@ import secrets
 
 USER_PROFILE_PHOTO_FOLDER = 'user-profiles'
 ALLOWED_PROFILE_IMAGE_TYPES = {'png', 'jpg', 'jpeg', 'webp'}
+MAX_PROFILE_IMAGE_SIZE = 5 * 1024 * 1024
 
 def upload_user_profile_photo(user_id, data_url):
     if not data_url:
         return None
     if isinstance(data_url, str) and data_url.startswith('http'):
         return data_url
-    try:
-        file_content = get_content_info(data_url)
-    except Exception as exc:
-        raise serializers.ValidationError({'profile_photo': 'La foto de perfil no tiene un formato válido.'}) from exc
-    extension = file_content['file_format'].lower()
+    if hasattr(data_url, 'read'):
+        content_type = str(getattr(data_url, 'content_type', '')).lower()
+        extension = content_type.split('/')[-1].replace('jpeg', 'jpg')
+        file_bytes = data_url.read()
+    else:
+        try:
+            file_content = get_content_info(data_url)
+        except Exception as exc:
+            raise serializers.ValidationError({'profile_photo': 'La foto de perfil no tiene un formato válido.'}) from exc
+        extension = file_content['file_format'].lower()
+        content_type = f"image/{'jpeg' if extension == 'jpg' else extension}"
+        try:
+            file_bytes = b64decode(file_content['content'], validate=True)
+        except Exception as exc:
+            raise serializers.ValidationError({'profile_photo': 'No fue posible leer la imagen enviada.'}) from exc
     if extension not in ALLOWED_PROFILE_IMAGE_TYPES:
         raise serializers.ValidationError({'profile_photo': 'La foto de perfil debe ser una imagen PNG, JPG, JPEG o WEBP.'})
-    content_type = f"image/{'jpeg' if extension == 'jpg' else extension}"
-    try:
-        file_bytes = b64decode(file_content['content'], validate=True)
-    except Exception as exc:
-        raise serializers.ValidationError({'profile_photo': 'No fue posible leer la imagen enviada.'}) from exc
+    if len(file_bytes) > MAX_PROFILE_IMAGE_SIZE:
+        raise serializers.ValidationError({'profile_photo': 'La foto de perfil no puede superar 5 MB.'})
     key = f'{USER_PROFILE_PHOTO_FOLDER}/{user_id}/{gen_uuid()}.{extension}'
     BucketS3().upload_file(file=file_bytes, file_path=key, content_type=content_type)
     return f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{key}"
+
+
+def delete_user_profile_photo(photo_url):
+    if not photo_url:
+        return
+    parsed = urlparse(photo_url)
+    key = parsed.path.lstrip('/')
+    expected_host = f'{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+    if parsed.netloc != expected_host or not key.startswith(f'{USER_PROFILE_PHOTO_FOLDER}/'):
+        return
+    BucketS3().session.client('s3').delete_object(
+        Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+        Key=key,
+    )
+
+
+def replace_user_profile_photo(user, value):
+    previous = user.profile_photo
+    uploaded = upload_user_profile_photo(user.id, value)
+    if previous and previous != uploaded:
+        delete_user_profile_photo(previous)
+    return uploaded
+
+
+def revoke_user_sessions(user):
+    user.token_version += 1
+
+
+def request_roles(data):
+    roles = data.get('roles', [])
+    if isinstance(roles, str):
+        try:
+            roles = json.loads(roles)
+        except json.JSONDecodeError:
+            roles = [roles]
+    return roles if isinstance(roles, list) else []
+
+
+def request_boolean(value):
+    if isinstance(value, str):
+        return value.lower() in ('true', '1', 'yes')
+    return bool(value)
+
+
+def user_can_be_purged(user):
+    if user.is_active or not user.archived_at or user.is_staff or user.is_superuser:
+        return False
+    allowed_relations = {'userrole_set', 'auth_token'}
+    for relation in user._meta.related_objects:
+        accessor = relation.get_accessor_name()
+        if accessor in allowed_relations:
+            continue
+        try:
+            related = getattr(user, accessor)
+        except relation.related_model.DoesNotExist:
+            continue
+        if hasattr(related, 'exists'):
+            if related.exists():
+                return False
+        elif related is not None:
+            return False
+    return True
+
 
 def audit(request, action, target_type, target_id=None, details=None):
     AccessAudit.objects.create(id=gen_uuid(),actor=request.user,action=action,target_type=target_type,target_id=str(target_id) if target_id else None,details=details or {},ip_address=request.META.get('REMOTE_ADDR'))
@@ -55,12 +131,33 @@ class RoleAdminSerializer(serializers.ModelSerializer):
 
 class UserAdminSerializer(serializers.ModelSerializer):
     roles = serializers.SerializerMethodField()
+    role_details = serializers.SerializerMethodField()
     client_access = serializers.SerializerMethodField()
-    class Meta: model = User; fields = ('id','first_name','last_name','email','phone_number','profile_photo','is_active','is_staff','is_superuser','last_login','date_joined','roles','client_access')
+    company = serializers.SerializerMethodField()
+    can_delete = serializers.SerializerMethodField()
+    class Meta:
+        model = User
+        fields = (
+            'id','first_name','last_name','email','phone_number','profile_photo',
+            'organization','company','description','is_active','is_staff',
+            'is_superuser','archived_at','last_login','date_joined','roles',
+            'role_details','client_access','can_delete',
+        )
     def get_roles(self, obj): return list(UserRole.objects.filter(user=obj,state=True).values_list('role__code',flat=True))
+    def get_role_details(self, obj):
+        return list(UserRole.objects.filter(user=obj,state=True).values('role__code','role__name'))
     def get_client_access(self, obj):
         access = getattr(obj,'client_access',None)
         return None if not access else {'id':access.id,'client_id':access.client_id,'status':access.status}
+    def get_company(self, obj):
+        if obj.organization:
+            return obj.organization
+        access = getattr(obj, 'client_access', None)
+        if not access:
+            return ''
+        return access.client.social_reason or f'{access.client.first_name or ""} {access.client.last_name or ""}'.strip()
+    def get_can_delete(self, obj):
+        return user_can_be_purged(obj)
 
 class ClientAccessSerializer(serializers.ModelSerializer):
     client_name = serializers.SerializerMethodField()
@@ -97,7 +194,7 @@ class ProfileAV(APIView):
                 setattr(user, field, request.data.get(field) or '')
                 update_fields.append(field)
         if 'profile_photo' in request.data:
-            user.profile_photo = upload_user_profile_photo(user.id, request.data.get('profile_photo'))
+            user.profile_photo = replace_user_profile_photo(user, request.data.get('profile_photo'))
             update_fields.append('profile_photo')
         current_password = request.data.get('current_password')
         new_password = request.data.get('new_password')
@@ -112,7 +209,8 @@ class ProfileAV(APIView):
             except DjangoValidationError as exc:
                 return Response({'error': True, 'message': list(exc.messages)}, status=400)
             user.set_password(new_password)
-            update_fields.append('password')
+            revoke_user_sessions(user)
+            update_fields.extend(['password', 'token_version'])
         if update_fields:
             user.save(update_fields=list(dict.fromkeys(update_fields)))
         return Response({'error': False, 'data': ProfileSerializer(user).data})
@@ -163,51 +261,232 @@ class RoleDetailAV(RoleListAV):
 class UserAdminAV(APIView):
     permission_classes=[IsAuthenticated]
     @permission_required('users.view')
-    def get(self,request): return Response({'error':False,'data':UserAdminSerializer(User.objects.all().order_by('email'),many=True).data})
+    def get(self,request):
+        users = User.objects.select_related('client_access__client').all().order_by('email')
+        return Response({'error':False,'data':UserAdminSerializer(users,many=True).data})
     @permission_required('users.create')
     @transaction.atomic
     def post(self,request):
-        if User.objects.filter(email__iexact=request.data['email']).exists():
+        email = str(request.data.get('email') or '').strip().lower()
+        try:
+            validate_email(email)
+        except DjangoValidationError:
+            return Response({'error':True,'message':'Ingresa un correo electrónico válido.'},status=400)
+        if User.objects.filter(email__iexact=email).exists():
             return Response({'error':True,'message':'El correo ya está registrado.'},status=400)
         temporary_password=request.data.get('password') or secrets.token_urlsafe(10)
-        user=User(id=gen_uuid(),email=request.data['email'].lower(),first_name=request.data.get('first_name',''),last_name=request.data.get('last_name',''),phone_number=request.data.get('phone_number') or None,is_active=True)
+        first_name = str(request.data.get('first_name') or '').strip()
+        last_name = str(request.data.get('last_name') or '').strip()
+        roles = request_roles(request.data)
+        if not first_name or not last_name or not roles:
+            return Response({'error':True,'message':'Nombres, apellidos y rol son obligatorios.'},status=400)
+        if Role.objects.filter(code__in=roles,state=True).count() != len(set(roles)):
+            return Response({'error':True,'message':'Uno o más roles seleccionados no están disponibles.'},status=400)
+        description = str(request.data.get('description') or '')
+        if len(description) > 1000:
+            return Response({'error':True,'message':'Las notas internas no pueden superar 1.000 caracteres.'},status=400)
+        user=User(
+            id=gen_uuid(), email=email,
+            first_name=first_name, last_name=last_name,
+            phone_number=request.data.get('phone_number') or None,
+            organization=request.data.get('organization') or None,
+            description=description or None, is_active=True,
+        )
         user.set_password(temporary_password); user.save()
         profile_photo = upload_user_profile_photo(user.id, request.data.get('profile_photo'))
         if profile_photo:
             user.profile_photo = profile_photo
             user.save(update_fields=['profile_photo'])
-        for role in Role.objects.filter(code__in=request.data.get('roles',[]),state=True):
+        for role in Role.objects.filter(code__in=roles,state=True):
             UserRole.objects.create(id=gen_uuid(),user=user,role=role,user_created_at=request.user)
-        audit(request,'USER_CREATED','user',user.id,{'email':user.email,'roles':request.data.get('roles',[])})
+        audit(request,'USER_CREATED','user',user.id,{'email':user.email,'roles':roles})
         return Response({'error':False,'data':UserAdminSerializer(user).data,'temporary_password':temporary_password},status=201)
+
+
+class UserMetricsAV(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @permission_required('users.view')
+    def get(self, request):
+        total_users = User.objects.count()
+        active_users = User.objects.filter(is_active=True).count()
+        blocked_users = total_users - active_users
+        client_accounts = ClientAccess.objects.filter(state=True).count()
+        associated_client_accounts = ClientAccess.objects.filter(
+            state=True,
+            user__isnull=False,
+        ).count()
+
+        def percentage(value, total):
+            return round((value / total) * 100, 1) if total else 0
+
+        return Response({
+            'error': False,
+            'data': {
+                'total_users': total_users,
+                'active_users': active_users,
+                'active_percentage': percentage(active_users, total_users),
+                'client_accounts': client_accounts,
+                'associated_client_accounts': associated_client_accounts,
+                'client_association_percentage': percentage(
+                    associated_client_accounts,
+                    client_accounts,
+                ),
+                'blocked_users': blocked_users,
+                'blocked_percentage': percentage(blocked_users, total_users),
+            },
+        })
+
 
 class UserAdminDetailAV(APIView):
     permission_classes=[IsAuthenticated]
+    @permission_required('users.view')
+    def get(self,request,pk):
+        user = get_object_or_404(User.objects.select_related('client_access__client'), pk=pk)
+        return Response({'error':False,'data':UserAdminSerializer(user).data})
+
     @transaction.atomic
     def patch(self,request,pk):
         required='users.assign_roles' if 'roles' in request.data else ('users.block' if 'is_active' in request.data else 'users.update')
         if not user_has_permission(request.user,required): return Response({'error':True,'message':'No tiene permiso para este cambio de usuario.'},status=403)
-        user=User.objects.get(pk=pk)
+        user=get_object_or_404(User,pk=pk)
         if user == request.user and request.data.get('is_active') is False:
             return Response({'error':True,'message':'No puede bloquear su propia cuenta.'},status=400)
         update_fields = []
         if 'is_active' in request.data:
-            user.is_active=request.data['is_active']
+            user.is_active=request_boolean(request.data['is_active'])
             update_fields.append('is_active')
-        for field in ('first_name','last_name','phone_number'):
+            if not user.is_active:
+                revoke_user_sessions(user)
+                update_fields.append('token_version')
+        for field in ('first_name','last_name','phone_number','organization','description'):
             if field in request.data:
                 setattr(user, field, request.data.get(field) or '')
                 update_fields.append(field)
+        if len(user.description or '') > 1000:
+            return Response({'error':True,'message':'Las notas internas no pueden superar 1.000 caracteres.'},status=400)
+        if 'email' in request.data:
+            email = str(request.data.get('email') or '').strip().lower()
+            try:
+                validate_email(email)
+            except DjangoValidationError:
+                return Response({'error':True,'message':'Ingresa un correo electrónico válido.'},status=400)
+            if User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
+                return Response({'error':True,'message':'El correo ya está registrado.'},status=400)
+            user.email = email
+            update_fields.append('email')
         if 'profile_photo' in request.data:
-            user.profile_photo = upload_user_profile_photo(user.id, request.data.get('profile_photo'))
+            user.profile_photo = replace_user_profile_photo(user, request.data.get('profile_photo'))
             update_fields.append('profile_photo')
         if update_fields: user.save(update_fields=update_fields)
         if 'roles' in request.data:
+            roles = request_roles(request.data)
+            if not roles:
+                return Response({'error':True,'message':'El usuario debe tener al menos un rol.'},status=400)
+            if Role.objects.filter(code__in=roles,state=True).count() != len(set(roles)):
+                return Response({'error':True,'message':'Uno o más roles seleccionados no están disponibles.'},status=400)
             UserRole.objects.filter(user=user).delete()
-            for role in Role.objects.filter(code__in=request.data['roles'],state=True):
+            for role in Role.objects.filter(code__in=roles,state=True):
                 UserRole.objects.create(id=gen_uuid(),user=user,role=role,user_created_at=request.user)
-        audit(request,'USER_UPDATED','user',user.id,{'is_active':user.is_active,'roles':request.data.get('roles')})
+        audit(request,'USER_UPDATED','user',user.id,{'is_active':user.is_active,'roles':request_roles(request.data) if 'roles' in request.data else None})
         return Response({'error':False,'data':UserAdminSerializer(user).data})
+
+    @permission_required('users.update')
+    @transaction.atomic
+    def delete(self,request,pk):
+        user=get_object_or_404(User,pk=pk)
+        if user == request.user or user.is_staff or user.is_superuser:
+            return Response({'error':True,'message':'Esta cuenta no puede eliminarse permanentemente.'},status=400)
+        if user.is_active or not user.archived_at:
+            return Response({'error':True,'message':'El usuario debe estar archivado antes de eliminarse.'},status=400)
+        if not user_can_be_purged(user):
+            return Response({'error':True,'message':'El usuario tiene trazabilidad histórica y no puede eliminarse.'},status=400)
+        email = user.email
+        delete_user_profile_photo(user.profile_photo)
+        UserRole.objects.filter(user=user).delete()
+        user.delete()
+        audit(request,'USER_DELETED','user',pk,{'email':email})
+        return Response({'error':False,'message':'Usuario eliminado permanentemente.'})
+
+
+class UserPasswordAV(APIView):
+    permission_classes=[IsAuthenticated]
+    @permission_required('users.update')
+    @transaction.atomic
+    def post(self,request,pk):
+        user=get_object_or_404(User,pk=pk)
+        new_password=request.data.get('new_password') or ''
+        confirm_password=request.data.get('confirm_password') or ''
+        if new_password != confirm_password:
+            return Response({'error':True,'message':'Las contraseñas no coinciden.'},status=400)
+        if len(new_password) < 8 or not any(c.isupper() for c in new_password) or not any(c.isdigit() for c in new_password):
+            return Response({'error':True,'message':'La contraseña debe tener mínimo 8 caracteres, una mayúscula y un número.'},status=400)
+        try:
+            validate_password(new_password,user=user)
+        except DjangoValidationError as exc:
+            return Response({'error':True,'message':list(exc.messages)},status=400)
+        user.set_password(new_password)
+        revoke_user_sessions(user)
+        user.save(update_fields=['password','token_version'])
+        audit(request,'USER_PASSWORD_CHANGED','user',user.id)
+        return Response({'error':False,'message':'Contraseña actualizada y sesiones cerradas.'})
+
+
+class UserArchiveAV(APIView):
+    permission_classes=[IsAuthenticated]
+    @permission_required('users.block')
+    @transaction.atomic
+    def post(self,request,pk):
+        user=get_object_or_404(User,pk=pk)
+        if user == request.user:
+            return Response({'error':True,'message':'No puede archivar su propia cuenta.'},status=400)
+        user.is_active=False
+        user.archived_at=timezone.now()
+        revoke_user_sessions(user)
+        user.save(update_fields=['is_active','archived_at','token_version'])
+        audit(request,'USER_ARCHIVED','user',user.id,{'email':user.email})
+        return Response({'error':False,'data':UserAdminSerializer(user).data})
+
+
+class UserRestoreAV(APIView):
+    permission_classes=[IsAuthenticated]
+    @permission_required('users.block')
+    @transaction.atomic
+    def post(self,request,pk):
+        user=get_object_or_404(User,pk=pk)
+        user.is_active=True
+        user.archived_at=None
+        user.save(update_fields=['is_active','archived_at'])
+        audit(request,'USER_RESTORED','user',user.id,{'email':user.email})
+        return Response({'error':False,'data':UserAdminSerializer(user).data})
+
+
+class UserOperationsAV(APIView):
+    permission_classes=[IsAuthenticated]
+    @permission_required('users.view')
+    def get(self,request,pk):
+        get_object_or_404(User,pk=pk)
+        from apps.operation.api.models.preOperation.index import PreOperation
+        filter_name=request.query_params.get('status','pending')
+        page=max(int(request.query_params.get('page',1)),1)
+        page_size=min(max(int(request.query_params.get('page_size',5)),1),50)
+        queryset=PreOperation.objects.filter(user_created_at_id=pk).select_related('emitter').order_by('-opDate','-opId')
+        queryset=queryset.filter(status=1) if filter_name == 'approved' else queryset.exclude(status=1)
+        total=queryset.count()
+        start=(page-1)*page_size
+        rows=[]
+        for operation in queryset[start:start+page_size]:
+            rows.append({
+                'id':operation.id,
+                'operation_id':operation.opId,
+                'date':operation.opDate,
+                'emitter':operation.emitter.social_reason or f'{operation.emitter.first_name or ""} {operation.emitter.last_name or ""}'.strip(),
+                'nominal_value':operation.amount,
+                'status':'Aprobada' if operation.status == 1 else 'Por aprobar',
+            })
+        pending=PreOperation.objects.filter(user_created_at_id=pk).exclude(status=1).count()
+        approved=PreOperation.objects.filter(user_created_at_id=pk,status=1).count()
+        return Response({'error':False,'data':{'results':rows,'total':total,'page':page,'page_size':page_size,'counts':{'pending':pending,'approved':approved}}})
 
 class ClientAccessAV(APIView):
     permission_classes=[IsAuthenticated]

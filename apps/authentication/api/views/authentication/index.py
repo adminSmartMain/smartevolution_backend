@@ -55,6 +55,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
                 token['client_portal_enabled'] = profile['client_portal_enabled']
                 token['profile_photo'] = profile.get('profile_photo')
                 token['is_superuser'] = is_superuser
+                token['token_version'] = user.token_version
                 if is_superuser == False and client:
                     # get client information
                     token['client']       = client.id

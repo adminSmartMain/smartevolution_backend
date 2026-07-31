@@ -36,11 +36,14 @@ class User(AbstractUser):
     username    = None
     first_name  = models.CharField(max_length=255, verbose_name='first name', blank=True, null=True)
     last_name   = models.CharField(max_length=255, verbose_name='last name', blank=True, null=True)
-    description = models.CharField(max_length=255, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
     email       = models.EmailField(max_length=255, verbose_name='Email', unique=True)
     password    = models.CharField(max_length=255, verbose_name='password')
     phone_number = models.CharField(max_length=255, blank=True, null=True, unique=False)
     profile_photo = models.URLField(max_length=1024, blank=True, null=True)
+    organization = models.CharField(max_length=255, blank=True, null=True)
+    archived_at = models.DateTimeField(blank=True, null=True)
+    token_version = models.PositiveIntegerField(default=0)
     code        = models.CharField(max_length=255, blank=True, null=True)
     
     objects = UserManager()
