@@ -22,6 +22,8 @@ from rest_framework.response import Response
 from rest_framework import status
 import requests
 import environ
+import json
+from django.utils import timezone
 import os
 from apps.bill.utils.updateMassiveTypeBill import updateMassiveTypeBill
 
@@ -481,12 +483,78 @@ class BillAV(BaseAV):
 
 
 
+def get_billy_functional_error(response):
+    """Billy puede responder HTTP 200 y reportar el error en ``errors``."""
+    try:
+        payload = response.json()
+    except (ValueError, json.JSONDecodeError):
+        payload = {}
+
+    errors = payload.get('errors', []) if isinstance(payload, dict) else []
+    error = errors[0] if errors and isinstance(errors[0], dict) else {}
+    return (
+        str(error.get('status') or response.status_code),
+        error.get('detail') or error.get('title') or response.text,
+    )
+
+
+class PendingBillyBillsAV(BaseAV):
+    @checkRole(['admin', 'third'])
+    def get(self, request):
+        bills = Bill.objects.filter(state=1, billySyncStatus='pending')
+        return response({'error': False, 'data': BillSerializer(bills, many=True).data}, 200)
+
+    @checkRole(['admin', 'third'])
+    def post(self, request):
+        bill_ids = request.data.get('billIds', [])
+        bills = Bill.objects.filter(state=1, billySyncStatus='pending')
+        if bill_ids:
+            bills = bills.filter(id__in=bill_ids)
+
+        env = environ.Env()
+        synced, pending, failed = [], [], []
+        for bill in bills:
+            token = env('PA_TOKEN') if bill.billyTokenScope == 'pa' else env('SMART_TOKEN')
+            try:
+                external_response = requests.post(
+                    'https://api.billy.com.co/v1/invoices/uploadByCufe',
+                    headers={'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'},
+                    json={'cufe': bill.cufe}, timeout=30,
+                )
+                external_status, external_detail = get_billy_functional_error(external_response)
+                bill.billySyncAttempts += 1
+                bill.billyLastSyncAt = timezone.now()
+
+                if external_status in ['200', '201', '409']:
+                    bill.billySyncStatus = 'synced'
+                    bill.billyErrorCode = None
+                    bill.billyErrorDetail = None
+                    synced.append({'id': str(bill.id), 'cufe': bill.cufe})
+                else:
+                    bill.billyErrorCode = external_status
+                    bill.billyErrorDetail = external_detail
+                    pending.append({'id': str(bill.id), 'cufe': bill.cufe, 'status': external_status, 'details': external_detail})
+                bill.save(update_fields=[
+                    'billySyncStatus', 'billyErrorCode', 'billyErrorDetail',
+                    'billySyncAttempts', 'billyLastSyncAt', 'updated_at'
+                ])
+            except requests.RequestException as exc:
+                bill.billySyncAttempts += 1
+                bill.billyLastSyncAt = timezone.now()
+                bill.billyErrorDetail = str(exc)
+                bill.save(update_fields=['billySyncAttempts', 'billyLastSyncAt', 'billyErrorDetail', 'updated_at'])
+                failed.append({'id': str(bill.id), 'cufe': bill.cufe, 'details': str(exc)})
+
+        return response({'error': False, 'synced': synced, 'pending': pending, 'failed': failed}, 200)
+
+
 class readBillAV(BaseAV):
     @checkRole(['admin', 'third'])
     def post(self, request):
         parsedBills = []
         duplicatedLocalBills = []
         duplicatedBillyBills = []
+        pendingBillyBills = []
         failedBills = []
 
         env = environ.Env()
@@ -556,7 +624,9 @@ class readBillAV(BaseAV):
                     )
 
                     # ---------- SI LA FACTURA YA ESTÁ (409) → CONTINUAR ----------
-                    if r.status_code == 409:
+                    billy_status, billy_detail = get_billy_functional_error(r)
+
+                    if billy_status == '409':
                         duplicatedBillyBills.append({
                             "cufe": parsed["cufe"],
                             "message": "Factura ya existía en Billy (409)"
@@ -565,12 +635,26 @@ class readBillAV(BaseAV):
                     
                         
                     # ---------- SI ES OTRO ERROR → FALLA ----------
-                    elif r.status_code not in [200, 201]:
+                    elif billy_status == '401':
+                        # El 401 es una excepción funcional de Billy. La factura
+                        # continúa hacia el guardado normal, pero queda pendiente.
+                        parsed['billySyncStatus'] = 'pending'
+                        parsed['billyErrorCode'] = billy_status
+                        parsed['billyErrorDetail'] = billy_detail
+                        parsed['billySyncAttempts'] = 1
+                        parsed['billyTokenScope'] = 'pa' if fideicomiso else 'smart'
+                        pendingBillyBills.append({
+                            "cufe": parsed["cufe"],
+                            "status": billy_status,
+                            "details": billy_detail,
+                            "message": "Factura extraída; pendiente de carga en Billy"
+                        })
+                    elif billy_status not in ['200', '201']:
                         failedBills.append({
                             "cufe": parsed["cufe"],
                             "message": "Error al subir factura a Billy",
-                            "status": r.status_code,
-                            "details": r.text
+                            "status": billy_status,
+                            "details": billy_detail
                         })
                         continue
 
@@ -581,20 +665,25 @@ class readBillAV(BaseAV):
                     })
                     continue
 
-                # -------------------- OBTENER EVENTOS (SIEMPRE) --------------------
-                events = billEvents(parsed['cufe'], update=True)
-                logger.debug(f'Eventos obtenidos de Billy para CUFE {parsed["cufe"]}: {events}')
-                parsed['events'] = events['events']
-                parsed['typeBill'] = events['type']
-                parsed['currentOwner'] = events['currentOwner']
-                if parsed['emitterId'] == events['current_ownerId']:
-                    parsed['sameCurrentOwner'] = True
-                else:
+                # Una factura pendiente no está disponible para consultar eventos
+                # en Billy, pero sí puede continuar al guardado local.
+                if parsed.get('billySyncStatus') == 'pending':
+                    # Al no poder consultar eventos en Billy, la factura se
+                    # conserva como FV hasta que se sincronice y se recalcule.
+                    parsed['typeBill'] = 'fdb5feb4-24e9-41fc-9689-31aff60b76c9'
+                    parsed['events'] = []
+                    parsed['endorsed'] = False
                     parsed['sameCurrentOwner'] = False
+                else:
+                    events = billEvents(parsed['cufe'], update=True)
+                    logger.debug(f'Eventos obtenidos de Billy para CUFE {parsed["cufe"]}: {events}')
+                    parsed['events'] = events['events']
+                    parsed['typeBill'] = events['type']
+                    parsed['currentOwner'] = events['currentOwner']
+                    parsed['sameCurrentOwner'] = parsed['emitterId'] == events['current_ownerId']
 
-                # -------------------- PROCESAR ENDOSOS --------------------
-                endorsedEvents = updateBillEvents(events['bill'])
-                parsed['endorsed'] = len(endorsedEvents) > 0
+                    endorsedEvents = updateBillEvents(events['bill'])
+                    parsed['endorsed'] = len(endorsedEvents) > 0
 
                 parsedBills.append(parsed)
 
@@ -604,6 +693,7 @@ class readBillAV(BaseAV):
                 "bills": parsedBills,
                 "duplicatedLocalBills": duplicatedLocalBills,
                 "duplicatedBillyBills": duplicatedBillyBills,
+                "pendingBillyBills": pendingBillyBills,
                 "failedBills": failedBills
             }, status=status.HTTP_200_OK)
 
