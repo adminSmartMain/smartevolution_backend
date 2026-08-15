@@ -17,7 +17,17 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG =  True if env('DEBUG') == 'True' else False
 
-ALLOWED_HOSTS = ["*"]
+
+# --- SEGURIDAD DE HOSTS ---
+# Solo a dominios oficiales de Smart Evolution
+ALLOWED_HOSTS = [
+    "devapp.smartevolution.com.co", 
+    "app.smartevolution.com.co",
+    "apis.smartevolution.com.co",
+    "localhost",
+    "127.0.0.1",
+    "0.0.0.0", 
+]
 
 # number format
 USE_DECIMAL_SEPARATOR = True
@@ -47,6 +57,7 @@ LOCAL_APPS = ['apps.base',
             'apps.administration', ]
 
 THIRD_PARTY_APPS = ['rest_framework',
+                     'drf_spectacular',
                     'rest_framework.authtoken',
                     'corsheaders',
                     'gunicorn',
@@ -56,6 +67,8 @@ THIRD_PARTY_APPS = ['rest_framework',
 
 INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_PARTY_APPS
 
+# --- SEGURIDAD CSRF ---
+# Lista de orígenes confiables para el envío de formularios y peticiones de estado
 CSRF_TRUSTED_ORIGINS = [
     'http://3.93.44.58:5000',
     'https://apis.smartevolution.com.co',
@@ -151,7 +164,6 @@ USE_I18N = True
 USE_TZ = False
 
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
@@ -165,9 +177,55 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # REST framework settings
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework_simplejwt.authentication.JWTAuthentication', ],
+    'DEFAULT_AUTHENTICATION_CLASSES': ['apps.authentication.jwt.RevocableJWTAuthentication', ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'EXCEPTION_HANDLER': 'apps.base.exceptions.custom_exception_handler',
 }
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Smart Evolution API',
+    'DESCRIPTION': (
+        'Documentación técnica de los endpoints consumidos por el frontend de Smart Evolution. '
+        'La autenticación se realiza con JWT usando el encabezado Authorization: Bearer <token>.'
+    ),
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    # Esquema Bearer para que Swagger muestre el botón Authorize.
+    # Aunque simplejwt suele detectarse, esto lo deja explícito y estable.
+    'APPEND_COMPONENTS': {
+        'securitySchemes': {
+            'BearerAuth': {
+                'type': 'http',
+                'scheme': 'bearer',
+                'bearerFormat': 'JWT',
+            }
+        }
+    },
+    'SECURITY': [{'BearerAuth': []}],
+    'SCHEMA_PATH_PREFIX': '/api',
+    'TAGS': [
+        {'name': 'Autenticación', 'description': 'Inicio de sesión, registro y recuperación de contraseña.'},
+        {'name': 'Usuarios', 'description': 'Administración y roles de usuarios.'},
+        {'name': 'Clientes', 'description': 'Clientes, contactos, representantes, cuentas y perfiles.'},
+        {'name': 'Catálogos', 'description': 'Catálogos base: ciudades, bancos, tipos, CIIU, países y similares.'},
+        {'name': 'Facturas', 'description': 'Gestión y lectura de facturas.'},
+        {'name': 'Operaciones', 'description': 'Preoperaciones, operaciones masivas, borradores y consultas operativas.'},
+        {'name': 'Recaudos', 'description': 'Registro individual, registro masivo, validación Excel e historial de recaudos.'},
+        {'name': 'Administración', 'description': 'Depósitos, egresos, devoluciones y movimientos administrativos.'},
+        {'name': 'Reportes', 'description': 'Órdenes, recibos, resúmenes y documentos generados.'},
+    ],
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': True,
+        'filter': True,
+    },
+    'REDOC_UI_SETTINGS': {
+        'hideDownloadButton': False,
+    },
+}
+
+
 
 # JWT settings
 SIMPLE_JWT = {
@@ -175,9 +233,41 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=73000)
 }
 
-# CORS settings
-CORS_ORIGIN_ALLOW_ALL = True
+# --- CONFIGURACIÓN DE COOKIES Y SEGURIDAD HTTP ---
 
+if not DEBUG:
+    # Fuerza a que las cookies solo se envíen por HTTPS
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # Protecciones adicionales del navegador
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    
+    # HSTS (Seguridad estricta de transporte)
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Asegura que Django confíe en el encabezado X-Forwarded-Proto enviado por Nginx
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# --- CONFIGURACIÓN DE CORS ---
+# Los orígenes que pueden consumir la API
+CORS_ORIGIN_ALLOW_ALL = False
+CORS_ALLOWED_ORIGINS = [
+    "https://devapp.smartevolution.com.co", 
+    "https://app.smartevolution.com.co",
+]
+
+
+
+# Para Docker si estamos en modo DEBUG
+if DEBUG:
+    CORS_ALLOWED_ORIGINS += [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
 # SMTP settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = env("EMAIL_HOST")

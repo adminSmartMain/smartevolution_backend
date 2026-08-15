@@ -17,7 +17,9 @@ class Account(BaseModel):
         verbose_name = 'account'
         verbose_name_plural = 'accounts'
         ordering = ['-created_at']
-
+        indexes = [
+            models.Index(fields=["client", "created_at"], name="idx_account_client_created"),
+        ]
 #se crea un modelo para manejar los logs de cambios del balance de la cuenta
 class AccountBalanceHistory(BaseModel):
     OPERATION_CHOICES = [

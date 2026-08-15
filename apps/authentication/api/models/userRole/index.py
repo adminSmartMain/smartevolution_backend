@@ -14,4 +14,5 @@ class UserRole(BaseModel):
         verbose_name = 'userRole'
         verbose_name_plural = 'userRoles'
         ordering = ['-created_at']
+        constraints = [models.UniqueConstraint(fields=['user', 'role'], name='uniq_user_role')]
 

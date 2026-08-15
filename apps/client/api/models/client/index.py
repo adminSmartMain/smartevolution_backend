@@ -26,9 +26,96 @@ class Client(BaseModel):
     income          = models.SmallIntegerField(default=0)
     entered_by      = models.ForeignKey('authentication.User', on_delete=models.CASCADE, related_name='entered_by')
     status          = models.IntegerField(default=0)
+    profile_image   =   models.CharField(max_length=255, null=True, blank=True)
+    riesgo = models.IntegerField(default=0)
 
     class Meta:
         db_table = 'clients'
         verbose_name = 'clients'
         verbose_name_plural = 'clients'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=["state", "-created_at"], name="idx_client_state_created"),
+            models.Index(fields=["document_number"], name="idx_client_document"),
+            models.Index(fields=["social_reason"], name="idx_client_social_reason"),
+            models.Index(fields=["first_name"], name="idx_client_first_name"),
+            models.Index(fields=["last_name"], name="idx_client_last_name"),
+        ]
+
+
+class ClientRole(BaseModel):
+    state = models.IntegerField(default=1)
+    code = models.IntegerField(default=0)
+    name = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = "clientRoles"
+        verbose_name = "clientRole"
+        verbose_name_plural = "clientRoles"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["state", "name"], name="idx_clientrole_state_name"),
+            models.Index(fields=["name"], name="idx_clientrole_name"),
+        ]
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+
+class ClientRoleAssignment(BaseModel):
+    client = models.ForeignKey( Client, on_delete=models.CASCADE, db_column="clients_id", related_name="role_assignments")
+    role = models.ForeignKey(ClientRole, on_delete=models.CASCADE, db_column="clientroles_id", related_name="client_assignments")
+
+   
+    notes = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = "client_role_assignments"
+        verbose_name = "client_role_assignment"
+        verbose_name_plural = "client_role_assignments"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["client", "role"], name="uniq_client_role_assignment")
+        ]
+        indexes = [
+    models.Index(fields=["client", "role"], name="idx_roleassign_client_role"),
+    models.Index(fields=["client"], name="idx_roleassign_client"),
+    models.Index(fields=["role"], name="idx_roleassign_role"),
+]
+
+    def __str__(self):
+        return f"{self.client_id} -> {self.role_id}"
+
+
+class ClientAccess(BaseModel):
+    STATUS_PENDING = "PENDING"
+    STATUS_ACTIVE = "ACTIVE"
+    STATUS_BLOCKED = "BLOCKED"
+    STATUS_DISABLED = "DISABLED"
+    STATUS_CHOICES = (
+        (STATUS_PENDING, "Pending"),
+        (STATUS_ACTIVE, "Active"),
+        (STATUS_BLOCKED, "Blocked"),
+        (STATUS_DISABLED, "Disabled"),
+    )
+
+    client = models.OneToOneField(Client, on_delete=models.CASCADE, related_name="access_account")
+    user = models.OneToOneField("authentication.User", on_delete=models.CASCADE, related_name="client_access")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    activated_at = models.DateTimeField(null=True, blank=True)
+    blocked_at = models.DateTimeField(null=True, blank=True)
+    blocked_reason = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = "client_access"
+        verbose_name = "client_access"
+        verbose_name_plural = "client_access"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status", "state"], name="idx_client_access_status"),
+            models.Index(fields=["created_at"], name="idx_client_access_created"),
+        ]
+
+    def __str__(self):
+        return f"{self.client_id} -> {self.user_id}"

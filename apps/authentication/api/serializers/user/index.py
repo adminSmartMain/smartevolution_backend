@@ -1,5 +1,6 @@
 # Django
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.password_validation import validate_password
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from django.template.loader import render_to_string
@@ -40,7 +41,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name','email','role', 'description', 'phone_number']
+        fields = ['first_name', 'last_name','email','role', 'description', 'phone_number', 'profile_photo']
         extra_kwargs = {
             'email'     : {'required': True},
             'first_name': {'required': True},
@@ -50,8 +51,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     def save(self):
         password = generatePassword(12)
-        code     = generatePassword(12)
-       
+        code     = generatePassword(12) 
+        
         if User.objects.filter(email=self.validated_data['email']).exists():
             raise HttpException(400, 'El correo ya se encuentra registrado')
         
@@ -69,6 +70,7 @@ class UserSerializer(serializers.ModelSerializer):
 
         account = User(id=gen_uuid(),email=self.validated_data['email'],first_name=self.validated_data['first_name'],
                         last_name=self.validated_data['last_name'], description=description,phone_number=self.validated_data['phone_number'],
+                        profile_photo=self.validated_data.get('profile_photo'),
                         code=code)
         account.set_password(code)
         account.save()
@@ -102,8 +104,8 @@ class UserSerializer(serializers.ModelSerializer):
 class UserReadOnlySerializer(serializers.ModelSerializer):
     class Meta:
         model  = User
-        fields = ['id', 'first_name', 'last_name', 'email']
-        read_only_fields = ['id', 'first_name', 'last_name', 'email']
+        fields = ['id', 'first_name', 'last_name', 'email', 'profile_photo']
+        read_only_fields = ['id', 'first_name', 'last_name', 'email', 'profile_photo']
 
 class UpdateUserSerializer(serializers.ModelSerializer):
     old_password     = serializers.CharField(style={'input_type': 'password'}, write_only=True, required=False)
@@ -111,7 +113,7 @@ class UpdateUserSerializer(serializers.ModelSerializer):
     confirm_password = serializers.CharField(style={'input_type': 'password'}, write_only=True, required=False)
     class Meta:
         model = User
-        fields = ['first_name', 'last_name','email','old_password','new_password','confirm_password']
+        fields = ['first_name', 'last_name','email','profile_photo','old_password','new_password','confirm_password']
 
 
     def update(self, instance, validated_data):
@@ -142,19 +144,21 @@ class UpdatePasswordSerializer(serializers.Serializer):
         fields = ['token', 'uidb64', 'new_password', 'new_password2']
 
     def validate(self, data):
+        if data['new_password'] != data['new_password2']:
+            raise serializers.ValidationError({'new_password2': 'Las contraseñas no coinciden.'})
         try:
-            if data['new_password'] != data['new_password2']:
-                raise HttpException(400, 'Las contraseñas no coinciden')
+            user_id = force_str(urlsafe_base64_decode(data['uidb64']))
+            user = User.objects.get(pk=user_id)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            raise serializers.ValidationError({'token': 'El enlace no es válido o ha expirado.'})
+        if not default_token_generator.check_token(user, data['token']):
+            raise serializers.ValidationError({'token': 'El enlace no es válido o ha expirado.'})
+        validate_password(data['new_password'], user=user)
+        data['user'] = user
+        return data
 
-            id   = force_str(urlsafe_base64_decode(data['uidb64']))
-            user = User.objects.get(pk=id)
-
-           # Validar el token usando la tabla authtoken_token
-            if not Token.objects.filter(user=user, key=data['token']).exists():
-                raise ValidationError("El link no es válido o ha expirado.")
-
-            user.set_password(data['new_password'])
-            user.save()
-            return data
-        except Exception as e:
-            raise HttpException(500, str(e))
+    def create(self, validated_data):
+        user = validated_data['user']
+        user.set_password(validated_data['new_password'])
+        user.save(update_fields=['password'])
+        return user
