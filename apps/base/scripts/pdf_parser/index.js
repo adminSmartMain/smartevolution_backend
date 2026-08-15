@@ -114,6 +114,93 @@ function getChromeExecutablePath() {
   return puppeteer.executablePath();
 }
 
+function imageMimeType(url, contentType) {
+  const normalizedType = (contentType || "").split(";")[0].trim().toLowerCase();
+  if (normalizedType.startsWith("image/")) {
+    return normalizedType;
+  }
+
+  const pathname = new URL(url).pathname.toLowerCase();
+  if (pathname.endsWith(".svg")) return "image/svg+xml";
+  if (pathname.endsWith(".png")) return "image/png";
+  if (pathname.endsWith(".jpg") || pathname.endsWith(".jpeg")) return "image/jpeg";
+  if (pathname.endsWith(".webp")) return "image/webp";
+
+  return null;
+}
+
+async function downloadImageAsDataUri(url) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    const response = await fetch(url, {
+      redirect: "follow",
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "SmartEvolution PDF renderer"
+      }
+    });
+    const contentLength = Number(response.headers.get("content-length") || 0);
+
+    if (!response.ok || contentLength > 10 * 1024 * 1024) {
+      return null;
+    }
+
+    const mimeType = imageMimeType(url, response.headers.get("content-type"));
+    if (!mimeType) {
+      return null;
+    }
+
+    const bytes = Buffer.from(await response.arrayBuffer());
+    return `data:${mimeType};base64,${bytes.toString("base64")}`;
+  } catch (error) {
+    console.error(`No fue posible incrustar la imagen ${url}: ${error.message}`);
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function inlineRemoteImages(htmlContent) {
+  const imagePattern = /(<img\b[^>]*?\bsrc\s*=\s*)(["'])(https?:\/\/[^"']+)\2/gi;
+  const sources = [...htmlContent.matchAll(imagePattern)].map((match) => match[3]);
+  const uniqueSources = [...new Set(sources)];
+
+  if (!uniqueSources.length) {
+    return htmlContent;
+  }
+
+  const images = await Promise.all(
+    uniqueSources.map(async (url) => [url, await downloadImageAsDataUri(url)])
+  );
+  const dataUris = new Map(images.filter(([, dataUri]) => Boolean(dataUri)));
+
+  return htmlContent.replace(imagePattern, (match, prefix, quote, url) => {
+    const dataUri = dataUris.get(url);
+    return dataUri ? `${prefix}${quote}${dataUri}${quote}` : match;
+  });
+}
+
+async function waitForDocumentResources(page) {
+  await page.evaluate(async () => {
+    const images = Array.from(document.images);
+    await Promise.all(
+      images.map((image) => {
+        if (image.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+          image.addEventListener("load", resolve, { once: true });
+          image.addEventListener("error", resolve, { once: true });
+        });
+      })
+    );
+
+    if (document.fonts && document.fonts.ready) {
+      await document.fonts.ready;
+    }
+  });
+}
+
 function buildChromeArgs(paths) {
   return [
     "--no-sandbox",
@@ -162,6 +249,7 @@ async function launchBrowser(paths) {
   try {
     const rawInput = await readStdin();
     const { htmlContent, pdfType } = parseInput(rawInput);
+    const htmlWithEmbeddedImages = await inlineRemoteImages(htmlContent);
 
     tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "smartevolution-pdf-"));
     const paths = {
@@ -181,12 +269,13 @@ async function launchBrowser(paths) {
     page.setDefaultTimeout(60000);
     page.setDefaultNavigationTimeout(60000);
 
-    await page.setContent(htmlContent, {
+    await page.setContent(htmlWithEmbeddedImages, {
       waitUntil: "domcontentloaded",
       timeout: 60000
     });
 
     await page.emulateMediaType("screen");
+    await waitForDocumentResources(page);
 
     const pdfBuffer = await page.pdf(buildPdfOptions(pdfType));
 
