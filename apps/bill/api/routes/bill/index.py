@@ -1,9 +1,10 @@
 # views
 from django.urls import path
-from apps.bill.api.views.index import BillAV, readBillAV, readCreditNoteAV,BillCreationManualAV
+from apps.bill.api.views.index import BillAV, readBillAV, readCreditNoteAV, BillCreationManualAV, PendingBillyBillsAV
 
 urlpatterns = [
     path('read', readBillAV.as_view(), name='bill'),
+    path('billy-pending', PendingBillyBillsAV.as_view(), name='billy-pending'),
     path('', BillAV.as_view(), name='bill'),
     path('<str:pk>', BillAV.as_view(), name='bill_id'),
     path('<uuid:pk>', BillAV.as_view(), name='bill_uuid'),

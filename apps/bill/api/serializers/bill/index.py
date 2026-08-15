@@ -79,7 +79,7 @@ class BillCreationSerializer(serializers.ModelSerializer):
         fields = [
             'typeBill', 'billId', 'emitterId', 
             'currentBalance', 'dateBill', 'expirationDate',
-            'payerName', 'payerId', 'emitterName', 'datePayment','billValue','subTotal','total','file','ret_iva','ret_ica','iva'
+            'payerName', 'payerId', 'emitterName', 'datePayment','billValue','subTotal','total','file','cufe','ret_iva','ret_ica','iva'
             ,'ret_fte','other_ret'
         ]
 
@@ -105,33 +105,31 @@ class BillCreationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         try:
-            # Usar el usuario del request
             validated_data['id'] = gen_uuid()
             validated_data['user_created_at'] = self.context['request'].user
-            
-            # Subir el archivo a S3
+
             if 'file' in validated_data:
                 fileUrl = validated_data.get('file', None)
                 if fileUrl:
                     fileUrl = uploadFileBase64(
-                        files_bse64=[fileUrl], 
+                        files_bse64=[fileUrl],
                         file_path=f'bill/{validated_data["id"]}'
                     )
                     validated_data['file'] = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{fileUrl}"
-            
-            # Asegurar que currentBalance sea igual a total si no se especifica
+
             if 'currentBalance' not in validated_data:
                 validated_data['currentBalance'] = validated_data.get('total', 0)
             elif validated_data.get('total'):
                 validated_data['currentBalance'] = validated_data['total']
-            
-            # Crear la factura
+
             bill = Bill.objects.create(**validated_data)
             return bill
-            
+
         except Exception as e:
-            logger.error(f"Error al crear factura: {str(e)}")
-            raise serializers.ValidationError(f"Error al crear la factura: {str(e)}")
+            logger.exception("Error al crear factura")
+            raise serializers.ValidationError({
+                "non_field_errors": [f"Error al crear la factura: {str(e)}"]
+            })
             
         
         
@@ -485,9 +483,13 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
 
-        # Sobrescribe typeBill con el valor REAL
+        # Si Billy aún no conoce el CUFE, mantenemos la factura local disponible.
+        if not instance.cufe:
+            return data
+
+        # Sobrescribe typeBill con el valor REAL solo si Billy pudo consultar eventos.
         events = self._get_billEvents(instance)
-        real_type = events.get("type")
+        real_type = events.get("type") if events.get("ok") else None
 
         if real_type:
             data["typeBill"] = real_type  # <-- ahora SIEMPRE el valor correcto

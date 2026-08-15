@@ -30,8 +30,18 @@ class Bill(BaseModel):
     currentOwner     = models.CharField(max_length=255, blank=True, null=True)
     sameCurrentOwner = models.BooleanField(default=False)
     integrationCode  = models.CharField(max_length=255, blank=True, null=True)
+    # Una factura puede existir localmente y quedar pendiente de sincronizar.
+    billySyncStatus = models.CharField(max_length=20, default='synced')
+    billyErrorCode = models.CharField(max_length=20, blank=True, null=True)
+    billyErrorDetail = models.TextField(blank=True, null=True)
+    billySyncAttempts = models.PositiveIntegerField(default=0)
+    billyLastSyncAt = models.DateTimeField(blank=True, null=True)
+    billyTokenScope = models.CharField(max_length=20, default='smart')
 
 
     class Meta:
         db_table = 'bills'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=["emitterId"], name="idx_bill_emitter_id"),
+        ]

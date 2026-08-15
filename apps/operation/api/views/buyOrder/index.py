@@ -541,7 +541,7 @@ class BuyOrderWebhookAV(BaseAV):
             logger.debug('# ❌ todo falló') 
             IntegrationHistory.objects.create(
             id=gen_uuid(),
-            integrationCode=None,
+            integrationCode=request.data['code'],
             status='FAILED',
             message=str(e),
             response=None

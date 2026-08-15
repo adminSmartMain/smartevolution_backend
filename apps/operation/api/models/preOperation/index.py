@@ -47,3 +47,116 @@ class PreOperation(BaseModel):
         verbose_name = 'operation'
         verbose_name_plural = 'operations'
         ordering = ['-opDate','-opId']
+        indexes = [
+    models.Index(fields=["emitter", "-created_at"], name="idx_operation_emitter_created"),
+    models.Index(fields=["payer", "-created_at"], name="idx_operation_payer_created"),
+    models.Index(fields=["investor", "-created_at"], name="idx_operation_investor_created"),
+    models.Index(fields=["emitter"], name="idx_operation_emitter"),
+    models.Index(fields=["payer"], name="idx_operation_payer"),
+    models.Index(fields=["investor"], name="idx_operation_investor"),
+]
+        
+        
+
+class OperationLog(BaseModel):
+    STATUS_CHOICES = (
+        ("SUCCESS", "Success"),
+        ("ERROR", "Error"),
+        ("PARTIAL", "Partial"),
+        ("INFO", "Info"),
+    )
+
+    SOURCE_CHOICES = (
+        ("SINGLE", "Single Operation"),
+        ("BULK", "Bulk Operation"),
+        ("UPLOAD_EXCEL", "Upload Excel"),
+        ("REGISTER_FROM_UPLOAD", "Register From Upload"),
+        ("PATCH", "Patch Operation"),
+        ("DELETE", "Delete Operation"),
+        ("BILL", "Bill"),
+    )
+
+    opId = models.BigIntegerField(null=True, blank=True)
+
+    pre_operation = models.ForeignKey(
+        "operation.PreOperation",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="logs"
+    )
+
+    source = models.CharField(max_length=40, choices=SOURCE_CHOICES)
+    action = models.CharField(max_length=120)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="INFO")
+
+    message = models.TextField()
+    error_type = models.CharField(max_length=255, null=True, blank=True)
+    error_detail = models.TextField(null=True, blank=True)
+    stack_trace = models.TextField(null=True, blank=True)
+
+    row_index = models.IntegerField(null=True, blank=True)
+    bill_code = models.CharField(max_length=255, null=True, blank=True)
+    bill_id_ref = models.CharField(max_length=255, null=True, blank=True)
+
+    request_payload = models.JSONField(null=True, blank=True)
+    response_payload = models.JSONField(null=True, blank=True)
+    extra_data = models.JSONField(null=True, blank=True)
+
+    user_email = models.CharField(max_length=255, null=True, blank=True)
+    user_id_ref = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        db_table = "operation_log"
+        verbose_name = "operation log"
+        verbose_name_plural = "operation logs"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.source} - {self.action} - {self.status} - opId:{self.opId or 'N/A'}"
+    
+    
+    
+class MassiveOperationDraft(BaseModel):
+    STATUS_DRAFT = "DRAFT"
+    STATUS_READY_FOR_EXCEL = "READY_FOR_EXCEL"
+    STATUS_REGISTERED = "REGISTERED"
+    STATUS_CANCELLED = "CANCELLED"
+
+    STATUS_CHOICES = (
+        (STATUS_DRAFT, "Borrador"),
+        (STATUS_READY_FOR_EXCEL, "Listo para Excel"),
+        (STATUS_REGISTERED, "Registrado"),
+        (STATUS_CANCELLED, "Cancelado"),
+    )
+
+    opId = models.BigIntegerField(null=True, blank=True)
+    opDate = models.DateField(null=True, blank=True)
+    opType = models.ForeignKey(TypeOperation, null=True, blank=True, on_delete=models.SET_NULL)
+
+    emitter = models.ForeignKey(Client, null=True, blank=True, on_delete=models.SET_NULL, related_name="massive_drafts_emitter")
+    payer = models.ForeignKey(Client, null=True, blank=True, on_delete=models.SET_NULL, related_name="massive_drafts_payer")
+    emitterBroker = models.ForeignKey(Broker, null=True, blank=True, on_delete=models.SET_NULL)
+
+    currentStep = models.IntegerField(default=0)
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default=STATUS_DRAFT)
+
+    selectedBills = models.JSONField(default=list, blank=True)
+    investorAssignments = models.JSONField(default=list, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+
+    registeredOpId = models.BigIntegerField(null=True, blank=True)
+    expiresAt = models.DateTimeField(null=True, blank=True)
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=[
+                    "state",
+                    "user_created_at",
+                    "status",
+                    "-updated_at",
+                    "-created_at",
+                ],
+                name="massive_draft_list_idx",
+            ),
+        ]

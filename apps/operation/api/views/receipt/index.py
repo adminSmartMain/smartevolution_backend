@@ -21,10 +21,22 @@ from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework import serializers
 import json
 from openpyxl import load_workbook
 from apps.operation.models import PreOperation, Receipt
 from apps.operation.api.serializers.index import ReceiptSerializer
+from apps.operation.api.serializers.receipt.index import is_last_active_receipt
+from apps.operation.enums import ReceiptStatusEnum
+from apps.base.utils.logBalanceAccount import log_balance_change
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiExample,
+    OpenApiParameter,
+    OpenApiResponse,
+    OpenApiTypes,
+    inline_serializer,
+)
 
 # Configurar el logger
 logger = logging.getLogger(__name__)
@@ -40,6 +52,189 @@ console_handler.setFormatter(formatter)
 
 # Añadir el handler al logger
 logger.addHandler(console_handler)
+
+
+# -----------------------------------------------------------------------------
+# Schemas auxiliares para drf-spectacular
+# -----------------------------------------------------------------------------
+# Estos serializers solo documentan entradas/salidas en Swagger. No cambian la
+# lógica de negocio actual de recaudos.
+ReceiptVoidRequestSchema = inline_serializer(
+    name="ReceiptVoidRequest",
+    fields={
+        "reason": serializers.CharField(required=True, min_length=50, max_length=500, help_text="Motivo obligatorio de anulación. Debe tener entre 50 y 500 caracteres."),
+    },
+)
+
+ReceiptAdjustRequestSchema = inline_serializer(
+    name="ReceiptAdjustRequest",
+    fields={
+        "reason": serializers.CharField(required=True, min_length=50, max_length=500, help_text="Motivo obligatorio de corrección. Debe tener entre 50 y 500 caracteres."),
+        "date": serializers.DateField(required=False, help_text="Nueva fecha de aplicación. Formato: YYYY-MM-DD."),
+        "payedAmount": serializers.DecimalField(required=False, max_digits=18, decimal_places=2, help_text="Nuevo monto aplicado."),
+        "calculatedDays": serializers.IntegerField(required=False, min_value=0, help_text="Días cálculo. Solo afecta futureValueRecalculation."),
+        "receiptStatus": serializers.UUIDField(required=False, help_text="Estado de recaudo. Si no se envía, conserva el actual."),
+    },
+)
+
+MassiveReceiptPreviewRequestSchema = inline_serializer(
+    name="MassiveReceiptPreviewRequest",
+    fields={
+        "applicationDate": serializers.DateField(required=True, help_text="Fecha de aplicación del recaudo. Formato: YYYY-MM-DD."),
+        "receiptStatus": serializers.UUIDField(required=False, allow_null=True),
+        "operations": serializers.ListField(
+            required=True,
+            child=serializers.JSONField(),
+            help_text="Lista de operaciones con preOperationId/id, payedAmount y opcionalmente calculatedDays.",
+        ),
+    },
+)
+
+MassiveReceiptUploadExcelRequestSchema = inline_serializer(
+    name="MassiveReceiptUploadExcelRequest",
+    fields={
+        "uploadExcel": serializers.FileField(required=True, help_text="Archivo Excel de recaudos."),
+        "context": serializers.CharField(required=True, help_text="JSON string con applicationDate, receiptStatus y rows esperadas."),
+    },
+)
+
+MassiveReceiptRegisterRequestSchema = inline_serializer(
+    name="MassiveReceiptRegisterRequest",
+    fields={
+        "applicationDate": serializers.DateField(required=True),
+        "receiptStatus": serializers.UUIDField(required=True),
+        "rows": serializers.ListField(required=False, child=serializers.JSONField()),
+        "operations": serializers.ListField(required=False, child=serializers.JSONField()),
+    },
+)
+
+
+RECEIPT_REASON_MIN_LENGTH = 50
+RECEIPT_REASON_MAX_LENGTH = 500
+RECEIPT_REASON_REQUIRED_MESSAGE = "El motivo es obligatorio y debe tener al menos 50 caracteres"
+
+
+def normalize_receipt_reason(raw_reason):
+    """Valida y normaliza motivos de edición/anulación de recaudos."""
+    reason = (raw_reason or "").strip()
+
+    if len(reason) < RECEIPT_REASON_MIN_LENGTH:
+        raise ValueError(RECEIPT_REASON_REQUIRED_MESSAGE)
+
+    if len(reason) > RECEIPT_REASON_MAX_LENGTH:
+        raise ValueError(f"El motivo no puede superar {RECEIPT_REASON_MAX_LENGTH} caracteres.")
+
+    return reason
+
+
+def receipt_active_queryset():
+    """Recaudos vigentes que sí cuentan financieramente."""
+    return Receipt.objects.filter(state=1, controlStatus=Receipt.CONTROL_ACTIVE)
+
+
+def get_user_display_name(user):
+    if not user:
+        return ""
+
+    full_name = f"{getattr(user, 'first_name', '') or ''} {getattr(user, 'last_name', '') or ''}".strip()
+    return full_name or getattr(user, "email", "") or str(getattr(user, "id", "") or "")
+
+
+def receipt_history_fraction(receipt):
+    operation = getattr(receipt, "operation", None)
+    bill = getattr(operation, "bill", None) if operation else None
+
+    return (
+        getattr(receipt, "fraction", None)
+        or getattr(operation, "fraction", None)
+        or getattr(operation, "billFraction", None)
+        or getattr(bill, "fraction", None)
+        or 1
+    )
+
+
+def receipt_history_group_key(receipt):
+    operation = getattr(receipt, "operation", None)
+    bill = getattr(operation, "bill", None) if operation else None
+    account = getattr(receipt, "account", None) or getattr(operation, "clientAccount", None)
+    investor = getattr(account, "client", None) or getattr(operation, "investor", None)
+    fraction = receipt_history_fraction(receipt)
+
+    return (
+        f"{getattr(operation, 'id', '')}-"
+        f"{getattr(bill, 'id', '')}-"
+        f"{fraction}-"
+        f"{getattr(account, 'id', '')}-"
+        f"{getattr(investor, 'id', '')}"
+    )
+
+
+def build_receipt_change_event(receipt):
+    operation = getattr(receipt, "operation", None)
+    bill = getattr(operation, "bill", None) if operation else None
+    account = getattr(receipt, "account", None) or getattr(operation, "clientAccount", None)
+    investor_client = get_account_client(account)
+    replaced_by = getattr(receipt, "replacedBy", None)
+
+    is_voided = getattr(receipt, "controlStatus", "") == Receipt.CONTROL_VOIDED
+    action_type = "VOIDED" if is_voided else "ADJUSTED"
+    action_label = "Anulado" if is_voided else "Editado"
+    reason = getattr(receipt, "voidReason", None) if is_voided else getattr(receipt, "adjustmentReason", None)
+
+    event = {
+        "id": str(receipt.id),
+        "actionType": action_type,
+        "actionLabel": action_label,
+        "controlStatus": getattr(receipt, "controlStatus", ""),
+        "state": getattr(receipt, "state", None),
+        "reason": reason or "Sin motivo registrado",
+        "voidReason": getattr(receipt, "voidReason", "") or "",
+        "adjustmentReason": getattr(receipt, "adjustmentReason", "") or "",
+        "date": format_date(getattr(receipt, "date", None)),
+        "created_at": format_date(getattr(receipt, "created_at", None)),
+        "updated_at": format_date(getattr(receipt, "updated_at", None)),
+        "voidedAt": format_date(getattr(receipt, "voidedAt", None)),
+        "changedAt": format_date(getattr(receipt, "voidedAt", None) or getattr(receipt, "updated_at", None) or getattr(receipt, "created_at", None)),
+        "changedBy": get_user_display_name(getattr(receipt, "voidedBy", None) or getattr(receipt, "user_updated_at", None)),
+        "opId": getattr(operation, "opId", None),
+        "operationId": str(getattr(operation, "id", "") or ""),
+        "billId": getattr(bill, "billId", None),
+        "billUniqueId": str(getattr(bill, "id", "") or ""),
+        "fraction": int(receipt_history_fraction(receipt) or 1),
+        "investorName": get_client_name(investor_client),
+        "payerName": getattr(bill, "payerName", None) or "",
+        "emitterName": getattr(bill, "emitterName", None) or "",
+        "typeReceipt": getattr(getattr(receipt, "typeReceipt", None), "description", None) or "",
+        "receiptStatus": getattr(getattr(receipt, "receiptStatus", None), "description", None) or "",
+        "payedAmount": float(to_decimal(getattr(receipt, "payedAmount", 0))),
+        "realDays": getattr(receipt, "realDays", 0),
+        "additionalDays": getattr(receipt, "additionalDays", 0),
+        "calculatedDays": getattr(receipt, "calculatedDays", 0),
+        "additionalInterests": float(to_decimal(getattr(receipt, "additionalInterests", 0))),
+        "investorInterests": float(to_decimal(getattr(receipt, "investorInterests", 0))),
+        "presentValueInvestor": float(to_decimal(getattr(receipt, "presentValueInvestor", 0))),
+        "remaining": float(to_decimal(getattr(receipt, "remaining", 0))),
+        "replacement": None,
+    }
+
+    if replaced_by:
+        event["replacement"] = {
+            "id": str(replaced_by.id),
+            "date": format_date(getattr(replaced_by, "date", None)),
+            "payedAmount": float(to_decimal(getattr(replaced_by, "payedAmount", 0))),
+            "realDays": getattr(replaced_by, "realDays", 0),
+            "additionalDays": getattr(replaced_by, "additionalDays", 0),
+            "calculatedDays": getattr(replaced_by, "calculatedDays", 0),
+            "additionalInterests": float(to_decimal(getattr(replaced_by, "additionalInterests", 0))),
+            "presentValueInvestor": float(to_decimal(getattr(replaced_by, "presentValueInvestor", 0))),
+            "typeReceipt": getattr(getattr(replaced_by, "typeReceipt", None), "description", None) or "",
+            "receiptStatus": getattr(getattr(replaced_by, "receiptStatus", None), "description", None) or "",
+            "created_at": format_date(getattr(replaced_by, "created_at", None)),
+            "controlStatus": getattr(replaced_by, "controlStatus", ""),
+        }
+
+    return event
+
 
 
 
@@ -260,7 +455,8 @@ def get_previous_receipt_data(op):
     receipts = Receipt.objects.filter(
         operation_id=op.id,
         state=1,
-    ).order_by("-date", "-created_at")
+        controlStatus=Receipt.CONTROL_ACTIVE,
+    ).order_by("-date", "-created_at", "-dId", "-id")
 
     last_receipt = receipts.first()
 
@@ -624,6 +820,22 @@ def build_receipt_preview_row(op, application_date, receipt_status_id=None, paye
     }
 
 class MassiveReceiptPreview(APIView):
+    @extend_schema(
+        tags=["Recaudos"],
+        summary="Previsualizar recaudos masivos",
+        description="Calcula una previsualización de recaudos para operaciones seleccionadas sin registrar movimientos financieros.",
+        request=MassiveReceiptPreviewRequestSchema,
+        responses={200: OpenApiResponse(description="Previsualización generada"), 400: OpenApiResponse(description="Datos inválidos")},
+        examples=[OpenApiExample(
+            "Preview básico",
+            value={
+                "applicationDate": "2026-05-15",
+                "receiptStatus": "ea8518e8-168a-46d7-b56a-1286bf0037cd",
+                "operations": [{"preOperationId": "uuid-operacion", "payedAmount": 1000, "calculatedDays": 41}],
+            },
+            request_only=True,
+        )],
+    )
     def post(self, request):
         application_date = request.data.get("applicationDate")
         receipt_status_id = request.data.get("receiptStatus")
@@ -888,6 +1100,13 @@ class MassiveReceiptUploadExcelParser:
 
 
 class MassiveReceiptUploadExcel(APIView):
+    @extend_schema(
+        tags=["Recaudos"],
+        summary="Validar Excel de recaudos masivos",
+        description="Lee el Excel cargado, valida filas contra el contexto enviado y devuelve filas normalizadas listas para registrar.",
+        request=MassiveReceiptUploadExcelRequestSchema,
+        responses={200: OpenApiResponse(description="Excel validado"), 400: OpenApiResponse(description="Archivo o contexto inválido")},
+    )
     def post(self, request):
         excel_file = request.FILES.get("uploadExcel")
 
@@ -1169,6 +1388,13 @@ class MassiveReceiptUploadExcel(APIView):
             status=status.HTTP_200_OK,
         )
 class MassiveReceiptRegister(APIView):
+    @extend_schema(
+        tags=["Recaudos"],
+        summary="Registrar recaudos masivos",
+        description="Registra varios recaudos de diferentes operaciones. Cada fila se trata por su propia operación, no como lote financiero.",
+        request=MassiveReceiptRegisterRequestSchema,
+        responses={200: OpenApiResponse(description="Recaudos registrados"), 400: OpenApiResponse(description="Errores de validación")},
+    )
     @transaction.atomic
     def post(self, request):
         application_date = request.data.get("applicationDate")
@@ -1350,188 +1576,608 @@ class MassiveReceiptRegister(APIView):
             status=status.HTTP_200_OK,
         )
 
+
+def get_receipt_balance_movement(receipt):
+    return round(float(receipt.presentValueInvestor or 0) + float(receipt.investorInterests or 0), 2)
+
+
+def restore_receipt_financial_effects(receipt, request_user=None):
+    """
+    Revierte los efectos financieros de un recaudo.
+    Prioridad: usar ReceiptSnapshot. Si no existe snapshot, aplica reversa segura para casos normales.
+    """
+
+    operation = receipt.operation
+    account = receipt.account
+    bill = getattr(operation, "bill", None)
+
+    try:
+        snapshot = receipt.snapshot
+    except Exception:
+        snapshot = None
+
+    if snapshot:
+        if account and snapshot.accountBalanceBefore is not None:
+            movement = round(float(snapshot.accountBalanceBefore) - float(account.balance or 0), 2)
+            if movement != 0:
+                log_balance_change(
+                    account,
+                    account.balance,
+                    snapshot.accountBalanceBefore,
+                    movement,
+                    "receipt_void",
+                    receipt.id,
+                    "Receipt - void snapshot",
+                )
+            account.balance = snapshot.accountBalanceBefore
+            account.save()
+
+        operation.status = snapshot.operationStatusBefore
+        operation.opPendingAmount = snapshot.operationPendingBefore
+
+        if snapshot.operationAmountBefore is not None:
+            operation.amount = snapshot.operationAmountBefore
+
+        if snapshot.operationPayedAmountBefore is not None:
+            operation.payedAmount = snapshot.operationPayedAmountBefore
+
+        operation.save()
+
+        if bill:
+            if snapshot.billCurrentBalanceBefore is not None:
+                bill.currentBalance = snapshot.billCurrentBalanceBefore
+
+            if snapshot.billReBuyAvailableBefore is not None:
+                bill.reBuyAvailable = snapshot.billReBuyAvailableBefore
+
+            bill.save()
+
+        return
+
+    # Fallback para históricos sin snapshot.
+    # Recompra toca factura y estado de operación de forma más compleja: se bloquea sin snapshot.
+    if receipt.receiptStatus_id == ReceiptStatusEnum.RECOMPRA.value:
+        raise ValueError(
+            "Este recaudo histórico no tiene snapshot y es recompra. Debe revisarse manualmente."
+        )
+
+    if account:
+        movement = get_receipt_balance_movement(receipt)
+        new_balance = round(float(account.balance or 0) - movement, 2)
+        log_balance_change(
+            account,
+            account.balance,
+            new_balance,
+            -movement,
+            "receipt_void",
+            receipt.id,
+            "Receipt - void fallback",
+        )
+        account.balance = new_balance
+        account.save()
+
+    net_paid = round(float(receipt.payedAmount or 0) - float(receipt.additionalInterests or 0), 2)
+
+    if receipt.typeReceipt_id in ReceiptStatusEnum.CANCELED_STATUSES.value:
+        restored_pending = max(
+            round(net_paid - float(receipt.remaining or 0), 2),
+            0,
+        )
+    else:
+        restored_pending = max(
+            round(float(operation.opPendingAmount or 0) + net_paid, 2),
+            0,
+        )
+
+    operation.opPendingAmount = restored_pending
+    operation.status = 1 if restored_pending > 0 else 4
+    operation.save()
+
+
+def build_receipt_payload_from_preview(preview_row, application_date, receipt_status_id, extra=None):
+    payload = {
+        "date": application_date,
+        "typeReceipt": preview_row["typeReceipt"],
+        "receiptStatus": receipt_status_id,
+        "payedAmount": preview_row["payedAmount"],
+        "opPendingAmount": preview_row["pendingAfter"],
+        "operation": preview_row["operation"],
+        "account": preview_row["account"],
+        "additionalDays": preview_row["additionalDays"],
+        "additionalInterests": preview_row["additionalInterests"],
+        "additionalInterestsSM": preview_row["additionalInterestsSM"],
+        "investorInterests": preview_row["investorInterests"],
+        "tableInterests": 0,
+        "futureValueRecalculation": preview_row["futureValueRecalculation"],
+        "tableRemaining": preview_row["tableRemaining"],
+        "realDays": preview_row["realDays"],
+        "remaining": preview_row["remaining"],
+        "calculatedDays": preview_row["calculatedDays"],
+        "presentValueInvestor": preview_row["presentValueInvestor"],
+        "client": preview_row.get("payerId") or None,
+    }
+
+    if extra:
+        payload.update(extra)
+
+    return payload
+
+
+class ReceiptVoidAV(APIView):
+    @extend_schema(
+        tags=["Recaudos"],
+        summary="Anular recaudo",
+        description="Anula un recaudo solo si es el último recaudo activo de su operación. No borra físicamente; deja trazabilidad y restaura saldos usando snapshot cuando existe.",
+        request=ReceiptVoidRequestSchema,
+        responses={200: ReceiptReadOnlySerializer, 400: OpenApiResponse(description="No se puede anular o falta motivo"), 404: OpenApiResponse(description="Recaudo no encontrado")},
+    )
+    @checkRole(['admin'])
+    @transaction.atomic
+    def post(self, request, pk):
+        try:
+            receipt = (
+                Receipt.objects
+                .select_related("operation", "account", "operation__bill", "receiptStatus", "typeReceipt")
+                .select_for_update()
+                .get(pk=pk, state=1)
+            )
+
+            if not is_last_active_receipt(receipt):
+                return response({
+                    "error": True,
+                    "message": "Solo se puede anular el último recaudo activo de la operación.",
+                }, 400)
+
+            try:
+                reason = normalize_receipt_reason(request.data.get("reason"))
+            except ValueError as error:
+                return response({"error": True, "message": str(error)}, 400)
+
+            restore_receipt_financial_effects(receipt, request.user)
+
+            receipt.controlStatus = Receipt.CONTROL_VOIDED
+            receipt.state = 0
+            receipt.voidReason = reason
+            receipt.voidedAt = timezone.now()
+            receipt.voidedBy = request.user
+            receipt.updated_at = timezone.now()
+            receipt.user_updated_at = request.user
+            receipt.save()
+
+            serializer = ReceiptReadOnlySerializer(receipt)
+            return response({
+                "error": False,
+                "message": "Recaudo anulado correctamente.",
+                "data": serializer.data,
+            }, 200)
+        except Receipt.DoesNotExist:
+            return response({"error": True, "message": "Recaudo no encontrado"}, 404)
+        except Exception as e:
+            transaction.set_rollback(True)
+            return response({"error": True, "message": str(e)}, getattr(e, "status_code", 500))
+
+
+class ReceiptAdjustAV(APIView):
+    @extend_schema(
+        tags=["Recaudos"],
+        summary="Editar/corregir recaudo",
+        description="Corrige el último recaudo activo de una operación. Internamente reversa el original, lo marca como ajustado y crea un nuevo recaudo activo corregido.",
+        request=ReceiptAdjustRequestSchema,
+        responses={200: OpenApiResponse(description="Recaudo corregido"), 400: OpenApiResponse(description="No se puede editar o datos inválidos"), 404: OpenApiResponse(description="Recaudo no encontrado")},
+    )
+    @checkRole(['admin'])
+    @transaction.atomic
+    def post(self, request, pk):
+        try:
+            receipt = (
+                Receipt.objects
+                .select_related("operation", "account", "operation__bill", "receiptStatus", "typeReceipt")
+                .select_for_update()
+                .get(pk=pk, state=1)
+            )
+
+            if not is_last_active_receipt(receipt):
+                return response({
+                    "error": True,
+                    "message": "Solo se puede editar el último recaudo activo de la operación.",
+                }, 400)
+
+            try:
+                reason = normalize_receipt_reason(request.data.get("reason"))
+            except ValueError as error:
+                return response({"error": True, "message": str(error)}, 400)
+
+            application_date = request.data.get("date") or receipt.date
+            application_date = parse_date(application_date)
+            receipt_status_id = request.data.get("receiptStatus") or receipt.receiptStatus_id
+
+            try:
+                payed_amount = money(
+                    request.data.get("payedAmount")
+                    if request.data.get("payedAmount") not in [None, ""]
+                    else receipt.payedAmount
+                )
+            except Exception:
+                return response({"error": True, "message": "Monto aplicación inválido."}, 400)
+
+            if payed_amount <= Decimal("0.00"):
+                return response({"error": True, "message": "El monto aplicación debe ser mayor a cero."}, 400)
+
+            # Si cambia la fecha de aplicación, los días cálculo deben seguir la fecha
+            # automáticamente. build_receipt_preview_row usa realDays cuando no recibe override.
+            original_application_date = normalize_to_date(receipt.date)
+            date_changed = application_date != original_application_date
+
+            calculated_days_override = None
+            if not date_changed:
+                if request.data.get("calculatedDays") not in [None, ""]:
+                    try:
+                        calculated_days_override = int(request.data.get("calculatedDays"))
+                    except Exception:
+                        return response({"error": True, "message": "Días cálculo inválido."}, 400)
+
+                    if calculated_days_override < 0:
+                        return response({"error": True, "message": "Días cálculo no puede ser negativo."}, 400)
+                else:
+                    calculated_days_override = receipt.calculatedDays
+
+            # Primero se revierte el movimiento original, para recalcular desde el saldo correcto.
+            restore_receipt_financial_effects(receipt, request.user)
+
+            receipt.controlStatus = Receipt.CONTROL_ADJUSTED
+            receipt.state = 0
+            receipt.adjustmentReason = reason
+            receipt.updated_at = timezone.now()
+            receipt.user_updated_at = request.user
+            receipt.save()
+
+            op = receipt.operation
+            preview_row = build_receipt_preview_row(
+                op,
+                application_date,
+                receipt_status_id=receipt_status_id,
+                payed_amount_override=payed_amount,
+                calculated_days_override=calculated_days_override,
+            )
+
+            if not preview_row:
+                transaction.set_rollback(True)
+                return response({"error": True, "message": "No se pudo recalcular el recaudo."}, 400)
+
+            if not preview_row.get("account"):
+                transaction.set_rollback(True)
+                return response({"error": True, "message": "La operación no tiene cuenta de inversionista asociada."}, 400)
+
+            payload = build_receipt_payload_from_preview(
+                preview_row,
+                application_date,
+                receipt_status_id,
+                extra={
+                    "originalReceipt": receipt.id,
+                    "adjustmentReason": reason,
+                    "controlStatus": Receipt.CONTROL_ACTIVE,
+                    "user_created_at": getattr(request.user, "id", None),
+                },
+            )
+
+            serializer = ReceiptSerializer(data=payload, context={"request": request})
+
+            if serializer.is_valid():
+                new_receipt = serializer.save()
+                receipt.replacedBy = new_receipt
+                receipt.save(update_fields=["replacedBy"])
+                return response({
+                    "error": False,
+                    "message": "Recaudo ajustado correctamente.",
+                    "data": ReceiptReadOnlySerializer(new_receipt).data,
+                    "original": ReceiptReadOnlySerializer(receipt).data,
+                }, 200)
+
+            transaction.set_rollback(True)
+            return response({"error": True, "message": serializer.errors}, 400)
+        except Receipt.DoesNotExist:
+            return response({"error": True, "message": "Recaudo no encontrado"}, 404)
+        except Exception as e:
+            transaction.set_rollback(True)
+            return response({"error": True, "message": str(e)}, getattr(e, "status_code", 500))
+
+
+class ReceiptOperationHistoryAV(BaseAV):
+    @extend_schema(
+        tags=["Recaudos"],
+        summary="Historial de recaudos de la operación exacta",
+        description=(
+            "Devuelve solo los recaudos vigentes asociados a la misma PreOperation del recaudo indicado. "
+            "No filtra por opId de negocio; usa el ID interno de la operación, por eso separa correctamente "
+            "casos con el mismo opId/factura pero distinta fracción o inversionista."
+        ),
+        parameters=[
+            OpenApiParameter("page", OpenApiTypes.INT, OpenApiParameter.QUERY, required=False),
+        ],
+        responses={200: ReceiptReadOnlySerializer},
+    )
+    @checkRole(['admin'])
+    def get(self, request, pk):
+        try:
+            selected_receipt = (
+                Receipt.objects
+                .select_related("operation", "operation__bill", "account", "account__client")
+                .get(pk=pk)
+            )
+
+            operation = getattr(selected_receipt, "operation", None)
+
+            if not operation:
+                return response({"error": True, "message": "El recaudo no tiene operación asociada."}, 400)
+
+            receipts = (
+                receipt_active_queryset()
+                .filter(operation_id=operation.id)
+                .select_related(
+                    "operation",
+                    "operation__bill",
+                    "account",
+                    "account__client",
+                    "typeReceipt",
+                    "receiptStatus",
+                    "originalReceipt",
+                    "replacedBy",
+                )
+                .order_by("-date", "-created_at", "-dId", "-id")
+            )
+
+            page = self.paginate_queryset(receipts)
+            serializer = ReceiptReadOnlySerializer(page if page is not None else receipts, many=True)
+
+            payload = {
+                "error": False,
+                "operationId": str(operation.id),
+                "opId": getattr(operation, "opId", None),
+                "billId": getattr(getattr(operation, "bill", None), "billId", "") or "",
+                "billUniqueId": str(getattr(getattr(operation, "bill", None), "id", "") or ""),
+                "fraction": int(receipt_history_fraction(selected_receipt) or 1),
+                "accountId": str(getattr(getattr(selected_receipt, "account", None), "id", "") or getattr(getattr(operation, "clientAccount", None), "id", "") or ""),
+            }
+
+            if page is not None:
+                paginated = self.get_paginated_response(serializer.data)
+                paginated.data.update(payload)
+                return paginated
+
+            payload["data"] = serializer.data
+            return response(payload, 200)
+        except Receipt.DoesNotExist:
+            return response({"error": True, "message": "Recaudo no encontrado"}, 404)
+        except Exception as e:
+            return response({"error": True, "message": str(e)}, getattr(e, "status_code", 500))
+
+
+class ReceiptHistoryAV(BaseAV):
+    @extend_schema(
+        tags=["Recaudos"],
+        summary="Historial de cambios de recaudos",
+        description="Agrupa en backend las ediciones/anulaciones de recaudos por operación, factura y fracción. El frontend solo renderiza los grupos devueltos.",
+        parameters=[
+            OpenApiParameter("page", OpenApiTypes.INT, OpenApiParameter.QUERY, required=False),
+            OpenApiParameter("pageSize", OpenApiTypes.INT, OpenApiParameter.QUERY, required=False),
+            OpenApiParameter("opId_billId", OpenApiTypes.STR, OpenApiParameter.QUERY, required=False, description="Buscar por opID o factura"),
+            OpenApiParameter("startDate", OpenApiTypes.DATE, OpenApiParameter.QUERY, required=False, description="Filtra por fecha de movimiento desde"),
+            OpenApiParameter("endDate", OpenApiTypes.DATE, OpenApiParameter.QUERY, required=False, description="Filtra por fecha de movimiento hasta"),
+        ],
+        responses={200: OpenApiResponse(description="Grupos de historial de cambios")},
+    )
+    @checkRole(['admin'])
+    def get(self, request):
+        try:
+            search_value = (request.query_params.get("opId_billId") or request.query_params.get("search") or "").strip()
+            start_date = request.query_params.get("startDate")
+            end_date = request.query_params.get("endDate")
+            page = int(request.query_params.get("page") or 1)
+            page_size = int(request.query_params.get("pageSize") or request.query_params.get("page_size") or 15)
+
+            if page < 1:
+                page = 1
+
+            if page_size < 1:
+                page_size = 15
+
+            queryset = (
+                Receipt.objects
+                .filter(
+                    Q(controlStatus__in=[Receipt.CONTROL_VOIDED, Receipt.CONTROL_ADJUSTED])
+                    | Q(voidReason__isnull=False)
+                    | Q(adjustmentReason__isnull=False)
+                )
+                .select_related(
+                    "operation",
+                    "operation__bill",
+                    "account",
+                    "account__client",
+                    "typeReceipt",
+                    "receiptStatus",
+                    "voidedBy",
+                    "user_updated_at",
+                    "originalReceipt",
+                    "replacedBy",
+                    "replacedBy__typeReceipt",
+                    "replacedBy__receiptStatus",
+                )
+                .order_by("-updated_at", "-voidedAt", "-created_at")
+            )
+
+            if search_value:
+                search_filter = Q(operation__bill__billId__icontains=search_value)
+                try:
+                    search_filter |= Q(operation__opId=int(search_value))
+                except (ValueError, TypeError):
+                    pass
+                queryset = queryset.filter(search_filter)
+
+            if start_date not in [None, ""]:
+                queryset = queryset.filter(
+                    Q(updated_at__date__gte=start_date)
+                    | Q(voidedAt__date__gte=start_date)
+                    | Q(created_at__date__gte=start_date)
+                )
+
+            if end_date not in [None, ""]:
+                queryset = queryset.filter(
+                    Q(updated_at__date__lte=end_date)
+                    | Q(voidedAt__date__lte=end_date)
+                    | Q(created_at__date__lte=end_date)
+                )
+
+            groups_map = {}
+
+            for receipt in queryset:
+                operation = getattr(receipt, "operation", None)
+                bill = getattr(operation, "bill", None) if operation else None
+                account = getattr(receipt, "account", None) or getattr(operation, "clientAccount", None)
+                investor_client = get_account_client(account)
+                fraction = int(receipt_history_fraction(receipt) or 1)
+                key = receipt_history_group_key(receipt)
+
+                if key not in groups_map:
+                    groups_map[key] = {
+                        "id": key,
+                        "operationId": str(getattr(operation, "id", "") or ""),
+                        "opId": getattr(operation, "opId", None),
+                        "billUniqueId": str(getattr(bill, "id", "") or ""),
+                        "billId": getattr(bill, "billId", None) or "",
+                        "fraction": fraction,
+                        "accountId": str(getattr(account, "id", "") or ""),
+                        "investorId": str(getattr(investor_client, "id", "") or ""),
+                        "investorName": get_client_name(investor_client),
+                        "payerName": getattr(bill, "payerName", None) or "",
+                        "emitterName": getattr(bill, "emitterName", None) or "",
+                        "receipts": [],
+                    }
+
+                groups_map[key]["receipts"].append(build_receipt_change_event(receipt))
+
+            groups = []
+            for group in groups_map.values():
+                group["receipts"] = sorted(
+                    group["receipts"],
+                    key=lambda item: item.get("changedAt") or item.get("updated_at") or item.get("created_at") or "",
+                    reverse=True,
+                )
+                group["changesCount"] = len(group["receipts"])
+                group["lastChange"] = group["receipts"][0] if group["receipts"] else None
+                groups.append(group)
+
+            groups = sorted(
+                groups,
+                key=lambda item: (item.get("lastChange") or {}).get("changedAt") or "",
+                reverse=True,
+            )
+
+            total = len(groups)
+            start = (page - 1) * page_size
+            end = start + page_size
+            page_groups = groups[start:end]
+
+            return Response(
+                {
+                    "error": False,
+                    "count": total,
+                    "page": page,
+                    "pageSize": page_size,
+                    "totalPages": (total + page_size - 1) // page_size if page_size else 1,
+                    "data": page_groups,
+                },
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return response({"error": True, "message": str(e)}, getattr(e, "status_code", 500))
+
+
 class ReceiptAV(BaseAV):
 
+    @extend_schema(
+        tags=["Recaudos"],
+        summary="Listar o consultar recaudos vigentes",
+        description="Devuelve únicamente recaudos activos/vigentes: state=1 y controlStatus=ACTIVE. Los recaudos anulados o ajustados se consultan por /receipt/history/.",
+        parameters=[
+            OpenApiParameter("id", OpenApiTypes.UUID, OpenApiParameter.QUERY, required=False),
+            OpenApiParameter("opId", OpenApiTypes.STR, OpenApiParameter.QUERY, required=False),
+            OpenApiParameter("operationId", OpenApiTypes.UUID, OpenApiParameter.QUERY, required=False, description="ID interno exacto de la PreOperation"),
+            OpenApiParameter("opId_billId", OpenApiTypes.STR, OpenApiParameter.QUERY, required=False),
+            OpenApiParameter("statusReceipt", OpenApiTypes.UUID, OpenApiParameter.QUERY, required=False),
+            OpenApiParameter("startDate", OpenApiTypes.DATE, OpenApiParameter.QUERY, required=False),
+            OpenApiParameter("endDate", OpenApiTypes.DATE, OpenApiParameter.QUERY, required=False),
+        ],
+        responses={200: ReceiptReadOnlySerializer},
+    )
     @checkRole(['admin'])
     def get(self, request, pk=None):
         try:
-            
-            if len(request.query_params) > 0:
-                
-                if request.query_params.get('id') != '' and len(request.query_params) == 1: #and request.query_params.get('opId_billId') in [None, ''] and request.query_params.get('statusReceipt') in [None, ''] and request.query_params.get('startDate') in [None, ''] and request.query_params.get('endDate') in [None, '']:
-                
-                    receipts    = Receipt.objects.filter(id=request.query_params.get('id'))
-                    page        = self.paginate_queryset(receipts)
-                    if page is not None:
-                        serializer = ReceiptReadOnlySerializer(page, many=True)
-                        return self.get_paginated_response(serializer.data)
-                
-                elif request.query_params.get('opId') != '' and len(request.query_params) == 2: #and request.query_params.get('opId_billId') in [None, ''] and request.query_params.get('statusReceipt') in [None, ''] and request.query_params.get('startDate') in [None, ''] and request.query_params.get('endDate') in [None, '']:
-              
-                    receipts    = Receipt.objects.filter(operation__opId=request.query_params.get('opId'))
-                    page        = self.paginate_queryset(receipts)
-                    if page is not None:
-                        serializer = ReceiptReadOnlySerializer(page, many=True)
-                        return self.get_paginated_response(serializer.data)
-               
-
-                elif request.query_params.get('opId_billId') not in [None, ''] and request.query_params.get('statusReceipt') in [None, ''] and request.query_params.get('startDate') in [None, ''] and request.query_params.get('endDate') in [None, '']:
-                    try:
-                        search_value = request.query_params.get('opId_billId', '').strip()
-                        
-                        
-                        # Intentar buscar como opId (numérico)
-                        try:
-                            op_id_value = int(search_value)
-                            receipts_by_opid = Receipt.objects.filter(operation__opId=op_id_value)
-                        except (ValueError, TypeError):
-                            receipts_by_opid = Receipt.objects.none()
-                        
-                        # Buscar como billId (texto)
-                        receipts_by_billid = Receipt.objects.filter(operation__bill__billId=search_value)
-                        
-                        # Combinar resultados
-                        receipts = receipts_by_opid | receipts_by_billid
-                        
-                        page = self.paginate_queryset(receipts)
-                        if page is not None:
-                            serializer = ReceiptReadOnlySerializer(page, many=True)
-                            return self.get_paginated_response(serializer.data)
-                            
-                    except Exception as e:
-                        logger.error(f"Error filtering receipts: {str(e)}")
-                     
-                     
-                elif request.query_params.get('opId_billId') != '' and request.query_params.get('statusReceipt')!='' and request.query_params.get('startDate')=='' and request.query_params.get('endDate')=='':
-                    try:
-                        search_value = request.query_params.get('opId_billId', '').strip()
-                        
-                        # Intentar buscar como opId (numérico)
-                        try:
-                            op_id_value = int(search_value)
-                            receipts_by_opid = Receipt.objects.filter(operation__opId=op_id_value,
-                                                         typeReceipt_id=request.query_params.get('statusReceipt'))
-                        except (ValueError, TypeError):
-                            receipts_by_opid = Receipt.objects.none()
-                        
-                        # Buscar como billId (texto)
-                        receipts_by_billid = Receipt.objects.filter(operation__bill__billId=search_value,
-                                                         typeReceipt_id=request.query_params.get('statusReceipt'))
-                        
-                        # Combinar resultados
-                        receipts = receipts_by_opid | receipts_by_billid
-                        
-                        page = self.paginate_queryset(receipts)
-                        if page is not None:
-                            serializer = ReceiptReadOnlySerializer(page, many=True)
-                            return self.get_paginated_response(serializer.data)
-                            
-                    except Exception as e:
-                        logger.error(f"Error filtering receipts: {str(e)}")
-                elif request.query_params.get('opId_billId') != '' and request.query_params.get('statusReceipt')!='' and request.query_params.get('startDate')!='' and request.query_params.get('endDate')!='':
-                    try:
-                        search_value = request.query_params.get('opId_billId', '').strip()
-                        
-                        
-                        # Intentar buscar como opId (numérico)
-                        try:
-                            op_id_value = int(search_value)
-                            receipts_by_opid = Receipt.objects.filter(operation__opId=op_id_value,
-                                                        date__gte=request.query_params.get('startDate'),
-                                                        date__lte=request.query_params.get('endDate'),
-                                                        typeReceipt_id=request.query_params.get('statusReceipt'))
-                        except (ValueError, TypeError):
-                            receipts_by_opid = Receipt.objects.none()
-                        
-                        # Buscar como billId (texto)
-                        receipts_by_billid = Receipt.objects.filter(operation__bill__billId=search_value,
-                                                        date__gte=request.query_params.get('startDate'),
-                                                        date__lte=request.query_params.get('endDate'),
-                                                        typeReceipt_id=request.query_params.get('statusReceipt'))
-                        
-                        # Combinar resultados
-                        receipts = receipts_by_opid | receipts_by_billid
-                        
-                        page = self.paginate_queryset(receipts)
-                        if page is not None:
-                            serializer = ReceiptReadOnlySerializer(page, many=True)
-                            return self.get_paginated_response(serializer.data)
-                            
-                    except Exception as e:
-                        logger.error(f"Error filtering receipts: {str(e)}")
-                elif request.query_params.get('opId_billId') != '' and request.query_params.get('statusReceipt')=='' and request.query_params.get('startDate')!='' and request.query_params.get('endDate')!='':
-                    try:
-                        search_value = request.query_params.get('opId_billId', '').strip()
-                        
-                        
-                        # Intentar buscar como opId (numérico)
-                        try:
-                            op_id_value = int(search_value)
-                            receipts_by_opid = Receipt.objects.filter(operation__opId=op_id_value,
-                                                        date__gte=request.query_params.get('startDate'),
-                                                        date__lte=request.query_params.get('endDate'),
-                                                        )
-                        except (ValueError, TypeError):
-                            receipts_by_opid = Receipt.objects.none()
-                        
-                        # Buscar como billId (texto)
-                        receipts_by_billid = Receipt.objects.filter(operation__bill__billId=search_value,
-                                                        date__gte=request.query_params.get('startDate'),
-                                                        date__lte=request.query_params.get('endDate'),
-                                                        )
-                        
-                        # Combinar resultados
-                        receipts = receipts_by_opid | receipts_by_billid
-                        
-                        page = self.paginate_queryset(receipts)
-                        if page is not None:
-                            serializer = ReceiptReadOnlySerializer(page, many=True)
-                            return self.get_paginated_response(serializer.data)
-                            
-                    except Exception as e:
-                        logger.error(f"Error filtering receipts: {str(e)}")
-                elif request.query_params.get('opId_billId') == '' and request.query_params.get('statusReceipt')!='' and request.query_params.get('startDate')!='' and request.query_params.get('endDate')!='':
-                    
-                    receipts    = Receipt.objects.filter(
-                                                         date__gte=request.query_params.get('startDate'),
-                                                            date__lte=request.query_params.get('endDate'),
-                                                            typeReceipt_id=request.query_params.get('statusReceipt'))
-                    page        = self.paginate_queryset(receipts)
-                    if page is not None:
-                        serializer = ReceiptReadOnlySerializer(page, many=True)
-                        return self.get_paginated_response(serializer.data)
-                elif request.query_params.get('opId_billId') == '' and request.query_params.get('statusReceipt')=='' and request.query_params.get('startDate')!='' and request.query_params.get('endDate')!='':
-                    
-                    receipts    = Receipt.objects.filter(date__gte=request.query_params.get('startDate'),
-                                                        date__lte=request.query_params.get('endDate'))
-                    page        = self.paginate_queryset(receipts)
-                    if page is not None:
-                        serializer = ReceiptReadOnlySerializer(page, many=True)
-                        return self.get_paginated_response(serializer.data)
-                elif request.query_params.get('opId_billId') == '' and request.query_params.get('statusReceipt')!='' and request.query_params.get('startDate')=='' and request.query_params.get('endDate')=='':
-                    
-                    receipts    = Receipt.objects.filter(typeReceipt_id=request.query_params.get('statusReceipt'))
-                    page        = self.paginate_queryset(receipts)
-                    if page is not None:
-                        serializer = ReceiptReadOnlySerializer(page, many=True)
-                        return self.get_paginated_response(serializer.data)    
-                else:
-                    receipts    = Receipt.objects.filter(state=1)
-                    page        = self.paginate_queryset(receipts)
-                    if page is not None:
-                        serializer = ReceiptReadOnlySerializer(page, many=True)
-                        return self.get_paginated_response(serializer.data)
-
+            base_receipts = (
+                receipt_active_queryset()
+                .select_related("operation", "operation__bill", "account", "account__client", "typeReceipt", "receiptStatus", "originalReceipt", "replacedBy")
+                .order_by("-created_at")
+            )
 
             if pk:
-                receipt      = Receipt.objects.get(pk=pk)
-                serializer   = ReceiptSerializer(receipt)
+                receipt = base_receipts.get(pk=pk)
+                serializer = ReceiptReadOnlySerializer(receipt)
                 return response({'error': False, 'data': serializer.data}, 200)
+
+            receipts = base_receipts
+
+            receipt_id = request.query_params.get('id')
+            operation_id = request.query_params.get('operationId')
+            op_id = request.query_params.get('opId')
+            search_value = (request.query_params.get('opId_billId') or '').strip()
+            status_receipt = request.query_params.get('statusReceipt')
+            start_date = request.query_params.get('startDate')
+            end_date = request.query_params.get('endDate')
+
+            if receipt_id not in [None, '']:
+                receipts = receipts.filter(id=receipt_id)
+
+            # Cuando se conoce la PreOperation, filtrar por su UUID interno.
+            # opId es un identificador de negocio y puede repetirse entre fracciones/inversionistas.
+            if operation_id not in [None, '']:
+                receipts = receipts.filter(operation_id=operation_id)
+            elif op_id not in [None, '']:
+                receipts = receipts.filter(operation__opId=op_id)
+
+            if search_value:
+                search_filter = Q(operation__bill__billId__icontains=search_value)
+                try:
+                    search_filter |= Q(operation__opId=int(search_value))
+                except (ValueError, TypeError):
+                    pass
+                receipts = receipts.filter(search_filter)
+
+            if status_receipt not in [None, '']:
+                receipts = receipts.filter(typeReceipt_id=status_receipt)
+
+            if start_date not in [None, '']:
+                receipts = receipts.filter(date__gte=start_date)
+
+            if end_date not in [None, '']:
+                receipts = receipts.filter(date__lte=end_date)
+
+            page = self.paginate_queryset(receipts)
+            if page is not None:
+                serializer = ReceiptReadOnlySerializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+
+            serializer = ReceiptReadOnlySerializer(receipts, many=True)
+            return response({'error': False, 'data': serializer.data}, 200)
         except Receipt.DoesNotExist:
-            return response({'error': True, 'message': 'recaudo/s no encontrados'}, 500)
+            return response({'error': True, 'message': 'recaudo/s no encontrados'}, 404)
         except Exception as e:
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
 
+    @extend_schema(
+        tags=["Recaudos"],
+        summary="Crear recaudo individual",
+        request=ReceiptSerializer,
+        responses={200: ReceiptSerializer, 400: OpenApiResponse(description="Errores de validación")},
+    )
     @checkRole(['admin'])
     def post(self, request):
         try:
@@ -1559,24 +2205,44 @@ class ReceiptAV(BaseAV):
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
     
     @checkRole(['admin'])
+    @transaction.atomic
     def delete(self, request, pk):
+        # Compatibilidad temporal: DELETE usa el nuevo flujo de anulación controlada.
         try:
-            receipt       = Receipt.objects.get(pk=pk)
-            # update the state of the operation
-            receipt.operation.amount          -= receipt.investorInterests
-            receipt.operation.opPendingAmount -= receipt.investorInterests
-            receipt.operation.amount          -= receipt.additionalInterests
-            receipt.operation.opPendingAmount -= receipt.additionalInterests
-            receipt.operation.amount          -= receipt.tableInterests
-            receipt.operation.opPendingAmount -= receipt.tableInterests
-            receipt.operation.payedAmount     -= receipt.payedAmount
+            receipt = (
+                Receipt.objects
+                .select_related("operation", "account", "operation__bill", "receiptStatus", "typeReceipt")
+                .select_for_update()
+                .get(pk=pk, state=1)
+            )
+
+            if not is_last_active_receipt(receipt):
+                return response({
+                    "error": True,
+                    "message": "Solo se puede anular el último recaudo activo de la operación.",
+                }, 400)
+
+            try:
+                reason = normalize_receipt_reason(request.data.get("reason"))
+            except ValueError as error:
+                return response({"error": True, "message": str(error)}, 400)
+
+            restore_receipt_financial_effects(receipt, request.user)
+
+            receipt.controlStatus = Receipt.CONTROL_VOIDED
             receipt.state = 0
-            receipt.operation.save()
+            receipt.voidReason = reason
+            receipt.voidedAt = timezone.now()
+            receipt.voidedBy = request.user
+            receipt.updated_at = timezone.now()
+            receipt.user_updated_at = request.user
             receipt.save()
-            return response({'error': False, 'message': 'Recaudo eliminado'}, 200)
+
+            return response({'error': False, 'message': 'Recaudo anulado correctamente'}, 200)
         except Receipt.DoesNotExist:
             return response({'error': True, 'message': 'Recaudo no encontrado'}, 404)
         except Exception as e:
+            transaction.set_rollback(True)
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
 
 

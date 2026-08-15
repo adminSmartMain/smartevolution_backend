@@ -2,14 +2,21 @@
 from rest_framework.decorators import APIView
 from django.db.models import Q, Count
 from rest_framework import serializers
+from django.utils import timezone
+from datetime import timedelta
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.db.models import Q, Max
 # Models
 from apps.client.models import Client, RiskProfile, Account, Broker
-from apps.operation.models import PreOperation, Receipt, BuyOrder
+from apps.operation.models import PreOperation, Receipt, BuyOrder,OperationLog
 from apps.bill.models import Bill
 from apps.misc.models import TypeBill
 # Serializers
 from apps.operation.api.serializers.index import (PreOperationSerializer, PreOperationReadOnlySerializer, 
                                                   ReceiptSerializer, PreOperationSignatureSerializer, PreOperationByParamsSerializer)
+from apps.operation.utils.operation_logger import create_operation_log, create_exception_log
 # Utils
 from apps.base.utils.index import response, gen_uuid, BaseAV
 from apps.report.utils.index import generateSellOffer, calcOperationDetail
@@ -30,19 +37,20 @@ from django.conf import settings
 import uuid
 from apps.base.utils.index import gen_uuid, PDFBase64File, uploadFileBase64
 from apps.base.utils.s3logging import log_execution_to_s3
-from apps.bill.api.serializers.index import BillSerializer
+
 from django.db.models import Max
 from datetime import date
 from django.db import transaction
 from datetime import date
 from django.db import transaction
-from apps.client.api.serializers.index import AccountSerializer
+from django.http import Http404
+from rest_framework.exceptions import APIException
 from apps.operation.utils.upload_excel_parser import UploadExcelParser
 from apps.operation.utils.upload_excel_resolver import UploadExcelReferenceResolver
 from apps.operation.utils.upload_excel_calculator import UploadExcelCalculator
 from apps.operation.utils.upload_excel_validator import UploadExcelValidator
 from apps.operation.utils.upload_excel_response import UploadExcelResponseBuilder
-
+from apps.bill.api.serializers.index import BillSerializer
 import base64
 import time
 from decimal import Decimal
@@ -56,6 +64,11 @@ from rest_framework import status
 
 from apps.operation.models import PreOperation
 from apps.base.utils.pdfToBase64 import pdfToBase64
+
+
+
+from apps.operation.api.models.index import MassiveOperationDraft, PreOperation
+from apps.operation.api.serializers.index import MassiveOperationDraftSerializer, MassiveOperationDraftListSerializer, PreOperationReadOnlySerializer
 # Configurar el logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -63,6 +76,8 @@ logger.setLevel(logging.DEBUG)
 # Crear un handler de consola y definir el nivel
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.DEBUG)
+
+
 
 # Crear un formato para los mensajes de log
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -83,6 +98,7 @@ from django.db.models import Q, Count
 from rest_framework import serializers
 # Models
 from apps.client.models import Client, RiskProfile, Account, Broker
+from apps.client.api.serializers.index import AccountSerializer
 from apps.operation.models import PreOperation, Receipt, BuyOrder
 from apps.bill.models import Bill
 from apps.misc.models import TypeBill
@@ -138,13 +154,8 @@ def is_uuid(val):
 class PreOperationAV(BaseAV):
     @transaction.atomic
     @checkRole(['admin'])
-    
     def post(self, request):
         try:
-            # ==================== INITIAL SETUP ====================
-            
-            
-            # Parse and validate request data
             try:
                 json_data = json.loads(request.body.decode('utf-8'))
                 values_list = json_data.get('values', [])
@@ -159,13 +170,9 @@ class PreOperationAV(BaseAV):
                     status.HTTP_400_BAD_REQUEST
                 )
 
-            
-
-            # ==================== SINGLE OPERATION ====================
             if len(values_list) == 1:
                 return self._handle_single_operation(request, values_list[0])
 
-            # ==================== BULK OPERATIONS ====================
             return self._handle_bulk_operations(request, values_list)
 
         except Exception as e:
@@ -177,56 +184,74 @@ class PreOperationAV(BaseAV):
 
     def _handle_single_operation(self, request, operation_data):
         """Process single operation with atomic creation of bill if needed"""
-
         try:
             with transaction.atomic():
-                # Create bill if billCode exists and it's the first occurrence
                 bill_id = None
+
                 if operation_data.get('billCode', '') != '' and operation_data.get('_isFirstOccurrence', False):
-                    bill_id = self._create_or_get_bill(operation_data)
+                    bill_id = self._create_or_get_bill(operation_data, request=request)
                     operation_data['bill'] = bill_id
+
                 elif operation_data.get('bill', '') and is_uuid(operation_data['bill']):
-                    # Si ya tiene un bill ID válido, lo usamos directamente
                     bill_id = operation_data['bill']
+
                 elif operation_data.get('bill', '') and not is_uuid(operation_data['bill']):
-                    # Si tiene un bill que no es UUID, buscamos la factura por billId Y emitter
                     emitter_id = operation_data.get('emitter')
                     if not emitter_id:
                         raise ValueError("Se requiere emitter para buscar la factura por billId")
-                    
-                    # Buscar cliente emisor para obtener document_number
+
                     try:
                         emitter_client = Client.objects.get(pk=emitter_id)
                         emitter_doc_number = emitter_client.document_number
                     except Client.DoesNotExist:
                         raise ValueError(f"Emisor con ID {emitter_id} no encontrado")
-                    
-                    # Buscar factura por billId Y emitterId
+
                     bill = Bill.objects.filter(
                         billId=operation_data['bill'],
                         emitterId=emitter_doc_number
                     ).first()
-                    
+
                     if bill:
                         operation_data['bill'] = str(bill.id)
                         bill_id = str(bill.id)
                     else:
-                        raise ValueError(f"Factura con billId {operation_data['bill']} y emisor {emitter_doc_number} no encontrada")
+                        raise ValueError(
+                            f"Factura con billId {operation_data['bill']} y emisor {emitter_doc_number} no encontrada"
+                        )
 
-                # Validate and save operation
                 serializer = PreOperationSerializer(
                     data=operation_data,
                     context={'request': request}
                 )
-                
+
                 if not serializer.is_valid():
                     logger.error(f"Validation failed: {serializer.errors}")
                     raise serializers.ValidationError(serializer.errors)
 
                 instance = serializer.save()
-                
+
+                log_operation_data = dict(operation_data)
+                log_response_data = {
+                    "id": str(instance.id),
+                    "bill_id": str(bill_id) if bill_id else None,
+                }
+
+                transaction.on_commit(lambda instance=instance, log_operation_data=log_operation_data, log_response_data=log_response_data: create_operation_log(
+                    source="SINGLE",
+                    action="CREATE_SINGLE_OPERATION",
+                    status="SUCCESS",
+                    message="Operation created successfully",
+                    op_id=instance.opId,
+                    pre_operation=instance,
+                    request_payload=log_operation_data,
+                    response_payload=log_response_data,
+                    bill_code=log_operation_data.get("billCode"),
+                    bill_id_ref=log_operation_data.get("bill"),
+                    user=request.user,
+                ))
+
                 logger.info(f"Created operation {instance.id} with bill {bill_id or 'none'}")
-                
+
                 return response({
                     'error': False,
                     'message': 'Operation created successfully',
@@ -245,27 +270,22 @@ class PreOperationAV(BaseAV):
         operations_created = []
         errors = []
 
-        
         try:
             with transaction.atomic():
-                # Fase 1: Identificar y crear facturas necesarias
                 bills_to_create = {}
-                existing_bills_to_find = {}  # Cambiado a dict para guardar emitter también
-                
+                existing_bills_to_find = {}
+
                 for index, op_data in enumerate(values_list):
-                    # Si tiene billCode y es primera ocurrencia, necesita crear factura
                     if op_data.get('billCode', '') and op_data.get('_isFirstOccurrence', False):
                         bill_code = op_data['billCode']
                         if bill_code not in bills_to_create:
                             bills_to_create[bill_code] = op_data
-                    
-                    # Si tiene bill que no es UUID, necesitamos buscar la factura existente
+
                     elif op_data.get('bill', '') and not is_uuid(op_data['bill']):
                         bill_id_ref = op_data['bill']
                         emitter_id = op_data.get('emitter')
-                        
+
                         if emitter_id:
-                            # Guardar la combinación billId + emitter
                             key = f"{bill_id_ref}_{emitter_id}"
                             existing_bills_to_find[key] = {
                                 'billId': bill_id_ref,
@@ -278,38 +298,33 @@ class PreOperationAV(BaseAV):
                                 'error': "Se requiere emitter para buscar factura existente",
                                 'data': op_data
                             })
-                
-                # Crear nuevas facturas
+
                 bill_mapping = {}
                 for bill_code, op_data in bills_to_create.items():
                     try:
-                        bill_id = self._create_or_get_bill(op_data)
+                        bill_id = self._create_or_get_bill(op_data, request=request)
                         bill_mapping[bill_code] = bill_id
                         logger.info(f"Factura creada: {bill_code} -> {bill_id}")
                     except Exception as e:
                         logger.error(f"Error creando factura {bill_code}: {str(e)}")
-                        # Encontrar todos los índices que usan esta factura
-                        for index, op_data in enumerate(values_list):
-                            if op_data.get('billCode') == bill_code:
+                        for index, item in enumerate(values_list):
+                            if item.get('billCode') == bill_code:
                                 errors.append({
                                     'index': index,
                                     'error': f"Error creando factura {bill_code}: {str(e)}",
-                                    'data': op_data
+                                    'data': item
                                 })
-                
-                # Buscar facturas existentes por billId Y emitterId
+
                 if existing_bills_to_find:
-                    # Obtener todos los emisores necesarios
                     emitter_ids = [item['emitterId'] for item in existing_bills_to_find.values()]
                     emitters = Client.objects.filter(id__in=emitter_ids)
                     emitter_map = {str(emitter.id): emitter.document_number for emitter in emitters}
-                    
-                    # Buscar facturas
+
                     for key, bill_info in existing_bills_to_find.items():
                         bill_id_ref = bill_info['billId']
                         emitter_client_id = bill_info['emitterId']
                         emitter_doc_number = emitter_map.get(emitter_client_id)
-                        
+
                         if not emitter_doc_number:
                             for index in bill_info['indexes']:
                                 errors.append({
@@ -318,13 +333,12 @@ class PreOperationAV(BaseAV):
                                     'data': values_list[index]
                                 })
                             continue
-                        
-                        # Buscar factura por billId Y emitterId
+
                         bill = Bill.objects.filter(
                             billId=bill_id_ref,
                             emitterId=emitter_doc_number
                         ).first()
-                        
+
                         if bill:
                             bill_mapping[key] = str(bill.id)
                         else:
@@ -334,73 +348,87 @@ class PreOperationAV(BaseAV):
                                     'error': f"Factura con billId {bill_id_ref} y emisor {emitter_doc_number} no encontrada",
                                     'data': values_list[index]
                                 })
-                
-                # Fase 2: Procesar operaciones
+
                 for index, op_data in enumerate(values_list):
                     if any(err['index'] == index for err in errors):
                         continue
-                    
+
                     try:
                         operation_data = {**op_data}
-                        
-                        # Manejar referencia a factura
+
                         if op_data.get('billCode', ''):
-                            # Operación con nueva factura
                             bill_code = op_data['billCode']
                             if bill_code in bill_mapping:
                                 operation_data['bill'] = bill_mapping[bill_code]
                             else:
                                 raise ValueError(f"Factura {bill_code} no encontrada en el mapeo")
-                        
+
                         elif op_data.get('bill', '') and not is_uuid(op_data['bill']):
-                            # Operación con factura existente referenciada por billId
                             bill_id_ref = op_data['bill']
                             emitter_id = op_data.get('emitter')
-                            
+
                             if not emitter_id:
                                 raise ValueError("Se requiere emitter para buscar factura existente")
-                            
-                            # Crear clave única para el mapeo
+
                             key = f"{bill_id_ref}_{emitter_id}"
-                            
+
                             if key in bill_mapping:
                                 operation_data['bill'] = bill_mapping[key]
                             else:
-                                # Intentar buscar directamente
                                 try:
                                     emitter_client = Client.objects.get(pk=emitter_id)
                                     emitter_doc_number = emitter_client.document_number
-                                    
+
                                     bill = Bill.objects.filter(
                                         billId=bill_id_ref,
                                         emitterId=emitter_doc_number
                                     ).first()
-                                    
+
                                     if bill:
                                         operation_data['bill'] = str(bill.id)
                                         bill_mapping[key] = str(bill.id)
                                     else:
-                                        raise ValueError(f"Factura con billId {bill_id_ref} y emisor {emitter_doc_number} no encontrada")
+                                        raise ValueError(
+                                            f"Factura con billId {bill_id_ref} y emisor {emitter_doc_number} no encontrada"
+                                        )
                                 except Client.DoesNotExist:
                                     raise ValueError(f"Emisor con ID {emitter_id} no encontrado")
-                        
-                        # Si ya tiene un bill UUID válido, lo dejamos como está
-                        
+
                         serializer = PreOperationSerializer(
                             data=operation_data,
                             context={'request': request}
                         )
-                        
+
                         if not serializer.is_valid():
                             logger.error(f"Error validación operación {index}: {serializer.errors}")
                             raise serializers.ValidationError(serializer.errors)
-                        
+
                         instance = serializer.save()
                         operations_created.append({
                             'index': index,
                             'operation_id': str(instance.id),
                             'bill_id': operation_data.get('bill')
                         })
+
+                        transaction.on_commit(
+                            lambda instance=instance, index=index, operation_data=operation_data: create_operation_log(
+                                source="BULK",
+                                action="CREATE_BULK_ROW",
+                                status="SUCCESS",
+                                message=f"Fila {index} creada correctamente",
+                                op_id=instance.opId,
+                                pre_operation=instance,
+                                row_index=index,
+                                request_payload=operation_data,
+                                response_payload={
+                                    "operation_id": str(instance.id),
+                                    "bill_id": operation_data.get("bill")
+                                },
+                                bill_code=operation_data.get("billCode"),
+                                bill_id_ref=operation_data.get("bill"),
+                                user=request.user,
+                            )
+                        )
 
                     except Exception as e:
                         logger.error(f"Error en operación {index}: {str(e)}")
@@ -412,6 +440,19 @@ class PreOperationAV(BaseAV):
 
                 if errors:
                     raise Exception("Algunas operaciones fallaron")
+
+                transaction.on_commit(lambda: create_operation_log(
+                    source="BULK",
+                    action="BULK_SUMMARY",
+                    status="SUCCESS",
+                    message="Todas las operaciones fueron creadas correctamente",
+                    op_id=values_list[0].get("opId") if values_list else None,
+                    response_payload={
+                        "successful_count": len(operations_created),
+                        "failed_count": 0
+                    },
+                    user=request.user,
+                ))
 
                 return response({
                     'total_operations': len(values_list),
@@ -429,38 +470,47 @@ class PreOperationAV(BaseAV):
                 'successful_count': len(operations_created)
             }, status.HTTP_400_BAD_REQUEST)
 
-    def _create_or_get_bill(self, operation_data):
+    def _create_or_get_bill(self, operation_data, request=None):
         """Helper to create or get existing bill by billId and emitterId"""
         bill_code = operation_data['billCode']
-        
+
         try:
-            # Obtener emitter document_number
             emitter = Client.objects.get(pk=operation_data['emitter'])
             emitter_doc_number = emitter.document_number
-            
-            # Primero intentar buscar si ya existe una factura con este billId Y emitterId
+
             bill = Bill.objects.filter(
                 billId=bill_code,
                 emitterId=emitter_doc_number
             ).first()
-            
+
             if bill:
+                log_operation_data = dict(operation_data)
+                log_response_data = {"bill_id": str(bill.id)}
+
+                transaction.on_commit(lambda log_operation_data=log_operation_data, log_response_data=log_response_data: create_operation_log(
+                    source="BILL",
+                    action="FIND_OR_CREATE_BILL",
+                    status="SUCCESS",
+                    message="Factura creada correctamente",
+                    op_id=log_operation_data.get("opId"),
+                    request_payload=log_operation_data,
+                    response_payload=log_response_data,
+                    bill_code=bill_code,
+                    user=request.user if request else None,
+                ))
                 return str(bill.id)
-            
-            # Crear nueva factura si no existe
+
             payer = Client.objects.get(pk=operation_data['payer'])
             type_bill = TypeBill.objects.get(pk='fdb5feb4-24e9-41fc-9689-31aff60b76c9')
 
-            # Manejar archivo si existe
             file_url = None
             if 'file' in operation_data and operation_data['file']:
                 file_url = uploadFileBase64(
-                    files_bse64=[operation_data['file']], 
+                    files_bse64=[operation_data['file']],
                     file_path=f'bill/{operation_data.get("id", gen_uuid())}'
                 )
                 file_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{file_url}"
 
-            # Crear la nueva factura
             bill = Bill.objects.create(
                 id=gen_uuid(),
                 typeBill=type_bill,
@@ -478,9 +528,21 @@ class PreOperationAV(BaseAV):
                 expirationDate=operation_data['DateExpiration'],
                 file=file_url
             )
-            
+
+            transaction.on_commit(lambda: create_operation_log(
+                source="BILL",
+                action="FIND_OR_CREATE_BILL",
+                status="SUCCESS",
+                message="Factura creada correctamente",
+                op_id=operation_data.get("opId"),
+                request_payload=operation_data,
+                response_payload={"bill_id": str(bill.id)},
+                bill_code=bill_code,
+                user=request.user if request else None,
+            ))
+
             return str(bill.id)
-            
+
         except Exception as e:
             logger.error(f"Bill creation failed for {bill_code}: {str(e)}")
             raise
@@ -501,7 +563,17 @@ class PreOperationAV(BaseAV):
                     
                     preOperation  = PreOperation.objects.get(pk=pk)
                     serializer    = PreOperationReadOnlySerializer(preOperation)
-                    receipts      = Receipt.objects.filter(operation=pk).order_by('-date')
+                    # Solo los recaudos vigentes afectan los acumulados y la referencia
+                    # del formulario. Los anulados/ajustados permanecen únicamente para trazabilidad.
+                    receipts = (
+                        Receipt.objects
+                        .filter(
+                            operation=pk,
+                            state=1,
+                            controlStatus=Receipt.CONTROL_ACTIVE,
+                        )
+                        .order_by('-date', '-created_at', '-dId', '-id')
+                    )
                     receipts_data = ReceiptSerializer(receipts, many=True)
                     calcs = {
                         'lastDate': receipts_data.data[0]['date'] if len(receipts_data.data) > 0 else None,
@@ -511,6 +583,16 @@ class PreOperationAV(BaseAV):
                     for x in receipts_data.data:
                         calcs['payedAmount'] += x['payedAmount']
                         calcs['interest'] += x['additionalInterests']
+
+                    # Saldo de referencia reconstruido únicamente con recaudos vigentes.
+                    # Esto también corrige operaciones antiguas donde un recaudo quedó state=0
+                    # pero opPendingAmount no fue restaurado por el flujo histórico de eliminación.
+                    active_net_paid = calcs['payedAmount'] - calcs['interest']
+                    calcs['pendingAmount'] = max(
+                        round(float(preOperation.payedAmount or 0) - float(active_net_paid or 0), 2),
+                        0,
+                    )
+
                     return response({'error': False, 'data': serializer.data, 'receipts':calcs}, 200)
 
             if len(request.query_params) > 0:
@@ -1443,11 +1525,12 @@ class GetOperationByParams(BaseAV):
                 presentValueInvestor += x.presentValueInvestor
                 futureValue += x.amount
 
-            #if sum >= 165000:
+           # if sum >= 165000:
              #   data['commission'] = sum
             #else:
-             #   data['commission'] = 165000
-            data['commission'] = sum   
+                #data['commission'] = 165000
+                
+            data['commission'] = sum    
             # calc iva
             data['iva'] = data['commission'] * 0.19
             #calc rteFte
@@ -2156,7 +2239,6 @@ class RegisterOperationFromUpload(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Validar que todas las filas traigan opId
         first_row = normalized_rows[0]
         requested_op_id = first_row.get("opId")
 
@@ -2174,10 +2256,6 @@ class RegisterOperationFromUpload(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # IMPORTANTE:
-        # Bloqueo transaccional para evitar que dos peticiones calculen el mismo opId al tiempo.
-        # Esta solución usa advisory lock de PostgreSQL.
-        # Si usas PostgreSQL, esta es la forma más segura sin crear una tabla secuenciadora.
         with connection.cursor() as cursor:
             cursor.execute("SELECT GET_LOCK(%s, %s)", ["register_massive_operation_opid", 10])
             result = cursor.fetchone()
@@ -2199,7 +2277,7 @@ class RegisterOperationFromUpload(APIView):
 
         created_ids = []
 
-        for row in normalized_rows:
+        for index, row in enumerate(normalized_rows):
             calculated = row.get("calculated", {})
 
             try:
@@ -2236,7 +2314,7 @@ class RegisterOperationFromUpload(APIView):
                 )
 
             payload = {
-                "opId": final_op_id,  # <-- ya no usamos row["opId"]
+                "opId": final_op_id,
                 "opType": op_type_id,
                 "opDate": row["opDate"],
                 "applyGm": row.get("applyGm", False),
@@ -2283,6 +2361,47 @@ class RegisterOperationFromUpload(APIView):
             instance = serializer.save()
 
             created_ids.append(instance.id)
+
+            transaction.on_commit(
+                lambda instance=instance, index=index, payload=payload, bill=bill: create_operation_log(
+                    source="REGISTER_FROM_UPLOAD",
+                    action="CREATE_ROW",
+                    status="SUCCESS",
+                    message=f"Fila {index} registrada correctamente",
+                    op_id=instance.opId,
+                    pre_operation=instance,
+                    row_index=index,
+                    request_payload=payload,
+                    response_payload={"id": str(instance.id)},
+                    bill_id_ref=str(bill.id),
+                    user=request.user,
+                )
+            )
+
+        
+        
+        
+        
+        transaction.on_commit(lambda: create_operation_log(
+            source="REGISTER_FROM_UPLOAD",
+            action="REGISTER_OPERATION",
+            status="SUCCESS",
+            message=(
+                f"Operación registrada correctamente. El opId fue ajustado de {requested_op_id} a {final_op_id}."
+                if op_id_changed
+                else "Operación registrada correctamente"
+            ),
+            op_id=final_op_id,
+            response_payload={
+                "createdCount": len(created_ids),
+                "ids": [str(x) for x in created_ids],
+                "requested": requested_op_id,
+                "final": final_op_id,
+                "changed": op_id_changed,
+            },
+            user=request.user,
+        ))
+
 
         return Response(
             {
@@ -2434,6 +2553,640 @@ class MassiveOperationReceiptPDFAV(APIView):
         )
         return response
     
+class BillsByOpId(APIView):
+    def get(self, request, pk):
+        try:
+            operations = (
+                PreOperation.objects
+                .filter(opId=pk, bill__isnull=False,status=1)
+                .select_related("bill", "investor", "clientAccount")
+            )
+
+            data = []
+            for op in operations:
+                bill_data = BillSerializer(op.bill).data
+
+                investor_name = ""
+                if op.investor:
+                    if getattr(op.investor, "first_name", None):
+                        investor_name = f"{op.investor.first_name} {op.investor.last_name}"
+                    else:
+                        investor_name = op.investor.social_reason or ""
+
+                investor_account = ""
+                if op.clientAccount:
+                    investor_account = (
+                        getattr(op.clientAccount, "account_number", None)
+                        or getattr(op.clientAccount, "number", None)
+                        or ""
+                    )
+
+                bill_data["investorId"] = str(op.investor_id) if op.investor_id else None
+                bill_data["investorName"] = investor_name
+                bill_data["investorAccountId"] = str(op.clientAccount_id) if op.clientAccount_id else None
+                bill_data["investorAccount"] = investor_account
+                bill_data["valorNominal"] = op.payedAmount
+                bill_data["valorFuturo"] = op.amount
+                bill_data["billFraction"] = op.billFraction
+
+                data.append(bill_data)
+
+            return response({
+                "error": False,
+                "data": data
+            }, 200)
+
+        except Exception as e:
+            return response(
+                {"error": True, "message": str(e)},
+                e.status_code if hasattr(e, "status_code") else 500
+            )
+            
+def get_draft_queryset(request):
+    return MassiveOperationDraft.objects.filter(
+        state=True,
+        user_created_at=request.user,
+        status__in=[
+            MassiveOperationDraft.STATUS_DRAFT,
+            MassiveOperationDraft.STATUS_READY_FOR_EXCEL,
+        ],
+    )
+
+
+def build_client_name(client):
+    if not client:
+        return ""
+
+    if getattr(client, "social_reason", None):
+        return client.social_reason
+
+    first_name = getattr(client, "first_name", "") or ""
+    last_name = getattr(client, "last_name", "") or ""
+
+    return f"{first_name} {last_name}".strip()
+
+
+DRAFT_EXPIRATION_MINUTES =3
+
+def expire_draft_if_needed(draft):
+    if draft.expiresAt and draft.expiresAt <= timezone.now():
+        draft.state = False
+        draft.status = MassiveOperationDraft.STATUS_CANCELLED
+        draft.user_updated_at = draft.user_created_at
+        draft.updated_at = timezone.now()
+        draft.save(update_fields=[
+            "state",
+            "status",
+            "user_updated_at",
+            "updated_at",
+        ])
+        return True
+
+    return False
+
+class MassiveOperationDraftAV(APIView):
+    def get(self, request):
+        now = timezone.now()
+
+        MassiveOperationDraft.objects.filter(
+            state=True,
+            user_created_at=request.user,
+            expiresAt__lte=now,
+        ).update(
+            state=False,
+            status=MassiveOperationDraft.STATUS_CANCELLED,
+            user_updated_at=request.user,
+            updated_at=now,
+        )
+
+        qs = get_draft_queryset(request).filter(
+            expiresAt__gt=now
+        )
+
+        status_filter = request.query_params.get("status")
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+
+        qs = (
+            qs.order_by("-updated_at", "-created_at")
+            .values(
+                "id", "opId", "opDate", "opType_id", "emitter_id",
+                "payer_id", "emitterBroker_id", "currentStep", "status",
+                "expiresAt", "registeredOpId", "created_at", "updated_at",
+                "metadata",
+            )[:50]
+        )
+
+        drafts = list(qs)
+
+        client_ids = set()
+
+        for item in drafts:
+            if item.get("emitter_id"):
+                client_ids.add(item["emitter_id"])
+
+            if item.get("payer_id"):
+                client_ids.add(item["payer_id"])
+
+        clients = Client.objects.filter(id__in=client_ids)
+
+        clients_by_id = {
+            str(client.id): client
+            for client in clients
+        }
+
+        data = []
+
+        for item in drafts:
+            metadata = item.get("metadata") or {}
+
+            emitter_id = str(item["emitter_id"]) if item.get("emitter_id") else None
+            payer_id = str(item["payer_id"]) if item.get("payer_id") else None
+
+            emitter = clients_by_id.get(emitter_id)
+            payer = clients_by_id.get(payer_id)
+
+            emitter_name = build_client_name(emitter)
+            payer_name = build_client_name(payer)
+
+            expires_at = item.get("expiresAt")
+            seconds_remaining = 0
+            minutes_remaining = 0
+
+            draft_badge_color = "#d32f2f"
+            draft_badge_level = "expired"
+            draft_badge_label = "Expirado"
+
+            if expires_at:
+                delta = expires_at - now
+                seconds_remaining = max(0, int(delta.total_seconds()))
+                minutes_remaining = max(0, int(delta.total_seconds() // 60))
+
+                if minutes_remaining >= 8:
+                    draft_badge_color = "#2e7d32"
+                    draft_badge_level = "safe"
+                    draft_badge_label = "Seguro"
+                elif minutes_remaining >= 5:
+                    draft_badge_color = "#fbc02d"
+                    draft_badge_level = "medium"
+                    draft_badge_label = "Medio"
+                elif seconds_remaining > 60:
+                    draft_badge_color = "#d32f2f"
+                    draft_badge_level = "critical"
+                    draft_badge_label = "Crítico"
+                else:
+                    draft_badge_color = "#d32f2f"
+                    draft_badge_level = "alert"
+                    draft_badge_label = "Menos de 1 min"
+
+            data.append({
+                "id": item["id"],
+                "opId": item["opId"],
+                "opDate": item["opDate"],
+                "opTypeId": item["opType_id"],
+
+                "emitterId": item["emitter_id"],
+                "emitterName": emitter_name,
+
+                "payerId": item["payer_id"],
+                "payerName": payer_name,
+
+                "emitterBrokerId": item["emitterBroker_id"],
+
+                "currentStep": item["currentStep"],
+                "status": item["status"],
+                "expiresAt": item["expiresAt"],
+                "registeredOpId": item["registeredOpId"],
+
+                "created_at": item["created_at"],
+                "updated_at": item["updated_at"],
+
+                "secondsRemaining": seconds_remaining,
+                "minutesRemaining": minutes_remaining,
+                "draftBadgeColor": draft_badge_color,
+                "draftBadgeLevel": draft_badge_level,
+                "draftBadgeLabel": draft_badge_label,
+
+                "metadata": {
+                    **metadata,
+                    "emitterName": metadata.get("emitterName") or emitter_name,
+                    "payerName": metadata.get("payerName") or payer_name,
+                },
+
+                "selectedBillsCount": metadata.get("selectedBillsCount", 0),
+                "assignmentsCount": metadata.get("assignmentsCount", 0),
+                "canGenerateInvestorsExcel": metadata.get("canGenerateInvestorsExcel", False),
+                "investorsExcelGenerated": metadata.get("investorsExcelGenerated", False),
+            })
+
+        return Response({"error": False, "data": data}, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        data = request.data.copy()
+
+        data["expiresAt"] = timezone.now() + timedelta(
+            minutes=DRAFT_EXPIRATION_MINUTES
+        )
+
+        serializer = MassiveOperationDraftSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+
+        draft = serializer.save(
+            user_created_at=request.user,
+            user_updated_at=request.user,
+        )
+
+        return Response({
+            "error": False,
+            "message": "Borrador creado correctamente",
+            "data": MassiveOperationDraftSerializer(draft).data,
+        }, status=status.HTTP_201_CREATED)
+class DraftExpiredException(APIException):
+    status_code = status.HTTP_410_GONE
+    default_detail = "El borrador expiró y fue eliminado."
+    default_code = "draft_expired"
+
+
+class MassiveOperationDraftDetailAV(APIView):
+    def get_object(self, request, pk):
+        try:
+            draft = MassiveOperationDraft.objects.get(
+                id=pk,
+                state=True,
+                user_created_at=request.user,
+            )
+        except MassiveOperationDraft.DoesNotExist:
+            raise Http404
+
+        if draft.expiresAt and draft.expiresAt <= timezone.now():
+            draft.state = False
+            draft.status = MassiveOperationDraft.STATUS_CANCELLED
+            draft.user_updated_at = request.user
+            draft.updated_at = timezone.now()
+            draft.save(update_fields=[
+                "state",
+                "status",
+                "user_updated_at",
+                "updated_at",
+            ])
+
+            raise DraftExpiredException()
+
+        return draft
+
+    def get(self, request, pk):
+        draft = self.get_object(request, pk)
+        serializer = MassiveOperationDraftSerializer(draft)
+
+        return Response({
+            "error": False,
+            "data": serializer.data,
+        }, status=status.HTTP_200_OK)
+
+    def patch(self, request, pk):
+        draft = self.get_object(request, pk)
+
+        if draft.status == MassiveOperationDraft.STATUS_REGISTERED:
+            return Response({
+                "error": True,
+                "message": "No se puede modificar un borrador ya registrado.",
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        data = request.data.copy()
+
+        current_step = data.get("currentStep", None)
+
+        if current_step is not None:
+            try:
+                current_step = int(current_step)
+            except Exception:
+                current_step = 0
+
+            current_step = max(0, min(current_step, 10))
+            data["currentStep"] = current_step
+
+            metadata = data.get("metadata") or {}
+            metadata["currentStep"] = current_step
+            data["metadata"] = metadata
+
+        serializer = MassiveOperationDraftSerializer(
+            draft,
+            data=data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+
+        draft = serializer.save(
+            user_updated_at=request.user,
+            updated_at=timezone.now(),
+            expiresAt=timezone.now() + timedelta(
+                minutes=DRAFT_EXPIRATION_MINUTES
+            ),
+        )
+
+        return Response({
+            "error": False,
+            "message": "Borrador actualizado correctamente",
+            "data": MassiveOperationDraftSerializer(draft).data,
+        }, status=status.HTTP_200_OK)
+
+    def delete(self, request, pk):
+        draft = self.get_object(request, pk)
+        draft.state = False
+        draft.status = MassiveOperationDraft.STATUS_CANCELLED
+        draft.user_updated_at = request.user
+        draft.updated_at = timezone.now()
+        draft.save()
+
+        return Response({
+            "error": False,
+            "message": "Borrador eliminado correctamente",
+        }, status=status.HTTP_200_OK)
+        
+        
+class MassiveOperationDraftValidateAV(APIView):
+    def post(self, request, pk):
+        try:
+            draft = MassiveOperationDraft.objects.get(
+                id=pk,
+                state=True,
+                user_created_at=request.user,
+            )
+        except MassiveOperationDraft.DoesNotExist:
+            return Response({
+                "error": True,
+                "message": "Borrador no encontrado.",
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        conflicts = []
+
+        if draft.expiresAt and draft.expiresAt <= timezone.now():
+            draft.state = False
+            draft.status = MassiveOperationDraft.STATUS_CANCELLED
+            draft.user_updated_at = request.user
+            draft.updated_at = timezone.now()
+            draft.save(update_fields=[
+                "state",
+                "status",
+                "user_updated_at",
+                "updated_at",
+            ])
+
+            return Response({
+                "error": True,
+                "valid": False,
+                "message": "El borrador expiró y fue eliminado.",
+                "conflicts": [
+                    {
+                        "field": "expiresAt",
+                        "message": "El borrador expiró. Debe crear una nueva operación.",
+                    }
+                ],
+                "data": None,
+            }, status=status.HTTP_410_GONE)
+
+        selected_bills = draft.selectedBills or []
+        investor_assignments = draft.investorAssignments or []
+
+        def get_bill_uuid(item):
+            return str(
+                item.get("billUniqueId")
+                or item.get("bill_uuid")
+                or item.get("billUuid")
+                or item.get("billPk")
+                or item.get("bill_id_uuid")
+                or item.get("id")
+                or ""
+            ).strip()
+
+        def get_bill_label(item):
+            return str(
+                item.get("billId")
+                or item.get("billCode")
+                or item.get("billNumber")
+                or get_bill_uuid(item)
+                or ""
+            ).strip()
+
+        def get_account_number(item):
+            selected_account = item.get("selectedAccount") or {}
+            return str(
+                selected_account.get("account_number")
+                or selected_account.get("accountNumber")
+                or selected_account.get("number")
+                or item.get("investorAccount")
+                or ""
+            ).strip()
+
+        bill_uuids = {
+            get_bill_uuid(item)
+            for item in selected_bills
+            if get_bill_uuid(item)
+        }
+
+        assignment_bill_uuids = {
+            get_bill_uuid(item)
+            for item in investor_assignments
+            if get_bill_uuid(item)
+        }
+
+        all_bill_uuids = bill_uuids.union(assignment_bill_uuids)
+
+        bills = Bill.objects.filter(id__in=all_bill_uuids)
+        bills_by_id = {str(b.id): b for b in bills}
+
+        draft_emitter_document = str(
+            getattr(draft.emitter, "document_number", None)
+            or getattr(draft.emitter, "nit", None)
+            or getattr(draft.emitter, "identification", None)
+            or ""
+        ).strip()
+
+        draft_payer_document = str(
+            getattr(draft.payer, "document_number", None)
+            or getattr(draft.payer, "nit", None)
+            or getattr(draft.payer, "identification", None)
+            or ""
+        ).strip()
+
+        for item in selected_bills:
+            bill_uuid = get_bill_uuid(item)
+            bill_label = get_bill_label(item)
+
+            if not bill_uuid:
+                conflicts.append({
+                    "field": "bill",
+                    "billId": bill_label,
+                    "message": "La factura no tiene UUID válido en el borrador.",
+                })
+                continue
+
+            bill = bills_by_id.get(bill_uuid)
+
+            if not bill:
+                conflicts.append({
+                    "field": "bill",
+                    "billId": bill_label,
+                    "message": "La factura ya no existe.",
+                })
+                continue
+
+            bill_emitter_document = str(getattr(bill, "emitterId", "") or "").strip()
+            bill_payer_document = str(getattr(bill, "payerId", "") or "").strip()
+
+            if draft_emitter_document and bill_emitter_document != draft_emitter_document:
+                conflicts.append({
+                    "field": "bill",
+                    "billId": bill_label,
+                    "message": "La factura ya no pertenece al emisor del borrador.",
+                })
+
+            if draft_payer_document and bill_payer_document != draft_payer_document:
+                conflicts.append({
+                    "field": "bill",
+                    "billId": bill_label,
+                    "message": "La factura ya no pertenece al pagador del borrador.",
+                })
+
+        investor_ids = {
+            str(item.get("investorId") or "").strip()
+            for item in investor_assignments
+            if item.get("investorId")
+        }
+
+        account_ids = {
+            str(item.get("accountId") or "").strip()
+            for item in investor_assignments
+            if item.get("accountId")
+        }
+
+        account_numbers = {
+            get_account_number(item)
+            for item in investor_assignments
+            if get_account_number(item)
+        }
+
+        investors = Client.objects.filter(id__in=investor_ids)
+        investors_by_id = {str(i.id): i for i in investors}
+
+        accounts_by_id = {
+            str(a.id): a
+            for a in Account.objects.filter(id__in=account_ids)
+        }
+
+        accounts_by_number = {
+            str(a.account_number).strip(): a
+            for a in Account.objects.filter(account_number__in=account_numbers)
+            if a.account_number
+        }
+
+        for item in investor_assignments:
+            bill_uuid = get_bill_uuid(item)
+            bill_label = get_bill_label(item)
+
+            fraction = int(item.get("fraction") or item.get("billFraction") or 0)
+
+            investor_id = str(item.get("investorId") or "").strip()
+            account_id = str(item.get("accountId") or "").strip()
+            account_number = get_account_number(item)
+
+            if investor_id and investor_id not in investors_by_id:
+                conflicts.append({
+                    "field": "investor",
+                    "investorId": investor_id,
+                    "message": "El inversionista ya no existe.",
+                })
+
+            account = None
+
+            if account_id:
+                account = accounts_by_id.get(account_id)
+
+            if not account and account_number:
+                account = accounts_by_number.get(account_number)
+
+            if not account:
+                if account_id or account_number:
+                    conflicts.append({
+                        "field": "account",
+                        "accountId": account_id,
+                        "accountNumber": account_number,
+                        "message": "La cuenta del inversionista ya no existe.",
+                    })
+            elif investor_id and str(account.client_id) != investor_id:
+                conflicts.append({
+                    "field": "account",
+                    "accountId": str(account.id),
+                    "accountNumber": str(account.account_number),
+                    "message": "La cuenta ya no pertenece al inversionista.",
+                })
+
+            if bill_uuid:
+                last_fraction = (
+                    PreOperation.objects
+                    .filter(bill_id=bill_uuid)
+                    .aggregate(max_fraction=Max("billFraction"))
+                    .get("max_fraction")
+                ) or 0
+
+                if fraction and fraction <= last_fraction:
+                    conflicts.append({
+                        "field": "billFraction",
+                        "billId": bill_label,
+                        "fraction": fraction,
+                        "message": "La fracción ya no está disponible para esta factura.",
+                    })
+
+        is_valid = len(conflicts) == 0
+
+        return Response({
+            "error": not is_valid,
+            "valid": is_valid,
+            "message": (
+                "El borrador está vigente."
+                if is_valid
+                else "El borrador tiene conflictos y debe ser revisado."
+            ),
+            "conflicts": conflicts,
+            "data": MassiveOperationDraftSerializer(draft).data,
+        }, status=status.HTTP_200_OK)
+class MassiveOperationDraftMarkRegisteredAV(APIView):
+    def post(self, request, pk):
+        try:
+            draft = MassiveOperationDraft.objects.get(
+                id=pk,
+                state=True,
+                user_created_at=request.user,
+            )
+        except MassiveOperationDraft.DoesNotExist:
+            return Response({
+                "error": True,
+                "message": "Borrador no encontrado.",
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        registered_op_id = request.data.get("registeredOpId")
+
+        draft.status = MassiveOperationDraft.STATUS_REGISTERED
+        draft.registeredOpId = registered_op_id
+        draft.currentStep = 3
+        draft.user_updated_at = request.user
+        draft.updated_at = timezone.now()
+
+        metadata = draft.metadata or {}
+        metadata["currentStep"] = 3
+        metadata["registeredOperationId"] = registered_op_id
+        draft.metadata = metadata
+
+        draft.save()
+
+        return Response({
+            "error": False,
+            "message": "Borrador marcado como registrado.",
+            "data": MassiveOperationDraftSerializer(draft).data,
+        }, status=status.HTTP_200_OK)
+        
+        
+        
 # RECAUDOS
 
 
