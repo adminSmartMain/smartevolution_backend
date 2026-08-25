@@ -79,7 +79,7 @@ class BillCreationSerializer(serializers.ModelSerializer):
         fields = [
             'typeBill', 'billId', 'emitterId', 
             'currentBalance', 'dateBill', 'expirationDate',
-            'payerName', 'payerId', 'emitterName', 'datePayment','billValue','subTotal','total','file','ret_iva','ret_ica','iva'
+            'payerName', 'payerId', 'emitterName', 'datePayment','billValue','subTotal','total','file','cufe','ret_iva','ret_ica','iva'
             ,'ret_fte','other_ret'
         ]
 
@@ -483,9 +483,13 @@ class BillEventReadOnlySerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
 
-        # Sobrescribe typeBill con el valor REAL
+        # Si Billy aún no conoce el CUFE, mantenemos la factura local disponible.
+        if not instance.cufe:
+            return data
+
+        # Sobrescribe typeBill con el valor REAL solo si Billy pudo consultar eventos.
         events = self._get_billEvents(instance)
-        real_type = events.get("type")
+        real_type = events.get("type") if events.get("ok") else None
 
         if real_type:
             data["typeBill"] = real_type  # <-- ahora SIEMPRE el valor correcto

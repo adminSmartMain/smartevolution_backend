@@ -5,7 +5,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.response import Response
 # REST Framework imports
@@ -36,7 +36,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         in this class we are overriding the default method of the TokenObtainPairSerializer class
         for generating the token, we are adding the user roles and the user information to the payload
         '''
-        def get_token(self, user):
+        @classmethod
+        def get_token(cls, user):
             try:
                 roles        = []
                 token        = super().get_token(user)
@@ -62,14 +63,16 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
                     token['client_name']  = client.first_name + ' ' + client.last_name if client.first_name and client.last_name else client.social_reason
 
                     if client.status == 0:
-                        return response({'error': True, 'message': 'cliente no validado'}, 401)
+                        raise AuthenticationFailed('cliente no validado')
                     elif client.status == 2:
-                        return response({'error': True, 'message': 'cliente no autorizado'}, 401)
+                        raise AuthenticationFailed('cliente no autorizado')
 
                 return token
 
-            except Exception as e:
-                return response({'error': True, 'message':str(e)}, 500)
+            except AuthenticationFailed:
+                raise
+            except Exception:
+                raise
 
 class LoginAV(TokenObtainPairView):
     '''
