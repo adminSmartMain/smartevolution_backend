@@ -40,11 +40,28 @@ services:
       retries: 5
     networks:
       - smartevolutionbackend_smartevolution_network
-
+  worker-billy:
+      build:
+        context: .
+      restart: unless-stopped
+      entrypoint: ["celery"]
+      command:
+        - -A
+        - core
+        - worker
+        - --loglevel=info
+        - --queues=billy
+        - --concurrency=3
+      env_file:
+        - docker.env
+      depends_on:
+        redis:
+          condition: service_healthy
+      networks:
+        - smartevolutionbackend_smartevolution_network
 volumes:
   redis_data:
 
 networks:
   smartevolutionbackend_smartevolution_network:
     external: true
-    
