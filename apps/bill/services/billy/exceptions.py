@@ -33,3 +33,35 @@ class BillyAPIError(BillyError):
         super().__init__(message)
         self.status_code = status_code
         self.response_data = response_data
+        
+class BillyLocalRateLimitError(BillyError):
+    """SmartEvolution alcanzó su límite interno de llamadas a Billy."""
+
+    def __init__(
+        self,
+        message,
+        retry_after=None,
+        count=None,
+        limit=None,
+    ):
+        super().__init__(message)
+
+        self.retry_after = retry_after
+        self.count = count
+        self.limit = limit
+        
+class BillyLocalRateLimitError(BillyError):
+    """SmartEvolution alcanzó su límite interno de llamadas a Billy."""
+
+    def __init__(
+        self,
+        message,
+        retry_after=None,
+        count=None,
+        limit=None,
+    ):
+        super().__init__(message)
+
+        self.retry_after = retry_after
+        self.count = count
+        self.limit = limit

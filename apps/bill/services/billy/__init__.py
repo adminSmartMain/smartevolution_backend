@@ -6,6 +6,10 @@ from .normalizer import (
 )
 from .sync_service import BillySyncService
 from .lock import BillyLock
+
+
+from .rate_limiter import BillyRateLimiter
+
 __all__ = (
     "BillyClient",
     "BillyInvoiceNormalizer",
@@ -13,4 +17,5 @@ __all__ = (
     "NormalizedBillyInvoice",
     "BillySyncService",
     "BillyLock",
+    "BillyRateLimiter",
 )

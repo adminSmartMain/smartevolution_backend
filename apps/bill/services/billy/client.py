@@ -7,11 +7,13 @@ from .exceptions import (
     BillyAPIError,
     BillyAuthenticationError,
     BillyConnectionError,
+    BillyLocalRateLimitError,
     BillyNotFoundError,
     BillyRateLimitError,
     BillyTimeoutError,
 )
 
+from .rate_limiter import BillyRateLimiter
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +23,22 @@ env = environ.Env()
 class BillyClient:
     BASE_URL = "https://api.billy.com.co"
 
-    def __init__(self, token=None, timeout=5):
+    def __init__(
+        self,
+        token=None,
+        timeout=5,
+        rate_limiter=None,
+    ):
         self.token = token or env("SMART_TOKEN")
         self.timeout = timeout
 
+        self.rate_limiter = (
+            rate_limiter
+            or BillyRateLimiter()
+        )
+
         self.session = requests.Session()
+
         self.session.headers.update(
             {
                 "Authorization": f"Bearer {self.token}",
@@ -63,6 +76,16 @@ class BillyClient:
         url = f"{self.BASE_URL}{path}"
 
         timeout = kwargs.pop("timeout", self.timeout)
+
+        rate = self.rate_limiter.acquire()
+
+        if not rate["allowed"]:
+            raise BillyLocalRateLimitError(
+                "Se alcanzó el límite interno de solicitudes a Billy",
+                retry_after=rate["retry_after"],
+                count=rate["count"],
+                limit=rate["limit"],
+            )
 
         try:
             response = self.session.request(
