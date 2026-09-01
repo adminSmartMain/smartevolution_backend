@@ -7,6 +7,7 @@ from apps.bill.models import Bill
 from apps.bill.services.billy import (
     BillyLock,
     BillySyncService,
+    calculate_next_check,
 )
 
 from apps.bill.services.billy.exceptions import (
@@ -131,11 +132,18 @@ def sync_bill_events(self, bill_id):
 
     try:
         result = BillySyncService().sync_bill(bill)
+
         now = timezone.now()
+
+        next_check = calculate_next_check(
+            bill.typeBill_id,
+            now,
+        )
 
         Bill.objects.filter(id=bill.id).update(
             billyEventsLastSuccessAt=now,
             billyEventsConsecutiveErrors=0,
+            billyEventsNextCheckAt=next_check,
         )
         logger.info(
             "Billy sync task completed "

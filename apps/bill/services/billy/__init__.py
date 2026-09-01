@@ -6,7 +6,7 @@ from .normalizer import (
 )
 from .sync_service import BillySyncService
 from .lock import BillyLock
-
+from .polling import calculate_next_check
 
 from .rate_limiter import BillyRateLimiter
 
@@ -18,4 +18,5 @@ __all__ = (
     "BillySyncService",
     "BillyLock",
     "BillyRateLimiter",
+    "calculate_next_check",
 )
