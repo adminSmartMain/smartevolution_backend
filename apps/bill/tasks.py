@@ -1,5 +1,6 @@
 import logging
-
+from django.db.models import F
+from django.utils import timezone
 from celery import shared_task
 
 from apps.bill.models import Bill
@@ -38,7 +39,12 @@ def _get_retry_countdown(retries):
 
     return BACKOFF_SECONDS[index]
 
-
+def _register_polling_error(bill_id):
+    Bill.objects.filter(id=bill_id).update(
+        billyEventsConsecutiveErrors=F(
+            "billyEventsConsecutiveErrors"
+        ) + 1
+    )
 
 @shared_task(
     bind=True,
@@ -86,6 +92,9 @@ def sync_bill_events(self, bill_id):
             "Billy sync skipped: bill has no CUFE bill_id=%s",
             bill_id,
         )
+        Bill.objects.filter(id=bill.id).update(
+    billyEventsLastAttemptAt=timezone.now(),
+)
 
         return {
             "ok": False,
@@ -101,6 +110,7 @@ def sync_bill_events(self, bill_id):
     )
 
     if not token:
+        
         logger.info(
             "Billy sync skipped: CUFE already processing "
             "bill_id=%s cufe=%s",
@@ -114,10 +124,19 @@ def sync_bill_events(self, bill_id):
             "bill_id": str(bill.id),
             "cufe": bill.cufe,
         }
+        
+    Bill.objects.filter(id=bill.id).update(
+        billyEventsLastAttemptAt=timezone.now(),
+    )
 
     try:
         result = BillySyncService().sync_bill(bill)
+        now = timezone.now()
 
+        Bill.objects.filter(id=bill.id).update(
+            billyEventsLastSuccessAt=now,
+            billyEventsConsecutiveErrors=0,
+        )
         logger.info(
             "Billy sync task completed "
             "bill_id=%s task_id=%s result=%s",
@@ -129,6 +148,7 @@ def sync_bill_events(self, bill_id):
         return result
 
     except BillyLocalRateLimitError as exc:
+        _register_polling_error(bill.id)
         countdown = max(
             int(exc.retry_after or 1),
             1,
@@ -149,6 +169,7 @@ def sync_bill_events(self, bill_id):
         )
 
     except BillyRateLimitError as exc:
+        _register_polling_error(bill.id)
         try:
             countdown = int(exc.retry_after or 60)
         except (TypeError, ValueError):
@@ -174,6 +195,7 @@ def sync_bill_events(self, bill_id):
         BillyTimeoutError,
         BillyConnectionError,
     ) as exc:
+        _register_polling_error(bill.id)
         countdown = _get_retry_countdown(
             self.request.retries
         )
@@ -196,6 +218,7 @@ def sync_bill_events(self, bill_id):
 
     except BillyAPIError as exc:
         if exc.status_code and exc.status_code >= 500:
+            _register_polling_error(bill.id)
             countdown = _get_retry_countdown(
                 self.request.retries
             )
