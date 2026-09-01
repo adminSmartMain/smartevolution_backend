@@ -3,7 +3,7 @@ import logging
 from apps.base.exceptions import HttpException
 from .events import normalize_description, ts_to_datetime
 
-from apps.bill.services.billy import BillyClient
+
 from apps.bill.services.billy.exceptions import (
     BillyAPIError,
     BillyAuthenticationError,
@@ -12,7 +12,7 @@ from apps.bill.services.billy.exceptions import (
     BillyRateLimitError,
     BillyTimeoutError,
 )
-
+from apps.bill.services.billy import BillyClient, BillyInvoiceNormalizer
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -38,16 +38,13 @@ def billEvents(cufe, update=False):
 
         bill_data = billy_client.get_invoice_by_cufe(cufe)
 
-        attributes = bill_data.get("data", {}).get("attributes", {})
+        invoice = BillyInvoiceNormalizer.normalize(bill_data)
 
-        events_api = attributes.get("events", [])
-        current_owner = attributes.get("holderName", "") or ""
-        current_owner_id = attributes.get("holderIdNumber", "") or ""
+        events_api = invoice.events
+        current_owner = invoice.current_owner
+        current_owner_id = invoice.current_owner_id
 
-        codes = {
-            (ev.get("code", "") or "").strip()
-            for ev in events_api
-        }
+        codes = {event.code for event in events_api}
 
         is_reject = "031" in codes
         is_pagada = any(c in codes for c in ["045", "051"])
@@ -60,13 +57,13 @@ def billEvents(cufe, update=False):
 
         parsed_events = []
 
-        for ev in events_api:
-            code = (ev.get("code", "") or "").strip()
+        for event in events_api:
+            code = event.code
 
             if code in ["036", "037", "038", "046"] and not update:
                 continue
 
-            details = ev.get("details", []) or []
+            details = event.details
 
             if not details:
                 continue
