@@ -37,7 +37,25 @@ class Bill(BaseModel):
     billySyncAttempts = models.PositiveIntegerField(default=0)
     billyLastSyncAt = models.DateTimeField(blank=True, null=True)
     billyTokenScope = models.CharField(max_length=20, default='smart')
+    billyEventsLastAttemptAt = models.DateTimeField(
+    null=True,
+    blank=True,
+    )
 
+    billyEventsLastSuccessAt = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    billyEventsNextCheckAt = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    billyEventsConsecutiveErrors = models.PositiveIntegerField(
+        default=0,
+    )
 
     class Meta:
         db_table = 'bills'
