@@ -8,8 +8,36 @@ from apps.bill.services.billy import (
     BillySyncService,
 )
 
+from apps.bill.services.billy.exceptions import (
+    BillyAPIError,
+    BillyConnectionError,
+    BillyLocalRateLimitError,
+    BillyRateLimitError,
+    BillyTimeoutError,
+)
 
+
+MAX_RETRIES = 4
+
+BACKOFF_SECONDS = (
+    15 * 60,      # 15 minutos
+    30 * 60,      # 30 minutos
+    60 * 60,      # 1 hora
+    2 * 60 * 60,  # 2 horas
+)
 logger = logging.getLogger(__name__)
+
+
+
+
+def _get_retry_countdown(retries):
+    index = min(
+        retries,
+        len(BACKOFF_SECONDS) - 1,
+    )
+
+    return BACKOFF_SECONDS[index]
+
 
 
 @shared_task(
@@ -99,6 +127,96 @@ def sync_bill_events(self, bill_id):
         )
 
         return result
+
+    except BillyLocalRateLimitError as exc:
+        countdown = max(
+            int(exc.retry_after or 1),
+            1,
+        )
+
+        logger.warning(
+            "Billy local rate limit reached "
+            "bill_id=%s retry_in=%ss attempt=%s",
+            bill_id,
+            countdown,
+            self.request.retries + 1,
+        )
+
+        raise self.retry(
+            exc=exc,
+            countdown=countdown,
+            max_retries=MAX_RETRIES,
+        )
+
+    except BillyRateLimitError as exc:
+        try:
+            countdown = int(exc.retry_after or 60)
+        except (TypeError, ValueError):
+            countdown = 60
+
+        countdown = max(countdown, 1)
+
+        logger.warning(
+            "Billy API rate limit reached "
+            "bill_id=%s retry_in=%ss attempt=%s",
+            bill_id,
+            countdown,
+            self.request.retries + 1,
+        )
+
+        raise self.retry(
+            exc=exc,
+            countdown=countdown,
+            max_retries=MAX_RETRIES,
+        )
+
+    except (
+        BillyTimeoutError,
+        BillyConnectionError,
+    ) as exc:
+        countdown = _get_retry_countdown(
+            self.request.retries
+        )
+
+        logger.warning(
+            "Temporary Billy error "
+            "bill_id=%s error=%s "
+            "retry_in=%ss attempt=%s",
+            bill_id,
+            type(exc).__name__,
+            countdown,
+            self.request.retries + 1,
+        )
+
+        raise self.retry(
+            exc=exc,
+            countdown=countdown,
+            max_retries=MAX_RETRIES,
+        )
+
+    except BillyAPIError as exc:
+        if exc.status_code and exc.status_code >= 500:
+            countdown = _get_retry_countdown(
+                self.request.retries
+            )
+
+            logger.warning(
+                "Billy server error "
+                "bill_id=%s status=%s "
+                "retry_in=%ss attempt=%s",
+                bill_id,
+                exc.status_code,
+                countdown,
+                self.request.retries + 1,
+            )
+
+            raise self.retry(
+                exc=exc,
+                countdown=countdown,
+                max_retries=MAX_RETRIES,
+            )
+
+        raise
 
     finally:
         lock.release(
