@@ -3,7 +3,10 @@ import logging
 from celery import shared_task
 
 from apps.bill.models import Bill
-from apps.bill.services.billy import BillySyncService
+from apps.bill.services.billy import (
+    BillyLock,
+    BillySyncService,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -14,7 +17,6 @@ logger = logging.getLogger(__name__)
     name="apps.bill.tasks.sync_bill_events",
     queue="billy",
 )
-
 def sync_bill_events(self, bill_id):
     """
     Sincroniza una factura local contra Billy.
@@ -22,9 +24,12 @@ def sync_bill_events(self, bill_id):
     La tarea Celery solo orquesta:
     - buscar la factura
     - validar que siga existiendo
+    - validar que tenga CUFE
+    - adquirir lock Redis por CUFE
     - delegar al BillySyncService
+    - liberar el lock
 
-    Retries, rate limiting y locks se agregarán
+    Retries y rate limiting se agregarán
     en commits posteriores.
     """
 
@@ -60,13 +65,43 @@ def sync_bill_events(self, bill_id):
             "bill_id": str(bill_id),
         }
 
-    result = BillySyncService().sync_bill(bill)
+    lock = BillyLock()
 
-    logger.info(
-        "Billy sync task completed bill_id=%s task_id=%s result=%s",
-        bill_id,
-        self.request.id,
-        result,
+    token = lock.acquire(
+        bill.cufe,
+        ttl=30,
     )
 
-    return result
+    if not token:
+        logger.info(
+            "Billy sync skipped: CUFE already processing "
+            "bill_id=%s cufe=%s",
+            bill.id,
+            bill.cufe,
+        )
+
+        return {
+            "ok": False,
+            "reason": "already_processing",
+            "bill_id": str(bill.id),
+            "cufe": bill.cufe,
+        }
+
+    try:
+        result = BillySyncService().sync_bill(bill)
+
+        logger.info(
+            "Billy sync task completed "
+            "bill_id=%s task_id=%s result=%s",
+            bill_id,
+            self.request.id,
+            result,
+        )
+
+        return result
+
+    finally:
+        lock.release(
+            bill.cufe,
+            token,
+        )
