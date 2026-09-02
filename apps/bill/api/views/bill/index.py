@@ -13,15 +13,24 @@ from apps.base.decorators.index import checkRole
 from base64 import b64decode
 import os
 import logging
+import requests
 import uuid
 from apps.bill.utils.billEvents import billEvents
 from apps.bill.utils.updateBillEvents import updateBillEvents
+import logging
 from rest_framework.response import Response
 from rest_framework import status
+import requests
 import environ
-from apps.bill.utils.updateMassiveTypeBill import updateMassiveTypeBill
+import json
+from django.utils import timezone
+import os
+from apps.bill.utils.billEvents import billEvents
 
-from apps.bill.services.billy import BillyUploadService
+from apps.bill.services.billy import (
+    BillyClient,
+    BillyUploadService,
+)
 
 # Configurar el logger
 logger = logging.getLogger(__name__)
@@ -37,6 +46,8 @@ console_handler.setFormatter(formatter)
 
 # Añadir el handler al logger
 logger.addHandler(console_handler)
+##comentario2
+import environ
 
 
 class BillCreationManualAV(BaseAV):
@@ -62,14 +73,52 @@ class BillCreationManualAV(BaseAV):
             bill = serializer.save()
             billy_sync = {'status': 'not_requested'}
 
-            # La carga inmediata sigue existiendo, pero ahora pasa por una
-            # única capa Billy compartida con el resto del backend.
+            # El registro manual con CUFE también queda cargado en Billy sin
+            # requerir una llamada manual por Postman. Si Billy no puede
+            # aceptarlo, la factura local se conserva como pendiente.
             if bill.cufe:
-                billy_sync = BillyUploadService().upload_bill(
-                    bill,
-                    token_scope="smart",
-                )
+                try:
+                    env = environ.Env()
+                    external_response = requests.post(
+                        'https://api.billy.com.co/v1/invoices/uploadByCufe',
+                        headers={
+                            'Authorization': f"Bearer {env('SMART_TOKEN')}",
+                            'Content-Type': 'application/json',
+                        },
+                        json={'cufe': bill.cufe},
+                        timeout=30,
+                    )
+                    external_status, external_detail = get_billy_functional_error(external_response)
+                    bill.billySyncAttempts = 1
+                    bill.billyLastSyncAt = timezone.now()
+                    bill.billyTokenScope = 'smart'
 
+                    if external_status in ['200', '201', '409']:
+                        bill.billySyncStatus = 'synced'
+                        bill.billyErrorCode = None
+                        bill.billyErrorDetail = None
+                    else:
+                        bill.billySyncStatus = 'pending'
+                        bill.billyErrorCode = external_status
+                        bill.billyErrorDetail = external_detail
+
+                    bill.save(update_fields=[
+                        'billySyncStatus', 'billyErrorCode', 'billyErrorDetail',
+                        'billySyncAttempts', 'billyLastSyncAt', 'billyTokenScope', 'updated_at'
+                    ])
+                    billy_sync = {'status': bill.billySyncStatus, 'code': external_status}
+                except requests.RequestException as exc:
+                    bill.billySyncStatus = 'pending'
+                    bill.billySyncAttempts = 1
+                    bill.billyLastSyncAt = timezone.now()
+                    bill.billyTokenScope = 'smart'
+                    bill.billyErrorDetail = str(exc)
+                    bill.save(update_fields=[
+                        'billySyncStatus', 'billySyncAttempts', 'billyLastSyncAt',
+                        'billyTokenScope', 'billyErrorDetail', 'updated_at'
+                    ])
+                    billy_sync = {'status': 'pending', 'detail': str(exc)}
+            
             return response({
                 'error': False,
                 'message': 'Factura creada exitosamente',
@@ -406,42 +455,26 @@ class BillAV(BaseAV):
             # -----------------------------
             page = self.paginate_queryset(bills)
             if page is None:
-                return response({'error': False, 'data': []}, 200)
+                return response({'error': False, 
+                                 'data': []},
+                                200)
 
-            # -----------------------------
-            # 8. updateMassiveTypeBill SOLO PARA CASO GENERAL
-            # -----------------------------
-            page_ids = [obj.id for obj in page]
-
-            qs_page = Bill.objects.filter(id__in=page_ids)
-
-            # ✅ Ejecutar actualización masiva y capturar warnings de Billy
-            update_result = updateMassiveTypeBill(qs_page, billEvents)
-            billy_warnings = (update_result or {}).get("warnings", [])
-
-            # refrescar manteniendo orden
-            refreshed = list(Bill.objects.filter(id__in=page_ids))
-            ordered_page = sorted(refreshed, key=lambda x: page_ids.index(x.id))
+          
+        
 
             # -----------------------------
             # 9. SERIALIZACIÓN
             # -----------------------------
-            serializer = BillReadOnlySerializer(ordered_page, many=True)
+            serializer = BillReadOnlySerializer(
+                page,
+                many=True,
+            )
 
-            # ✅ Response paginado normal
-            resp = self.get_paginated_response(serializer.data)
+            resp = self.get_paginated_response(
+                serializer.data
+            )
 
-            # ✅ Agregar mensaje de advertencia para el frontend si Billy falló
-            if billy_warnings:
-                resp.data["billy_warning"] = True
-                resp.data["billy_warning_message"] = (
-                    f"Billy está lento o no respondió correctamente. "
-                    f"{len(billy_warnings)} facturas no pudieron actualizar eventos. "
-                    "No se realizaron cambios sobre esas facturas."
-                )
-                resp.data["warnings"] = billy_warnings
-            else:
-                resp.data["billy_warning"] = False
+            resp.data["billy_warning"] = False
 
             return resp
 
@@ -466,17 +499,50 @@ class BillAV(BaseAV):
                 billy_sync = {'status': 'not_requested'}
                 current_cufe = (updated_bill.cufe or '').strip()
 
-                # Al agregar o modificar el CUFE desde edición, mantenemos la
-                # sincronización inmediata usando la capa Billy centralizada.
-                if (
-                    "cufe" in request.data
-                    and current_cufe
-                    and current_cufe != previous_cufe
-                ):
-                    billy_sync = BillyUploadService().upload_bill(
-                        updated_bill,
-                        token_scope="smart",
-                    )
+                # Al agregar o modificar el CUFE desde edición, se intenta
+                # cargar en Billy sin impedir que la factura quede guardada.
+                if 'cufe' in request.data and current_cufe and current_cufe != previous_cufe:
+                    try:
+                        env = environ.Env()
+                        external_response = requests.post(
+                            'https://api.billy.com.co/v1/invoices/uploadByCufe',
+                            headers={
+                                'Authorization': f"Bearer {env('SMART_TOKEN')}",
+                                'Content-Type': 'application/json',
+                            },
+                            json={'cufe': current_cufe},
+                            timeout=30,
+                        )
+                        external_status, external_detail = get_billy_functional_error(external_response)
+                        updated_bill.billySyncAttempts += 1
+                        updated_bill.billyLastSyncAt = timezone.now()
+                        updated_bill.billyTokenScope = 'smart'
+
+                        if external_status in ['200', '201', '409']:
+                            updated_bill.billySyncStatus = 'synced'
+                            updated_bill.billyErrorCode = None
+                            updated_bill.billyErrorDetail = None
+                        else:
+                            updated_bill.billySyncStatus = 'pending'
+                            updated_bill.billyErrorCode = external_status
+                            updated_bill.billyErrorDetail = external_detail
+
+                        updated_bill.save(update_fields=[
+                            'billySyncStatus', 'billyErrorCode', 'billyErrorDetail',
+                            'billySyncAttempts', 'billyLastSyncAt', 'billyTokenScope', 'updated_at'
+                        ])
+                        billy_sync = {'status': updated_bill.billySyncStatus, 'code': external_status}
+                    except requests.RequestException as exc:
+                        updated_bill.billySyncStatus = 'pending'
+                        updated_bill.billySyncAttempts += 1
+                        updated_bill.billyLastSyncAt = timezone.now()
+                        updated_bill.billyTokenScope = 'smart'
+                        updated_bill.billyErrorDetail = str(exc)
+                        updated_bill.save(update_fields=[
+                            'billySyncStatus', 'billySyncAttempts', 'billyLastSyncAt',
+                            'billyTokenScope', 'billyErrorDetail', 'updated_at'
+                        ])
+                        billy_sync = {'status': 'pending', 'detail': str(exc)}
 
                 return response({
                     'error': False,
@@ -507,83 +573,69 @@ class BillAV(BaseAV):
 
 
 
+def get_billy_functional_error(response):
+    """Billy puede responder HTTP 200 y reportar el error en ``errors``."""
+    try:
+        payload = response.json()
+    except (ValueError, json.JSONDecodeError):
+        payload = {}
+
+    errors = payload.get('errors', []) if isinstance(payload, dict) else []
+    error = errors[0] if errors and isinstance(errors[0], dict) else {}
+    return (
+        str(error.get('status') or response.status_code),
+        error.get('detail') or error.get('title') or response.text,
+    )
+
+
 class PendingBillyBillsAV(BaseAV):
-    @checkRole(["admin", "third"])
+    @checkRole(['admin', 'third'])
     def get(self, request):
-        bills = Bill.objects.filter(
-            state=1,
-            billySyncStatus="pending",
-        )
-        return response(
-            {
-                "error": False,
-                "data": BillSerializer(bills, many=True).data,
-            },
-            200,
-        )
+        bills = Bill.objects.filter(state=1, billySyncStatus='pending')
+        return response({'error': False, 'data': BillSerializer(bills, many=True).data}, 200)
 
-    @checkRole(["admin", "third"])
+    @checkRole(['admin', 'third'])
     def post(self, request):
-        bill_ids = request.data.get("billIds", [])
-        bills = Bill.objects.filter(
-            state=1,
-            billySyncStatus="pending",
-        )
-
+        bill_ids = request.data.get('billIds', [])
+        bills = Bill.objects.filter(state=1, billySyncStatus='pending')
         if bill_ids:
             bills = bills.filter(id__in=bill_ids)
 
         env = environ.Env()
-        service = BillyUploadService()
-
-        synced = []
-        pending = []
-        failed = []
-
+        synced, pending, failed = [], [], []
         for bill in bills:
-            token_scope = bill.billyTokenScope or "smart"
-            token = (
-                env("PA_TOKEN")
-                if token_scope == "pa"
-                else env("SMART_TOKEN")
-            )
+            token = env('PA_TOKEN') if bill.billyTokenScope == 'pa' else env('SMART_TOKEN')
+            try:
+                external_response = requests.post(
+                    'https://api.billy.com.co/v1/invoices/uploadByCufe',
+                    headers={'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'},
+                    json={'cufe': bill.cufe}, timeout=30,
+                )
+                external_status, external_detail = get_billy_functional_error(external_response)
+                bill.billySyncAttempts += 1
+                bill.billyLastSyncAt = timezone.now()
 
-            result = service.upload_bill(
-                bill,
-                token=token,
-                token_scope=token_scope,
-            )
+                if external_status in ['200', '201', '409']:
+                    bill.billySyncStatus = 'synced'
+                    bill.billyErrorCode = None
+                    bill.billyErrorDetail = None
+                    synced.append({'id': str(bill.id), 'cufe': bill.cufe})
+                else:
+                    bill.billyErrorCode = external_status
+                    bill.billyErrorDetail = external_detail
+                    pending.append({'id': str(bill.id), 'cufe': bill.cufe, 'status': external_status, 'details': external_detail})
+                bill.save(update_fields=[
+                    'billySyncStatus', 'billyErrorCode', 'billyErrorDetail',
+                    'billySyncAttempts', 'billyLastSyncAt', 'updated_at'
+                ])
+            except requests.RequestException as exc:
+                bill.billySyncAttempts += 1
+                bill.billyLastSyncAt = timezone.now()
+                bill.billyErrorDetail = str(exc)
+                bill.save(update_fields=['billySyncAttempts', 'billyLastSyncAt', 'billyErrorDetail', 'updated_at'])
+                failed.append({'id': str(bill.id), 'cufe': bill.cufe, 'details': str(exc)})
 
-            item = {
-                "id": str(bill.id),
-                "cufe": bill.cufe,
-            }
-
-            if result["ok"]:
-                synced.append(item)
-                continue
-
-            item.update(
-                {
-                    "status": result.get("code"),
-                    "details": result.get("detail"),
-                }
-            )
-
-            if result.get("transport_error"):
-                failed.append(item)
-            else:
-                pending.append(item)
-
-        return response(
-            {
-                "error": False,
-                "synced": synced,
-                "pending": pending,
-                "failed": failed,
-            },
-            200,
-        )
+        return response({'error': False, 'synced': synced, 'pending': pending, 'failed': failed}, 200)
 
 
 class readBillAV(BaseAV):
@@ -646,59 +698,61 @@ class readBillAV(BaseAV):
                     continue
 
                 # -------------------- SUBIR A BILLY --------------------
-                token_scope = "pa" if fideicomiso else "smart"
-                token = (
-                    env("PA_TOKEN")
-                    if fideicomiso
-                    else env("SMART_TOKEN")
-                )
+                token = env('PA_TOKEN') if fideicomiso else env('SMART_TOKEN')
 
-                upload_result = BillyUploadService().upload_cufe(
-                    parsed["cufe"],
-                    token=token,
-                )
+                headers = {
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json"
+                }
 
-                billy_status = upload_result.get("code")
-                billy_detail = upload_result.get("detail")
-
-                # 409 significa que Billy ya tenía la factura. No bloquea el
-                # flujo local y se conserva como sincronización válida.
-                if billy_status == "409":
-                    duplicatedBillyBills.append(
-                        {
-                            "cufe": parsed["cufe"],
-                            "message": "Factura ya existía en Billy (409)",
-                        }
+                try:
+                    r = requests.post(
+                        "https://api.billy.com.co/v1/invoices/uploadByCufe",
+                        headers=headers,
+                        json={"cufe": parsed["cufe"]},
+                        timeout=30
                     )
 
-                # El 401 funcional permite guardar localmente y reintentar luego.
-                elif billy_status == "401":
-                    parsed["billySyncStatus"] = "pending"
-                    parsed["billyErrorCode"] = billy_status
-                    parsed["billyErrorDetail"] = billy_detail
-                    parsed["billySyncAttempts"] = 1
-                    parsed["billyTokenScope"] = token_scope
+                    # ---------- SI LA FACTURA YA ESTÁ (409) → CONTINUAR ----------
+                    billy_status, billy_detail = get_billy_functional_error(r)
 
-                    pendingBillyBills.append(
-                        {
+                    if billy_status == '409':
+                        duplicatedBillyBills.append({
+                            "cufe": parsed["cufe"],
+                            "message": "Factura ya existía en Billy (409)"
+                        })
+                        # NO continue → CONTINUAMOS CON EL FLUJO NORMAL
+                    
+                        
+                    # ---------- SI ES OTRO ERROR → FALLA ----------
+                    elif billy_status == '401':
+                        # El 401 es una excepción funcional de Billy. La factura
+                        # continúa hacia el guardado normal, pero queda pendiente.
+                        parsed['billySyncStatus'] = 'pending'
+                        parsed['billyErrorCode'] = billy_status
+                        parsed['billyErrorDetail'] = billy_detail
+                        parsed['billySyncAttempts'] = 1
+                        parsed['billyTokenScope'] = 'pa' if fideicomiso else 'smart'
+                        pendingBillyBills.append({
                             "cufe": parsed["cufe"],
                             "status": billy_status,
                             "details": billy_detail,
-                            "message": (
-                                "Factura extraída; pendiente de carga en Billy"
-                            ),
-                        }
-                    )
-
-                elif not upload_result["ok"]:
-                    failedBills.append(
-                        {
+                            "message": "Factura extraída; pendiente de carga en Billy"
+                        })
+                    elif billy_status not in ['200', '201']:
+                        failedBills.append({
                             "cufe": parsed["cufe"],
                             "message": "Error al subir factura a Billy",
                             "status": billy_status,
-                            "details": billy_detail,
-                        }
-                    )
+                            "details": billy_detail
+                        })
+                        continue
+
+                except Exception as e:
+                    failedBills.append({
+                        "cufe": parsed["cufe"],
+                        "message": f"Error al conectar con Billy: {str(e)}"
+                    })
                     continue
 
                 # Una factura pendiente no está disponible para consultar eventos
