@@ -5,6 +5,7 @@ from .normalizer import (
     NormalizedBillyInvoice,
 )
 from .sync_service import BillySyncService
+from .upload_service import BillyUploadService
 from .lock import BillyLock
 from .polling import calculate_next_check
 
@@ -16,6 +17,7 @@ __all__ = (
     "NormalizedBillyEvent",
     "NormalizedBillyInvoice",
     "BillySyncService",
+    "BillyUploadService",
     "BillyLock",
     "BillyRateLimiter",
     "calculate_next_check",
