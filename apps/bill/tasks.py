@@ -409,36 +409,53 @@ def schedule_due_billy_bills():
             billyEventsNextCheckAt__lte=now,
         )
         .exclude(cufe="")
-        .order_by(
-            "billyEventsNextCheckAt"
-        )
+        .order_by("billyEventsNextCheckAt")
     )
 
     due_total = due_queryset.count()
 
-    due_bills = list(
+    candidate_ids = list(
         due_queryset.values_list(
             "id",
             flat=True,
         )[:batch_size]
     )
 
-    for bill_id in due_bills:
+    scheduled_ids = []
+
+    claim_until = now + timedelta(minutes=10)
+
+    for bill_id in candidate_ids:
+        claimed = Bill.objects.filter(
+            id=bill_id,
+            billyEventsNextCheckAt__isnull=False,
+            billyEventsNextCheckAt__lte=now,
+        ).update(
+            billyEventsNextCheckAt=claim_until,
+        )
+
+        if not claimed:
+            continue
+
         sync_bill_events.delay(
             str(bill_id)
+        )
+
+        scheduled_ids.append(
+            bill_id
         )
 
     logger.info(
         "Billy scheduler completed "
         "due_total=%s scheduled=%s batch_size=%s",
         due_total,
-        len(due_bills),
+        len(scheduled_ids),
         batch_size,
     )
 
     return {
         "ok": True,
         "due_total": due_total,
-        "scheduled": len(due_bills),
+        "scheduled": len(scheduled_ids),
         "batch_size": batch_size,
     }
