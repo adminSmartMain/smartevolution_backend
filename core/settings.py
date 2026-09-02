@@ -61,7 +61,7 @@ THIRD_PARTY_APPS = ['rest_framework',
                     'rest_framework.authtoken',
                     'corsheaders',
                     'gunicorn',
-                    'django_crontab',
+                    
                     'import_export'
                     ]
 
@@ -75,10 +75,7 @@ CSRF_TRUSTED_ORIGINS = [
     # Agrega otras URLs de confianza si es necesario
 ]
 
-CRONJOBS = [
-    ('*/10 * * * *', 'apps.base.cron.check_bills_by_cufe >> /app/logs/cronjob.log 2>&1'),
-    #('0 */6 * * *', 'apps.base.cron.check_bills_by_cufe >> /app/logs/cronjob.log 2>&1'),
-]
+
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
