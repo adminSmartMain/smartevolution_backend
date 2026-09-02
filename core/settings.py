@@ -312,3 +312,13 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 
 CELERY_TIMEZONE = TIME_ZONE
+
+CELERY_BEAT_SCHEDULE = {
+    "schedule-due-billy-bills": {
+        "task": "apps.bill.tasks.schedule_due_billy_bills",
+        "schedule": 60.0,
+        "options": {
+            "queue": "billy",
+        },
+    },
+}

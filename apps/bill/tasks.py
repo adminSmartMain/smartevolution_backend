@@ -2,7 +2,8 @@ import logging
 from django.db.models import F
 from django.utils import timezone
 from celery import shared_task
-
+from django.conf import settings
+from django.utils import timezone
 from apps.bill.models import Bill
 from apps.bill.services.billy import (
     BillyLock,
@@ -254,3 +255,42 @@ def sync_bill_events(self, bill_id):
             bill.cufe,
             token,
         )
+@shared_task(
+name="apps.bill.tasks.schedule_due_billy_bills",
+queue="billy",
+)
+def schedule_due_billy_bills():
+    now = timezone.now()
+
+    batch_size = getattr(
+        settings,
+        "BILLY_SCHEDULER_BATCH_SIZE",
+        100,
+    )
+
+    due_bills = list(
+        Bill.objects.filter(
+            cufe__isnull=False,
+            billyEventsNextCheckAt__isnull=False,
+            billyEventsNextCheckAt__lte=now,
+        )
+        .exclude(cufe="")
+        .order_by("billyEventsNextCheckAt")
+        .values_list("id", flat=True)[:batch_size]
+    )
+
+    for bill_id in due_bills:
+        sync_bill_events.delay(str(bill_id))
+
+    logger.info(
+        "Billy scheduler completed due=%s batch_size=%s",
+        len(due_bills),
+        batch_size,
+    )
+
+    return {
+        "ok": True,
+        "scheduled": len(due_bills),
+        "batch_size": batch_size,
+    } 
+        

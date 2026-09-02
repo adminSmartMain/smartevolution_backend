@@ -59,6 +59,23 @@ services:
           condition: service_healthy
       networks:
         - smartevolutionbackend_smartevolution_network
+  beat-billy:
+    build:
+      context: .
+    restart: unless-stopped
+    entrypoint: ["celery"]
+    command:
+      - -A
+      - core
+      - beat
+      - --loglevel=info
+    env_file:
+      - docker.env
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - smartevolutionbackend_smartevolution_network
 volumes:
   redis_data:
 
