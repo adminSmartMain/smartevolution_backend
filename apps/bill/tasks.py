@@ -90,6 +90,96 @@ def _disable_polling(bill_id):
     )
 
 
+def _reserve_polling_until_retry(bill_id, countdown):
+    """
+    Evita que Beat vuelva a encolar una factura mientras Celery
+    ya tiene un retry programado.
+    """
+    next_check = timezone.now() + timedelta(
+        seconds=max(int(countdown or 0), 0) + 60
+    )
+
+    Bill.objects.filter(id=bill_id).update(
+        billyEventsNextCheckAt=next_check,
+    )
+
+    return next_check
+
+
+def _schedule_after_retry_exhaustion(bill_id):
+    """
+    Cuando se agotan los retries técnicos, devuelve la factura al
+    polling futuro sin propagar indefinidamente la excepción.
+    """
+    next_check = timezone.now() + timedelta(hours=6)
+
+    Bill.objects.filter(id=bill_id).update(
+        billyEventsNextCheckAt=next_check,
+    )
+
+    return next_check
+
+
+def _retry_or_defer(
+    task,
+    bill,
+    exc,
+    countdown,
+    errors,
+    log_label,
+):
+    """
+    Programa un retry técnico y reserva NextCheckAt para que Beat no
+    duplique el trabajo. Si Celery agotó los retries, posterga el
+    siguiente polling y termina la tarea de forma controlada.
+    """
+    if task.request.retries >= MAX_RETRIES:
+        next_check = _schedule_after_retry_exhaustion(bill.id)
+
+        logger.error(
+            "%s retries exhausted bill_id=%s error=%s "
+            "consecutive_errors=%s next_check=%s",
+            log_label,
+            bill.id,
+            type(exc).__name__,
+            errors,
+            next_check,
+        )
+
+        return {
+            "ok": False,
+            "reason": "retries_exhausted",
+            "bill_id": str(bill.id),
+            "cufe": bill.cufe,
+            "error": type(exc).__name__,
+            "next_check": next_check.isoformat(),
+        }
+
+    next_check = _reserve_polling_until_retry(
+        bill.id,
+        countdown,
+    )
+
+    logger.warning(
+        "%s retry scheduled bill_id=%s error=%s "
+        "retry_in=%ss attempt=%s consecutive_errors=%s "
+        "next_check=%s",
+        log_label,
+        bill.id,
+        type(exc).__name__,
+        countdown,
+        task.request.retries + 1,
+        errors,
+        next_check,
+    )
+
+    raise task.retry(
+        exc=exc,
+        countdown=countdown,
+        max_retries=MAX_RETRIES,
+    )
+
+
 @shared_task(
     bind=True,
     name="apps.bill.tasks.sync_bill_events",
@@ -209,20 +299,13 @@ def sync_bill_events(self, bill_id):
             1,
         )
 
-        logger.warning(
-            "Billy local rate limit reached "
-            "bill_id=%s retry_in=%ss attempt=%s "
-            "consecutive_errors=%s",
-            bill_id,
+        return _retry_or_defer(
+            self,
+            bill,
+            exc,
             countdown,
-            self.request.retries + 1,
             errors,
-        )
-
-        raise self.retry(
-            exc=exc,
-            countdown=countdown,
-            max_retries=MAX_RETRIES,
+            "Billy local rate limit",
         )
 
     # =========================================================
@@ -241,20 +324,13 @@ def sync_bill_events(self, bill_id):
             1,
         )
 
-        logger.warning(
-            "Billy API rate limit reached "
-            "bill_id=%s retry_in=%ss attempt=%s "
-            "consecutive_errors=%s",
-            bill_id,
+        return _retry_or_defer(
+            self,
+            bill,
+            exc,
             countdown,
-            self.request.retries + 1,
             errors,
-        )
-
-        raise self.retry(
-            exc=exc,
-            countdown=countdown,
-            max_retries=MAX_RETRIES,
+            "Billy API rate limit",
         )
 
     # =========================================================
@@ -270,22 +346,13 @@ def sync_bill_events(self, bill_id):
             self.request.retries
         )
 
-        logger.warning(
-            "Temporary Billy error "
-            "bill_id=%s error=%s "
-            "retry_in=%ss attempt=%s "
-            "consecutive_errors=%s",
-            bill_id,
-            type(exc).__name__,
+        return _retry_or_defer(
+            self,
+            bill,
+            exc,
             countdown,
-            self.request.retries + 1,
             errors,
-        )
-
-        raise self.retry(
-            exc=exc,
-            countdown=countdown,
-            max_retries=MAX_RETRIES,
+            "Temporary Billy error",
         )
 
     # =========================================================
@@ -331,22 +398,13 @@ def sync_bill_events(self, bill_id):
                 self.request.retries
             )
 
-            logger.warning(
-                "Billy server error "
-                "bill_id=%s status=%s "
-                "retry_in=%ss attempt=%s "
-                "consecutive_errors=%s",
-                bill_id,
-                exc.status_code,
+            return _retry_or_defer(
+                self,
+                bill,
+                exc,
                 countdown,
-                self.request.retries + 1,
                 errors,
-            )
-
-            raise self.retry(
-                exc=exc,
-                countdown=countdown,
-                max_retries=MAX_RETRIES,
+                "Billy server error",
             )
 
         # -------------------------
