@@ -1,148 +1,216 @@
-import requests
-from apps.base.exceptions import HttpException
-import environ
 import logging
 
-from .events import normalize_description, ts_to_datetime  # ajusta el import
+from apps.base.exceptions import HttpException
+from .events import normalize_description, ts_to_datetime
+
+
+from apps.bill.services.billy.exceptions import (
+    BillyAPIError,
+    BillyAuthenticationError,
+    BillyConnectionError,
+    BillyNotFoundError,
+    BillyRateLimitError,
+    BillyTimeoutError,
+)
+from apps.bill.services.billy import BillyClient, BillyInvoiceNormalizer
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-env = environ.Env()
 
 UUID_FV = "fdb5feb4-24e9-41fc-9689-31aff60b76c9"
 UUID_FV_TV = "a7c70741-8c1a-4485-8ed4-5297e54a978a"
 UUID_RECHAZADA = "dcec6f03-5dc1-42ea-a525-afada28686da"
 UUID_ENDOSADA = "29113618-6ab8-4633-aa8e-b3d6f242e8a4"
-UUID_PAGADA = "e079bea4-401e-41f2-8ccc-e4ac42217728"  # ✅ NUEVO
+UUID_PAGADA = "e079bea4-401e-41f2-8ccc-e4ac42217728"
 
 
 def billEvents(cufe, update=False):
-    """
-    Devuelve:
-      - ok=True  -> Billy respondió bien (200) y devolvemos eventos
-      - ok=False -> Timeout/network/no-200 (y NO debemos actualizar nada en DB)
-
-    warning: texto corto para mostrar en frontend si aplica.
-    """
     try:
-        token = env('SMART_TOKEN')
+        logger.debug(
+            "Fetching bill events for CUFE: %s",
+            cufe,
+        )
 
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
+        billy_client = BillyClient()
+
+        
+
+        bill_data = billy_client.get_invoice_by_cufe(cufe)
+
+        invoice = BillyInvoiceNormalizer.normalize(bill_data)
+
+        events_api = invoice.events
+        current_owner = invoice.current_owner
+        current_owner_id = invoice.current_owner_id
+
+        codes = {event.code for event in events_api}
+
+        is_reject = "031" in codes
+        is_pagada = any(c in codes for c in ["045", "051"])
+        is_endosada = any(c in codes for c in ["037", "047", "046"])
+        is_fv_tv = (
+            "030" in codes
+            and "032" in codes
+            and ("033" in codes or "034" in codes)
+        )
+
+        parsed_events = []
+
+        for event in events_api:
+            code = event.code
+
+            if code in ["036", "037", "038", "046"] and not update:
+                continue
+
+            details = event.details
+
+            if not details:
+                continue
+
+            for detail in details:
+                description = detail.get("description", "") or ""
+                date = ts_to_datetime(detail.get("timestamp"))
+
+                parsed_events.append({
+                    "code": code,
+                    "description": description,
+                    "description_norm": normalize_description(description),
+                    "date": date,
+                })
+
+        # IMPORTANTE: esto va fuera del for
+        if is_reject:
+            response_type = UUID_RECHAZADA
+        elif is_pagada:
+            response_type = UUID_PAGADA
+        elif is_endosada:
+            response_type = UUID_ENDOSADA
+        elif is_fv_tv:
+            response_type = UUID_FV_TV
+        else:
+            response_type = UUID_FV
+
+        return {
+            "ok": True,
+            "type": response_type,
+            "events": parsed_events,
+            "currentOwner": current_owner,
+            "current_ownerId": current_owner_id,
+            "bill": bill_data,
+            "warning": None,
         }
 
-        logger.debug(f'Fetching bill events for CUFE: {cufe}')
+    except BillyTimeoutError:
+        logger.warning(
+            "Timeout fetching bill events for CUFE: %s",
+            cufe,
+        )
 
-        try:
-            resp = requests.get(
-                f"https://api.billy.com.co/v2/invoices?cufe={cufe}",
-                headers=headers,
-                timeout=5
-            )
+        return {
+            "ok": False,
+            "error": "billy_timeout",
+            "warning": "Billy está lento. Los eventos no se pudieron actualizar.",
+            "type": None,
+            "events": None,
+            "currentOwner": None,
+            "current_ownerId": None,
+            "bill": None,
+        }
 
-            if resp.status_code == 200:
-                bill_data = resp.json()
-                attributes = bill_data.get("data", {}).get("attributes", {})
+    except BillyConnectionError as exc:
+        logger.error(
+            "Network error for CUFE %s: %s",
+            cufe,
+            str(exc),
+        )
 
-                events_api = attributes.get("events", [])
-                current_owner = attributes.get("holderName", "") or ""
-                current_ownerId = attributes.get("holderIdNumber", "") or ""
+        return {
+            "ok": False,
+            "error": "billy_network_error",
+            "warning": "Error de red consultando Billy.",
+            "type": None,
+            "events": None,
+            "currentOwner": None,
+            "current_ownerId": None,
+            "bill": None,
+        }
 
-                codes = set((ev.get("code", "") or "").strip() for ev in events_api)
+    except BillyAuthenticationError:
+        logger.error(
+            "Billy authentication error for CUFE %s",
+            cufe,
+        )
 
-                is_reject = "031" in codes
-                is_pagada = any(c in codes for c in ["045", "051"])  # ✅ NUEVO
-                is_endosada = any(c in codes for c in ["037", "047", "046"])
-                is_fv_tv = ("030" in codes and "032" in codes and ("033" in codes or "034" in codes))
+        return {
+            "ok": False,
+            "error": "billy_authentication_error",
+            "warning": "Billy rechazó la autenticación.",
+            "type": None,
+            "events": None,
+            "currentOwner": None,
+            "current_ownerId": None,
+            "bill": None,
+        }
 
-                parsed_events = []
+    except BillyRateLimitError as exc:
+        logger.warning(
+            "Billy rate limit reached for CUFE %s retry_after=%s",
+            cufe,
+            exc.retry_after,
+        )
 
-                for ev in events_api:
-                    code = (ev.get("code", "") or "").strip()
+        return {
+            "ok": False,
+            "error": "billy_rate_limit",
+            "retry_after": exc.retry_after,
+            "warning": "Billy alcanzó temporalmente el límite de solicitudes.",
+            "type": None,
+            "events": None,
+            "currentOwner": None,
+            "current_ownerId": None,
+            "bill": None,
+        }
 
-                    # Filtrar por update (tu regla original)
-                    if code in ['036', '037', '038', '046'] and not update:
-                        continue
+    except BillyNotFoundError:
+        logger.warning(
+            "Billy invoice not found for CUFE %s",
+            cufe,
+        )
 
-                    details = ev.get("details", []) or []
-                    if not details:
-                        continue
+        return {
+            "ok": False,
+            "error": "billy_not_found",
+            "warning": "Billy no encontró la factura.",
+            "type": None,
+            "events": None,
+            "currentOwner": None,
+            "current_ownerId": None,
+            "bill": None,
+        }
 
-                    for d in details:
-                        desc = d.get("description", "") or ""
-                        date = ts_to_datetime(d.get("timestamp"))
+    except BillyAPIError as exc:
+        logger.error(
+            "Billy API error for CUFE %s status=%s",
+            cufe,
+            exc.status_code,
+        )
 
-                        parsed_events.append({
-                            "code": code,
-                            "description": desc,
-                            "description_norm": normalize_description(desc),
-                            "date": date,
-                        })
+        return {
+            "ok": False,
+            "error": "billy_api_error",
+            "status_code": exc.status_code,
+            "warning": "Billy respondió con un error.",
+            "type": None,
+            "events": None,
+            "currentOwner": None,
+            "current_ownerId": None,
+            "bill": None,
+        }
 
-                # ✅ Prioridad recomendada: RECHAZADA > PAGADA > ENDOSADA > FV_TV > FV
-                if is_reject:
-                    response_type = UUID_RECHAZADA
-                elif is_pagada:
-                    response_type = UUID_PAGADA
-                elif is_endosada:
-                    response_type = UUID_ENDOSADA
-                elif is_fv_tv:
-                    response_type = UUID_FV_TV
-                else:
-                    response_type = UUID_FV
-
-                return {
-                    "ok": True,
-                    "type": response_type,
-                    "events": parsed_events,
-                    "currentOwner": current_owner,
-                    "current_ownerId": current_ownerId,
-                    "bill": bill_data,
-                    "warning": None
-                }
-
-            # ❌ NO 200: no tocar DB
-            logger.warning(f'Billy API returned status {resp.status_code} for CUFE: {cufe}')
-            return {
-                "ok": False,
-                "error": "billy_non_200",
-                "status_code": resp.status_code,
-                "warning": "Billy no respondió correctamente (status != 200).",
-                "type": None,
-                "events": None,
-                "currentOwner": None,
-                "current_ownerId": None,
-                "bill": None
-            }
-
-        except requests.exceptions.Timeout:
-            logger.warning(f'Timeout (3s) fetching bill events for CUFE: {cufe}')
-            return {
-                "ok": False,
-                "error": "billy_timeout",
-                "warning": "Billy está lento (timeout). Los eventos no se pudieron actualizar.",
-                "type": None,
-                "events": None,
-                "currentOwner": None,
-                "current_ownerId": None,
-                "bill": None
-            }
-
-        except requests.exceptions.RequestException as req_err:
-            logger.error(f'Network error for CUFE {cufe}: {str(req_err)}')
-            return {
-                "ok": False,
-                "error": "billy_network_error",
-                "warning": "Error de red consultando Billy. Los eventos no se pudieron actualizar.",
-                "type": None,
-                "events": None,
-                "currentOwner": None,
-                "current_ownerId": None,
-                "bill": None
-            }
-
-    except Exception as e:
-        logger.error(f'Unexpected error for CUFE {cufe}: {str(e)}')
-        raise HttpException(str(e))
+    except Exception as exc:
+        logger.exception(
+            "Unexpected error for CUFE %s",
+            cufe,
+        )
+        raise HttpException(str(exc))
