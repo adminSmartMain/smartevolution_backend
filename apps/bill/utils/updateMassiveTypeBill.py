@@ -29,7 +29,7 @@ UUID_PAGADA = "e079bea4-401e-41f2-8ccc-e4ac42217728"  # ✅ NUEVO
 
 RECHAZO_CODES = {"031"}
 PAGO_CODES = {"045", "051"}  # ✅ NUEVO: pago parcial/total (factura o derechos económicos)
-ENDOSO_CODES = {"037", "047"}
+ENDOSO_CODES = {"037", "047","046"}
 TV_REQUIRED = {"030", "032"}
 TV_ACCEPT = {"033", "034"}
 
