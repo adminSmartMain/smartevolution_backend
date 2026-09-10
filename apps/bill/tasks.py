@@ -61,33 +61,29 @@ def _register_polling_error(bill_id):
     )
 
 
-def _schedule_not_found_retry(bill_id):
+def _schedule_by_business_rule(bill):
     """
-    Billy no conoce actualmente el CUFE.
+    Programa el siguiente polling según el estado funcional actual
+    de la factura, independientemente de cómo terminó la última
+    llamada a Billy.
 
-    No hacemos retry técnico inmediato.
-    Lo volvemos a consultar dentro de 24 horas.
+    La fuente de verdad de la frecuencia es calculate_next_check():
+    - FV / FV-TV: frecuencia normal
+    - ENDOSADA: frecuencia de endosada
+    - estados terminales: None
     """
-    next_check = timezone.now() + timedelta(hours=24)
+    bill.refresh_from_db(fields=["typeBill"])
 
-    Bill.objects.filter(id=bill_id).update(
+    next_check = calculate_next_check(
+        bill.typeBill_id,
+        timezone.now(),
+    )
+
+    Bill.objects.filter(id=bill.id).update(
         billyEventsNextCheckAt=next_check,
     )
 
     return next_check
-
-
-def _disable_polling(bill_id):
-    """
-    Desactiva el polling automático para una factura.
-
-    Se utiliza cuando Billy responde con un error
-    de cliente 4xx que no tiene sentido reintentar
-    automáticamente.
-    """
-    Bill.objects.filter(id=bill_id).update(
-        billyEventsNextCheckAt=None,
-    )
 
 
 def _reserve_polling_until_retry(bill_id, countdown):
@@ -106,18 +102,14 @@ def _reserve_polling_until_retry(bill_id, countdown):
     return next_check
 
 
-def _schedule_after_retry_exhaustion(bill_id):
+def _schedule_after_retry_exhaustion(bill):
     """
-    Cuando se agotan los retries técnicos, devuelve la factura al
-    polling futuro sin propagar indefinidamente la excepción.
+    Al agotarse los retries técnicos, la factura vuelve a su
+    frecuencia funcional normal en lugar de recibir una demora
+    arbitraria.
     """
-    next_check = timezone.now() + timedelta(hours=6)
+    return _schedule_by_business_rule(bill)
 
-    Bill.objects.filter(id=bill_id).update(
-        billyEventsNextCheckAt=next_check,
-    )
-
-    return next_check
 
 
 def _retry_or_defer(
@@ -134,7 +126,7 @@ def _retry_or_defer(
     siguiente polling y termina la tarea de forma controlada.
     """
     if task.request.retries >= MAX_RETRIES:
-        next_check = _schedule_after_retry_exhaustion(bill.id)
+        next_check = _schedule_after_retry_exhaustion(bill)
 
         logger.error(
             "%s retries exhausted bill_id=%s error=%s "
@@ -265,6 +257,11 @@ def sync_bill_events(self, bill_id):
 
         now = timezone.now()
 
+        # BillySyncService puede haber cambiado typeBill en base de datos.
+        # Refrescamos antes de calcular la siguiente frecuencia para no usar
+        # el estado viejo que quedó cargado en memoria al iniciar la tarea.
+        bill.refresh_from_db(fields=["typeBill"])
+
         next_check = calculate_next_check(
             bill.typeBill_id,
             now,
@@ -359,9 +356,7 @@ def sync_bill_events(self, bill_id):
     # 404 - CUFE NO ENCONTRADO EN BILLY
     # =========================================================
     except BillyNotFoundError:
-        next_check = _schedule_not_found_retry(
-            bill.id
-        )
+        next_check = _schedule_by_business_rule(bill)
 
         logger.warning(
             "Billy invoice not found "
@@ -408,24 +403,24 @@ def sync_bill_events(self, bill_id):
             )
 
         # -------------------------
-        # 4xx: problema de datos /
-        # request, no tiene sentido
-        # reintentarlo cada minuto.
+        # 4xx: registramos el fallo, pero la cadencia funcional
+        # de la factura se conserva. Un 401/404 de Billy no debe
+        # convertir una FV de 1h en una factura de 24h ni sacarla
+        # definitivamente del scheduler.
         # -------------------------
         if (
             exc.status_code
             and 400 <= exc.status_code < 500
         ):
-            _disable_polling(
-                bill.id
-            )
+            next_check = _schedule_by_business_rule(bill)
 
             logger.warning(
-                "Billy client error disabling polling "
-                "bill_id=%s cufe=%s status=%s",
+                "Billy client error; polling kept by business rule "
+                "bill_id=%s cufe=%s status=%s next_check=%s",
                 bill_id,
                 bill.cufe,
                 exc.status_code,
+                next_check,
             )
 
             return {
@@ -434,6 +429,11 @@ def sync_bill_events(self, bill_id):
                 "bill_id": str(bill.id),
                 "cufe": bill.cufe,
                 "status_code": exc.status_code,
+                "next_check": (
+                    next_check.isoformat()
+                    if next_check
+                    else None
+                ),
             }
 
         # Si BillyAPIError llega sin status conocido,
