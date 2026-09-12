@@ -7,11 +7,16 @@ from apps.bill.utils.updateMassiveTypeBill import (
 )
 
 
-def calculate_next_check(type_bill_id, now):
+def calculate_next_check(
+    type_bill_id,
+    now,
+    on_watchlist=False,
+):
     """
     Calcula cuándo debe volver a consultarse una factura en Billy.
 
     Reglas:
+    - Watchlist activa: volver a consultar en 15 minutos.
     - PAGADA: no volver a consultar.
     - RECHAZADA: no volver a consultar.
     - ENDOSADA: volver a consultar en 24 horas.
@@ -19,6 +24,9 @@ def calculate_next_check(type_bill_id, now):
     """
 
     type_bill_id = str(type_bill_id) if type_bill_id else None
+
+    if on_watchlist:
+        return now + timedelta(minutes=15)
 
     if type_bill_id in {
         UUID_PAGADA,

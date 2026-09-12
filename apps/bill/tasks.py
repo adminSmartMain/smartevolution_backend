@@ -72,12 +72,18 @@ def _schedule_by_business_rule(bill):
     - ENDOSADA: frecuencia de endosada
     - estados terminales: None
     """
-    bill.refresh_from_db(fields=["typeBill"])
+    bill.refresh_from_db(
+            fields=[
+                "typeBill",
+                "onWatchlist",
+            ]
+        )
 
     next_check = calculate_next_check(
-        bill.typeBill_id,
-        timezone.now(),
-    )
+    bill.typeBill_id,
+    timezone.now(),
+    on_watchlist=bill.onWatchlist,
+)
 
     Bill.objects.filter(id=bill.id).update(
         billyEventsNextCheckAt=next_check,
@@ -260,12 +266,18 @@ def sync_bill_events(self, bill_id):
         # BillySyncService puede haber cambiado typeBill en base de datos.
         # Refrescamos antes de calcular la siguiente frecuencia para no usar
         # el estado viejo que quedó cargado en memoria al iniciar la tarea.
-        bill.refresh_from_db(fields=["typeBill"])
+        bill.refresh_from_db(
+    fields=[
+        "typeBill",
+        "onWatchlist",
+    ]
+)
 
         next_check = calculate_next_check(
-            bill.typeBill_id,
-            now,
-        )
+    bill.typeBill_id,
+    now,
+    on_watchlist=bill.onWatchlist,
+)
 
         Bill.objects.filter(id=bill.id).update(
             billyEventsLastSuccessAt=now,
@@ -467,7 +479,10 @@ def schedule_due_billy_bills():
             billyEventsNextCheckAt__lte=now,
         )
         .exclude(cufe="")
-        .order_by("billyEventsNextCheckAt")
+        .order_by(
+    "-onWatchlist",
+    "billyEventsNextCheckAt",
+)
     )
 
     due_total = due_queryset.count()
