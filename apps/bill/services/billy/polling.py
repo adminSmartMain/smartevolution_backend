@@ -7,6 +7,13 @@ from apps.bill.utils.updateMassiveTypeBill import (
 )
 
 
+WATCHLIST_EXIT_TYPE_IDS = {
+    UUID_ENDOSADA,
+    UUID_PAGADA,
+    UUID_RECHAZADA,
+}
+
+
 def calculate_next_check(
     type_bill_id,
     now,
