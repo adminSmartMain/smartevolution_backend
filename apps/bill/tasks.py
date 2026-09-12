@@ -12,7 +12,7 @@ from apps.bill.services.billy import (
     BillySyncService,
     calculate_next_check,
 )
-from apps.bill.services.billy.polling import WATCHLIST_EXIT_TYPE_IDS
+from apps.bill.services.billy.polling import apply_watchlist_exit_rule
 from apps.bill.services.billy.exceptions import (
     BillyAPIError,
     BillyConnectionError,
@@ -60,50 +60,6 @@ def _register_polling_error(bill_id):
         )
         .first()
     )
-
-
-def _apply_watchlist_exit_rule(bill):
-    """
-    Saca automáticamente una factura de Watchlist cuando Billy la
-    lleva a un estado que ya no requiere seguimiento intensivo.
-
-    Estados manejados por el sistema:
-    - ENDOSADA: vuelve a la cadencia normal de 24 horas.
-    - PAGADA: sale del polling automático.
-    - RECHAZADA: sale del polling automático.
-    """
-    if not bill.onWatchlist:
-        return False
-
-    type_bill_id = (
-        str(bill.typeBill_id)
-        if bill.typeBill_id
-        else None
-    )
-
-    if type_bill_id not in WATCHLIST_EXIT_TYPE_IDS:
-        return False
-
-    bill.onWatchlist = False
-    bill.watchlistActivatedAt = None
-    bill.watchlistActivatedBy = None
-
-    bill.save(
-        update_fields=[
-            "onWatchlist",
-            "watchlistActivatedAt",
-            "watchlistActivatedBy",
-        ]
-    )
-
-    logger.info(
-        "Billy watchlist automatically disabled "
-        "bill_id=%s type_bill_id=%s",
-        bill.id,
-        type_bill_id,
-    )
-
-    return True
 
 
 def _schedule_by_business_rule(bill):
@@ -320,7 +276,7 @@ def sync_bill_events(self, bill_id):
             ]
         )
 
-        _apply_watchlist_exit_rule(bill)
+        apply_watchlist_exit_rule(bill)
 
         next_check = calculate_next_check(
             bill.typeBill_id,

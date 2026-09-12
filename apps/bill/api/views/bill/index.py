@@ -19,7 +19,22 @@ from apps.bill.api.serializers.index import (
     BillSerializer,
 )
 from apps.bill.models import Bill
-from apps.bill.services.billy import BillyUploadService, calculate_next_check
+from apps.bill.services.billy import (
+    BillyLock,
+    BillySyncService,
+    BillyUploadService,
+    apply_watchlist_exit_rule,
+    calculate_next_check,
+)
+from apps.bill.services.billy.exceptions import (
+    BillyAPIError,
+    BillyAuthenticationError,
+    BillyConnectionError,
+    BillyLocalRateLimitError,
+    BillyNotFoundError,
+    BillyRateLimitError,
+    BillyTimeoutError,
+)
 from apps.bill.utils.billEvents import billEvents
 from apps.bill.utils.index import parseBill, parseCreditNote
 from apps.bill.utils.updateBillEvents import updateBillEvents
@@ -504,6 +519,156 @@ class BillAV(BaseAV):
         except Exception as e:
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
 
+
+
+class BillSyncNowAV(BaseAV):
+    """Sincronización inmediata solicitada por una acción del usuario.
+
+    Se usa antes de Ver factura, Editar factura y Ver eventos. Un fallo
+    consultando Billy nunca bloquea el acceso a la información local.
+    """
+
+    @checkRole(['admin', 'third'])
+    def post(self, request, pk):
+        try:
+            bill = Bill.objects.get(pk=pk, state=1)
+        except Bill.DoesNotExist:
+            return response({
+                'error': True,
+                'message': 'Factura no encontrada.',
+            }, 404)
+
+        def current_data():
+            bill.refresh_from_db()
+            serializer = (
+                BillEventReadOnlySerializer(bill)
+                if bill.cufe
+                else BillDetailSerializer(bill)
+            )
+            return serializer.data
+
+        if not (bill.cufe or '').strip():
+            return response({
+                'error': False,
+                'sync_ok': False,
+                'reason': 'missing_cufe',
+                'warning': (
+                    'La factura no tiene CUFE. Se muestra la última '
+                    'información disponible en la base de datos.'
+                ),
+                'data': current_data(),
+            }, 200)
+
+        lock = BillyLock()
+        token = lock.acquire(bill.cufe, ttl=30)
+
+        if not token:
+            return response({
+                'error': False,
+                'sync_ok': False,
+                'reason': 'already_processing',
+                'warning': (
+                    'La factura ya está siendo actualizada. Se muestra '
+                    'la última información disponible.'
+                ),
+                'data': current_data(),
+            }, 200)
+
+        Bill.objects.filter(id=bill.id).update(
+            billyEventsLastAttemptAt=timezone.now(),
+        )
+
+        try:
+            sync_result = BillySyncService().sync_bill(bill)
+            now = timezone.now()
+
+            bill.refresh_from_db(
+                fields=[
+                    'typeBill',
+                    'onWatchlist',
+                    'watchlistActivatedAt',
+                    'watchlistActivatedBy',
+                ]
+            )
+
+            watchlist_disabled = apply_watchlist_exit_rule(bill)
+            if watchlist_disabled:
+                logger.info(
+                    'Billy watchlist automatically disabled from sync-now '
+                    'bill_id=%s type_bill_id=%s',
+                    bill.id,
+                    bill.typeBill_id,
+                )
+
+            next_check = calculate_next_check(
+                bill.typeBill_id,
+                now,
+                on_watchlist=bill.onWatchlist,
+            )
+
+            Bill.objects.filter(id=bill.id).update(
+                billyEventsLastSuccessAt=now,
+                billyEventsConsecutiveErrors=0,
+                billyEventsNextCheckAt=next_check,
+            )
+
+            return response({
+                'error': False,
+                'sync_ok': True,
+                'message': 'Factura actualizada desde Billy.',
+                'sync': sync_result,
+                'data': current_data(),
+            }, 200)
+
+        except BillyLocalRateLimitError as exc:
+            reason = 'local_rate_limit'
+            detail = str(exc)
+        except BillyRateLimitError as exc:
+            reason = 'rate_limit'
+            detail = str(exc)
+        except BillyTimeoutError as exc:
+            reason = 'timeout'
+            detail = str(exc)
+        except BillyConnectionError as exc:
+            reason = 'connection_error'
+            detail = str(exc)
+        except BillyAuthenticationError as exc:
+            reason = 'authentication_error'
+            detail = str(exc)
+        except BillyNotFoundError as exc:
+            reason = 'not_found'
+            detail = str(exc)
+        except BillyAPIError as exc:
+            reason = 'api_error'
+            detail = str(exc)
+        except Exception as exc:
+            logger.exception(
+                'Unexpected Billy sync-now error bill_id=%s',
+                bill.id,
+            )
+            reason = 'unexpected_error'
+            detail = str(exc)
+        finally:
+            lock.release(bill.cufe, token)
+
+        logger.warning(
+            'Billy sync-now failed bill_id=%s reason=%s detail=%s',
+            bill.id,
+            reason,
+            detail,
+        )
+
+        return response({
+            'error': False,
+            'sync_ok': False,
+            'reason': reason,
+            'warning': (
+                'No fue posible actualizar la factura desde Billy. '
+                'Se muestra la última información disponible.'
+            ),
+            'detail': detail,
+            'data': current_data(),
+        }, 200)
 
 
 class BillWatchlistAV(BaseAV):
