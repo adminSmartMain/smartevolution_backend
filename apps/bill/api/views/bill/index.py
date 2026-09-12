@@ -3,7 +3,9 @@ import logging
 import os
 
 import environ
+from django.db import transaction
 from django.db.models import Q
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -17,7 +19,7 @@ from apps.bill.api.serializers.index import (
     BillSerializer,
 )
 from apps.bill.models import Bill
-from apps.bill.services.billy import BillyUploadService
+from apps.bill.services.billy import BillyUploadService, calculate_next_check
 from apps.bill.utils.billEvents import billEvents
 from apps.bill.utils.index import parseBill, parseCreditNote
 from apps.bill.utils.updateBillEvents import updateBillEvents
@@ -504,6 +506,124 @@ class BillAV(BaseAV):
 
 
 
+class BillWatchlistAV(BaseAV):
+    MAX_ACTIVE_WATCHLIST = 50
+
+    @checkRole(['admin', 'third'])
+    def post(self, request, pk):
+        enabled = request.data.get('enabled')
+
+        if not isinstance(enabled, bool):
+            return response({
+                'error': True,
+                'message': "El campo 'enabled' debe ser booleano.",
+            }, 400)
+
+        try:
+            with transaction.atomic():
+                bill = (
+                    Bill.objects
+                    .select_for_update()
+                    .get(pk=pk, state=1)
+                )
+
+                # Idempotencia: repetir el mismo estado no debe reiniciar
+                # el reloj de seguimiento ni cambiar el usuario activador.
+                if bill.onWatchlist == enabled:
+                    return response({
+                        'error': False,
+                        'message': (
+                            'La factura ya estaba en seguimiento intensivo.'
+                            if enabled
+                            else 'La factura ya estaba fuera del seguimiento intensivo.'
+                        ),
+                        'data': self._serialize_watchlist_state(bill),
+                    }, 200)
+
+                now = timezone.now()
+
+                if enabled:
+                    active_count = (
+                        Bill.objects
+                        .filter(state=1, onWatchlist=True)
+                        .exclude(pk=bill.pk)
+                        .count()
+                    )
+
+                    if active_count >= self.MAX_ACTIVE_WATCHLIST:
+                        return response({
+                            'error': True,
+                            'message': (
+                                'Ya existen 50 facturas en seguimiento intensivo. '
+                                'Retire una antes de agregar otra.'
+                            ),
+                        }, 409)
+
+                    bill.onWatchlist = True
+                    bill.watchlistActivatedAt = now
+                    bill.watchlistActivatedBy = request.user
+                    # Al activar seguimiento queremos una revisión lo antes posible.
+                    bill.billyEventsNextCheckAt = now
+
+                else:
+                    bill.onWatchlist = False
+                    bill.watchlistActivatedAt = None
+                    bill.watchlistActivatedBy = None
+                    # Al salir de Watchlist vuelve a la cadencia normal
+                    # determinada por el estado actual de la factura.
+                    bill.billyEventsNextCheckAt = calculate_next_check(
+                        bill.typeBill_id,
+                        now,
+                    )
+
+                bill.save(update_fields=[
+                    'onWatchlist',
+                    'watchlistActivatedAt',
+                    'watchlistActivatedBy',
+                    'billyEventsNextCheckAt',
+                ])
+
+            return response({
+                'error': False,
+                'message': (
+                    'Seguimiento intensivo activado.'
+                    if enabled
+                    else 'Seguimiento intensivo desactivado.'
+                ),
+                'data': self._serialize_watchlist_state(bill),
+            }, 200)
+
+        except Bill.DoesNotExist:
+            return response({
+                'error': True,
+                'message': 'Factura no encontrada.',
+            }, 404)
+        except Exception as exc:
+            logger.error(
+                'Error actualizando Watchlist bill_id=%s: %s',
+                pk,
+                str(exc),
+                exc_info=True,
+            )
+            return response({
+                'error': True,
+                'message': 'No fue posible actualizar el seguimiento de la factura.',
+                'detail': str(exc),
+            }, 500)
+
+    @staticmethod
+    def _serialize_watchlist_state(bill):
+        return {
+            'id': str(bill.id),
+            'onWatchlist': bill.onWatchlist,
+            'watchlistActivatedAt': bill.watchlistActivatedAt,
+            'watchlistActivatedBy': (
+                str(bill.watchlistActivatedBy_id)
+                if bill.watchlistActivatedBy_id
+                else None
+            ),
+            'billyEventsNextCheckAt': bill.billyEventsNextCheckAt,
+        }
 
 
 class PendingBillyBillsAV(BaseAV):
