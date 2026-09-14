@@ -54,7 +54,8 @@ LOCAL_APPS = ['apps.base',
             'apps.bill', 
             'apps.report', 
             'apps.operation',
-            'apps.administration', ]
+            'apps.administration',
+            'apps.notifications', ]
 
 THIRD_PARTY_APPS = ['rest_framework',
                      'drf_spectacular',
