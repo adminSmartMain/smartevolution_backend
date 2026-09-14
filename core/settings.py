@@ -59,11 +59,13 @@ LOCAL_APPS = ['apps.base',
 
 THIRD_PARTY_APPS = ['rest_framework',
                      'drf_spectacular',
+                     
                     'rest_framework.authtoken',
                     'corsheaders',
                     'gunicorn',
                     
-                    'import_export'
+                    'import_export',
+                    'channels',
                     ]
 
 INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_PARTY_APPS
@@ -317,6 +319,23 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": 60.0,
         "options": {
             "queue": "billy",
+        },
+    },
+}
+
+
+ASGI_APPLICATION = "core.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [
+                env(
+                    "CHANNEL_REDIS_URL",
+                    default="redis://redis:6379/2",
+                )
+            ],
         },
     },
 }
