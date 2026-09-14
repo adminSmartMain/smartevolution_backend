@@ -2,7 +2,7 @@ from pathlib import Path
 from datetime import timedelta
 import environ
 import os
-
+from celery.schedules import crontab
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -319,6 +319,17 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": 60.0,
         "options": {
             "queue": "billy",
+        },
+    },
+
+    "notify-expired-bills-daily": {
+        "task": "apps.notifications.tasks.notify_expired_bills",
+        "schedule": crontab(
+            hour=0,
+            minute=5,
+        ),
+        "options": {
+            "queue": "notifications",
         },
     },
 }
