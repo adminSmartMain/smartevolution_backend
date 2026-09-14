@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from celery import shared_task
 from django.conf import settings
-from django.db.models import F
+from django.db.models import Case, F, IntegerField, Value, When
 from django.utils import timezone
 
 from apps.bill.models import Bill
@@ -477,6 +477,16 @@ def schedule_due_billy_bills():
         100,
     )
 
+    # Prioridad del scheduler:
+    #   0. Watchlist activa.
+    #   1. Facturas que nunca han tenido un intento de polling.
+    #   2. Resto de facturas vencidas.
+    #
+    # onWatchlist tiene un máximo funcional de 50 facturas, por lo que
+    # incluso si todas están vencidas todavía queda capacidad dentro del
+    # batch por defecto (100) para facturas nuevas. Esto evita que una
+    # factura recién creada quede detrás de miles de facturas históricas
+    # cuyo nextCheck ya estaba vencido.
     due_queryset = (
         Bill.objects.filter(
             cufe__isnull=False,
@@ -484,10 +494,21 @@ def schedule_due_billy_bills():
             billyEventsNextCheckAt__lte=now,
         )
         .exclude(cufe="")
+        .annotate(
+            schedulerPriority=Case(
+                When(onWatchlist=True, then=Value(0)),
+                When(
+                    billyEventsLastAttemptAt__isnull=True,
+                    then=Value(1),
+                ),
+                default=Value(2),
+                output_field=IntegerField(),
+            )
+        )
         .order_by(
-    "-onWatchlist",
-    "billyEventsNextCheckAt",
-)
+            "schedulerPriority",
+            "billyEventsNextCheckAt",
+        )
     )
 
     due_total = due_queryset.count()
