@@ -1,9 +1,14 @@
+import logging
+
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.db import transaction
 
 from apps.notifications.models import Notification
 from apps.notifications.serializers import NotificationSerializer
+
+
+logger = logging.getLogger(__name__)
 
 
 class NotificationService:
@@ -32,12 +37,23 @@ class NotificationService:
         )
 
         transaction.on_commit(
-            lambda: NotificationService._publish_created(
+            lambda: NotificationService._safe_publish_created(
                 notification
             )
         )
 
         return notification
+
+
+    @staticmethod
+    def _safe_publish_created(notification):
+        try:
+            NotificationService._publish_created(notification)
+        except Exception:
+            logger.exception(
+                "Failed to publish notification %s to realtime channel",
+                notification.id,
+            )
 
     @staticmethod
     def _publish_created(notification):
