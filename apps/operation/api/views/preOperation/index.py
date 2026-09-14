@@ -17,7 +17,10 @@ from apps.misc.models import TypeBill
 from apps.operation.api.serializers.index import (PreOperationSerializer, PreOperationReadOnlySerializer, 
                                                   ReceiptSerializer, PreOperationSignatureSerializer, PreOperationByParamsSerializer)
 from apps.operation.utils.operation_logger import create_operation_log, create_exception_log
-from apps.notifications.producers import notify_preoperation_pending_approval
+from apps.notifications.producers import (
+    notify_electronic_signature_pending,
+    notify_preoperation_pending_approval,
+)
 # Utils
 from apps.base.utils.index import response, gen_uuid, BaseAV
 from apps.report.utils.index import generateSellOffer, calcOperationDetail
@@ -241,6 +244,10 @@ class PreOperationAV(BaseAV):
                     lambda instance=instance: notify_preoperation_pending_approval(instance)
                 )
 
+                transaction.on_commit(
+                    lambda instance=instance: notify_electronic_signature_pending(instance)
+                )
+
                 transaction.on_commit(lambda instance=instance, log_operation_data=log_operation_data, log_response_data=log_response_data: create_operation_log(
                     source="SINGLE",
                     action="CREATE_SINGLE_OPERATION",
@@ -417,6 +424,10 @@ class PreOperationAV(BaseAV):
 
                         transaction.on_commit(
                             lambda instance=instance: notify_preoperation_pending_approval(instance)
+                        )
+
+                        transaction.on_commit(
+                            lambda instance=instance: notify_electronic_signature_pending(instance)
                         )
 
                         transaction.on_commit(
