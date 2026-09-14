@@ -1,1 +1,1 @@
-from .bill.index import BillAV, readBillAV, readCreditNoteAV, BillCreationManualAV, PendingBillyBillsAV
+from .bill.index import BillAV, readBillAV, readCreditNoteAV, BillCreationManualAV, PendingBillyBillsAV, BillWatchlistAV, BillSyncNowAV

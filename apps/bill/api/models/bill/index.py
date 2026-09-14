@@ -1,6 +1,7 @@
 from django.db import models
 from apps.base.models import BaseModel
 from apps.misc.models import TypeBill
+from django.conf import settings
 
 class Bill(BaseModel):
     typeBill         = models.ForeignKey(TypeBill, on_delete=models.CASCADE)
@@ -55,6 +56,24 @@ class Bill(BaseModel):
 
     billyEventsConsecutiveErrors = models.PositiveIntegerField(
         default=0,
+    )
+    
+    onWatchlist = models.BooleanField(
+    default=False,
+    db_index=True,
+    )
+
+    watchlistActivatedAt = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    watchlistActivatedBy = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="billy_watchlist_bills",
     )
 
     class Meta:

@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from celery import shared_task
 from django.conf import settings
-from django.db.models import F
+from django.db.models import Case, F, IntegerField, Value, When
 from django.utils import timezone
 
 from apps.bill.models import Bill
@@ -12,6 +12,7 @@ from apps.bill.services.billy import (
     BillySyncService,
     calculate_next_check,
 )
+from apps.bill.services.billy.polling import apply_watchlist_exit_rule
 from apps.bill.services.billy.exceptions import (
     BillyAPIError,
     BillyConnectionError,
@@ -72,12 +73,18 @@ def _schedule_by_business_rule(bill):
     - ENDOSADA: frecuencia de endosada
     - estados terminales: None
     """
-    bill.refresh_from_db(fields=["typeBill"])
+    bill.refresh_from_db(
+            fields=[
+                "typeBill",
+                "onWatchlist",
+            ]
+        )
 
     next_check = calculate_next_check(
-        bill.typeBill_id,
-        timezone.now(),
-    )
+    bill.typeBill_id,
+    timezone.now(),
+    on_watchlist=bill.onWatchlist,
+)
 
     Bill.objects.filter(id=bill.id).update(
         billyEventsNextCheckAt=next_check,
@@ -258,13 +265,23 @@ def sync_bill_events(self, bill_id):
         now = timezone.now()
 
         # BillySyncService puede haber cambiado typeBill en base de datos.
-        # Refrescamos antes de calcular la siguiente frecuencia para no usar
-        # el estado viejo que quedó cargado en memoria al iniciar la tarea.
-        bill.refresh_from_db(fields=["typeBill"])
+        # Refrescamos antes de aplicar reglas de Watchlist y calcular
+        # la próxima frecuencia.
+        bill.refresh_from_db(
+            fields=[
+                "typeBill",
+                "onWatchlist",
+                "watchlistActivatedAt",
+                "watchlistActivatedBy",
+            ]
+        )
+
+        apply_watchlist_exit_rule(bill)
 
         next_check = calculate_next_check(
             bill.typeBill_id,
             now,
+            on_watchlist=bill.onWatchlist,
         )
 
         Bill.objects.filter(id=bill.id).update(
@@ -460,6 +477,16 @@ def schedule_due_billy_bills():
         100,
     )
 
+    # Prioridad del scheduler:
+    #   0. Watchlist activa.
+    #   1. Facturas que nunca han tenido un intento de polling.
+    #   2. Resto de facturas vencidas.
+    #
+    # onWatchlist tiene un máximo funcional de 50 facturas, por lo que
+    # incluso si todas están vencidas todavía queda capacidad dentro del
+    # batch por defecto (100) para facturas nuevas. Esto evita que una
+    # factura recién creada quede detrás de miles de facturas históricas
+    # cuyo nextCheck ya estaba vencido.
     due_queryset = (
         Bill.objects.filter(
             cufe__isnull=False,
@@ -467,7 +494,21 @@ def schedule_due_billy_bills():
             billyEventsNextCheckAt__lte=now,
         )
         .exclude(cufe="")
-        .order_by("billyEventsNextCheckAt")
+        .annotate(
+            schedulerPriority=Case(
+                When(onWatchlist=True, then=Value(0)),
+                When(
+                    billyEventsLastAttemptAt__isnull=True,
+                    then=Value(1),
+                ),
+                default=Value(2),
+                output_field=IntegerField(),
+            )
+        )
+        .order_by(
+            "schedulerPriority",
+            "billyEventsNextCheckAt",
+        )
     )
 
     due_total = due_queryset.count()

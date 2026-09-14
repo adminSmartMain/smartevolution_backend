@@ -34,7 +34,7 @@ from apps.base.exceptions import HttpException
 from apps.bill.api.models.bill.index import Bill
 from apps.bill.api.models.event.index import BillEvent
 from apps.misc.api.models.typeEvent.index import TypeEvent# ajusta imports
-
+from django.utils import timezone
 from apps.bill.utils.events import normalize_description  # ajusta a tu ruta
 
 def delete_old_file_from_s3(file_url):
@@ -121,6 +121,10 @@ class BillCreationSerializer(serializers.ModelSerializer):
             elif validated_data.get('total'):
                 validated_data['currentBalance'] = validated_data['total']
 
+            
+            if validated_data.get("cufe"):
+                validated_data["billyEventsNextCheckAt"] = timezone.now()
+            
             bill = Bill.objects.create(**validated_data)
             return bill
 
@@ -156,6 +160,8 @@ class BillSerializer(serializers.ModelSerializer):
                         file_path=f'bill/{validated_data["id"]}'
                     )
                     validated_data['file'] = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{fileUrl}"
+            if validated_data.get("cufe"):
+                validated_data["billyEventsNextCheckAt"] = timezone.now()
 
             bill = Bill.objects.create(**validated_data)
 

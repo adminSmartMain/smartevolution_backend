@@ -7,7 +7,7 @@ from .normalizer import (
 from .sync_service import BillySyncService
 from .upload_service import BillyUploadService
 from .lock import BillyLock
-from .polling import calculate_next_check
+from .polling import calculate_next_check, apply_watchlist_exit_rule
 from .rate_limiter import BillyRateLimiter
 
 __all__ = (
@@ -20,4 +20,5 @@ __all__ = (
     "BillyLock",
     "BillyRateLimiter",
     "calculate_next_check",
+    "apply_watchlist_exit_rule",
 )
