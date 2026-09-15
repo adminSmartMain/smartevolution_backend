@@ -332,6 +332,17 @@ CELERY_BEAT_SCHEDULE = {
             "queue": "notifications",
         },
     },
+
+    "notify-expiring-operations-daily": {
+        "task": "apps.notifications.tasks.notify_expiring_operations",
+        "schedule": crontab(
+            hour=0,
+            minute=10,
+        ),
+        "options": {
+            "queue": "notifications",
+        },
+    },
 }
 
 
