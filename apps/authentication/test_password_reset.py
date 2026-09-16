@@ -48,3 +48,10 @@ class PasswordResetFlowTests(APITestCase):
         response = self.client.post('/api/auth/reset-password', {'email': 'unknown@local.invalid'}, format='json')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(mail.outbox), 0)
+
+    def test_reset_email_contains_frontend_link(self):
+        response = self.client.post('/api/auth/reset-password', {'email': self.user.email}, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('http://localhost:3000/auth/resetPassword?uidb64=', mail.outbox[0].body)
+
