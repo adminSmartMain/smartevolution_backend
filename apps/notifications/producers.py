@@ -5,17 +5,15 @@ from apps.notifications.services.notification_service import NotificationService
 from apps.notifications.services.recipient_service import NotificationRecipientService
 
 
-PREOPERATION_APPROVAL_PERMISSION = "preoperations.approve"
-ELECTRONIC_SIGNATURE_PERMISSION = "operations.create"
-
 
 def notify_preoperation_pending_approval(preoperation):
     """Notify active internal users who can approve a newly pending preoperation."""
     if preoperation.status != 0:
         return 0
 
-    recipients = NotificationRecipientService.users_with_permission(
-        PREOPERATION_APPROVAL_PERMISSION
+    recipients = NotificationRecipientService.recipients_for_event(
+        NotificationEvent.PREOPERATION_PENDING_APPROVAL,
+        entity_creator=preoperation.user_created_at,
     )
 
     entity_label = preoperation.opId or str(preoperation.id)
@@ -68,8 +66,9 @@ def notify_electronic_signature_pending(preoperation):
     if has_buy_order:
         return 0
 
-    recipients = NotificationRecipientService.users_with_permission(
-        ELECTRONIC_SIGNATURE_PERMISSION
+    recipients = NotificationRecipientService.recipients_for_event(
+        NotificationEvent.ELECTRONIC_SIGNATURE_PENDING,
+        entity_creator=preoperation.user_created_at,
     )
 
     entity_id = f"{preoperation.opId}:{preoperation.investor_id}"

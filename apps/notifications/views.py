@@ -5,10 +5,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.notifications.models import Notification
+from apps.authentication.access import permission_required
+from apps.authentication.models import AccessAudit, Permission, Role, User
+from apps.base.utils.index import gen_uuid
+from apps.notifications.models import Notification, NotificationRule
 from apps.notifications.pagination import NotificationPagination
-from apps.notifications.serializers import NotificationSerializer
-
+from apps.notifications.serializers import (
+    NotificationRuleSerializer,
+    NotificationSerializer,
+)
 
 class NotificationListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -97,4 +102,169 @@ class NotificationMarkAllReadView(APIView):
         return Response({
             "updated": updated,
             "unread_count": 0,
+        })
+
+
+class NotificationRuleListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @permission_required("security.access")
+    def get(self, request):
+        rules = (
+            NotificationRule.objects
+            .select_related("permission")
+            .prefetch_related("roles", "include_users", "exclude_users")
+            .all()
+        )
+        return Response({
+            "error": False,
+            "data": NotificationRuleSerializer(rules, many=True).data,
+        })
+
+
+class NotificationRuleOptionsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @permission_required("security.access")
+    def get(self, request):
+        roles = Role.objects.filter(
+            state=True,
+            audience=Role.AUDIENCE_INTERNAL,
+        ).order_by("name")
+
+        users = User.objects.filter(
+            is_active=True,
+            archived_at__isnull=True,
+            client_access__isnull=True,
+        ).order_by("email")
+
+        permissions = Permission.objects.filter(
+            state=True,
+        ).order_by("module", "action")
+
+        return Response({
+            "error": False,
+            "data": {
+                "roles": [
+                    {
+                        "id": role.id,
+                        "code": role.code,
+                        "name": role.name,
+                    }
+                    for role in roles
+                ],
+                "users": [
+                    {
+                        "id": user.id,
+                        "email": user.email,
+                        "name": (
+                            f"{user.first_name or ''} {user.last_name or ''}".strip()
+                            or user.email
+                        ),
+                    }
+                    for user in users
+                ],
+                "permissions": [
+                    {
+                        "code": permission.code,
+                        "name": permission.name,
+                        "module": permission.module,
+                    }
+                    for permission in permissions
+                ],
+            },
+        })
+
+
+class NotificationRuleDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @permission_required("security.access")
+    def patch(self, request, rule_id):
+        try:
+            rule = NotificationRule.objects.get(id=rule_id)
+        except NotificationRule.DoesNotExist:
+            return Response(
+                {"error": True, "message": "Regla de notificación no encontrada."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        data = request.data
+
+        if "enabled" in data:
+            rule.enabled = bool(data["enabled"])
+
+        if "include_entity_creator" in data:
+            rule.include_entity_creator = bool(data["include_entity_creator"])
+
+        if "permission_code" in data:
+            permission_code = data.get("permission_code")
+            if permission_code:
+                try:
+                    rule.permission = Permission.objects.get(
+                        code=permission_code,
+                        state=True,
+                    )
+                except Permission.DoesNotExist:
+                    return Response(
+                        {"error": True, "message": "El permiso seleccionado no existe."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+            else:
+                rule.permission = None
+
+        rule.save()
+
+        if "role_ids" in data:
+            roles = Role.objects.filter(
+                id__in=data.get("role_ids") or [],
+                state=True,
+                audience=Role.AUDIENCE_INTERNAL,
+            )
+            rule.roles.set(roles)
+
+        if "include_user_ids" in data:
+            users = User.objects.filter(
+                id__in=data.get("include_user_ids") or [],
+                is_active=True,
+                archived_at__isnull=True,
+                client_access__isnull=True,
+            )
+            rule.include_users.set(users)
+
+        if "exclude_user_ids" in data:
+            users = User.objects.filter(
+                id__in=data.get("exclude_user_ids") or [],
+                client_access__isnull=True,
+            )
+            rule.exclude_users.set(users)
+
+        AccessAudit.objects.create(
+            id=gen_uuid(),
+            actor=request.user,
+            action="NOTIFICATION_RULE_UPDATED",
+            target_type="notification_rule",
+            target_id=str(rule.id),
+            details={
+                "event_type": rule.event_type,
+                "enabled": rule.enabled,
+                "permission_code": rule.permission.code if rule.permission else None,
+                "include_entity_creator": rule.include_entity_creator,
+                "role_ids": list(rule.roles.values_list("id", flat=True)),
+                "include_user_ids": list(rule.include_users.values_list("id", flat=True)),
+                "exclude_user_ids": list(rule.exclude_users.values_list("id", flat=True)),
+            },
+            ip_address=request.META.get("REMOTE_ADDR"),
+        )
+
+        rule = (
+            NotificationRule.objects
+            .select_related("permission")
+            .prefetch_related("roles", "include_users", "exclude_users")
+            .get(id=rule.id)
+        )
+
+        return Response({
+            "error": False,
+            "data": NotificationRuleSerializer(rule).data,
         })

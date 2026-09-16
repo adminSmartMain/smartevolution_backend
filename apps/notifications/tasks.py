@@ -115,40 +115,44 @@ def process_expired_bills(reference_date=None):
         if expiration_date != today:
             continue
 
-        recipient = bill.user_created_at
+        recipients = NotificationRecipientService.recipients_for_event(
+            NotificationEvent.BILL_EXPIRED,
+            entity_creator=bill.user_created_at,
+        )
 
-        if recipient is None:
+        if not recipients.exists():
             skipped_without_recipient += 1
             continue
 
-        notification_exists = Notification.objects.filter(
-            recipient=recipient,
-            event_type=NotificationEvent.BILL_EXPIRED,
-            entity_type="bill",
-            entity_id=str(bill.id),
-        ).exists()
+        for recipient in recipients.iterator():
+            notification_exists = Notification.objects.filter(
+                recipient=recipient,
+                event_type=NotificationEvent.BILL_EXPIRED,
+                entity_type="bill",
+                entity_id=str(bill.id),
+            ).exists()
 
-        if notification_exists:
-            already_notified += 1
-            continue
+            if notification_exists:
+                already_notified += 1
+                continue
 
-        NotificationService.create_notification(
-            recipient=recipient,
-            event_type=NotificationEvent.BILL_EXPIRED,
-            title="Factura vencida",
-            message=(
-                f"La factura {bill.billId} "
-                "alcanzó su fecha de vencimiento."
-            ),
-            entity_type="bill",
-            entity_id=bill.id,
-            entity_label=bill.billId,
-            metadata={
-                "expiration_date": expiration_date.isoformat(),
-            },
-        )
+            NotificationService.create_notification(
+                recipient=recipient,
+                event_type=NotificationEvent.BILL_EXPIRED,
+                title="Factura vencida",
+                message=(
+                    f"La factura {bill.billId} "
+                    "alcanzó su fecha de vencimiento."
+                ),
+                entity_type="bill",
+                entity_id=bill.id,
+                entity_label=bill.billId,
+                metadata={
+                    "expiration_date": expiration_date.isoformat(),
+                },
+            )
 
-        notified += 1
+            notified += 1
 
     result = {
         "reference_date": today.isoformat(),
@@ -175,7 +179,6 @@ def notify_expired_bills():
     """
     return process_expired_bills()
 
-OPERATION_EXPIRING_PERMISSION = "operations.view"
 OPERATION_EXPIRING_DAYS = 7
 
 
@@ -213,10 +216,6 @@ def process_expiring_operations(reference_date=None, days_before=OPERATION_EXPIR
         .order_by("opExpiration", "opId", "investor_id", "id")
     )
 
-    recipients = NotificationRecipientService.users_with_permission(
-        OPERATION_EXPIRING_PERMISSION
-    )
-
     seen_operations = set()
     notified = 0
     already_notified = 0
@@ -232,6 +231,11 @@ def process_expiring_operations(reference_date=None, days_before=OPERATION_EXPIR
         entity_id = str(operation.id)
         entity_label = f"OP-{operation.opId}"
         expiration_date = operation.opExpiration
+
+        recipients = NotificationRecipientService.recipients_for_event(
+            NotificationEvent.OPERATION_EXPIRING,
+            entity_creator=operation.user_created_at,
+        )
 
         for recipient in recipients.iterator():
             notification_exists = Notification.objects.filter(
