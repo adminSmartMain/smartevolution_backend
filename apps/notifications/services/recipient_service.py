@@ -14,12 +14,15 @@ class NotificationRecipientService:
 
     @staticmethod
     def _eligible_users():
+        # Internal recipients are users without ClientAccess plus superusers.
+        # A superuser may retain ClientAccess metadata without becoming a
+        # CLIENT_PORTAL identity.
         return User.objects.filter(
             is_active=True,
             archived_at__isnull=True,
-            client_access__isnull=True,
+        ).filter(
+            Q(client_access__isnull=True) | Q(is_superuser=True)
         )
-
 
     @staticmethod
     def preview_draft(
@@ -31,13 +34,7 @@ class NotificationRecipientService:
         exclude_user_ids=None,
         include_entity_creator=False,
     ):
-        """Resolve a draft rule without persisting it.
-
-        This is used by the administration UI to explain who matches the
-        configured criteria. The entity creator cannot be resolved until a
-        concrete event occurs, so it is reported separately as a runtime
-        inclusion.
-        """
+        """Resolve a draft rule without persisting it."""
         role_ids = role_ids or []
         include_user_ids = include_user_ids or []
         exclude_user_ids = exclude_user_ids or []
@@ -201,7 +198,6 @@ class NotificationRecipientService:
                 ).values_list("user_id", flat=True)
             )
 
-            # Superusers pass permission checks throughout the platform.
             recipient_ids.update(
                 NotificationRecipientService._eligible_users()
                 .filter(is_superuser=True)
@@ -226,7 +222,8 @@ class NotificationRecipientService:
             rule.include_users.filter(
                 is_active=True,
                 archived_at__isnull=True,
-                client_access__isnull=True,
+            ).filter(
+                Q(client_access__isnull=True) | Q(is_superuser=True)
             ).values_list("id", flat=True)
         )
 
@@ -235,7 +232,10 @@ class NotificationRecipientService:
             and entity_creator is not None
             and getattr(entity_creator, "is_active", False)
             and getattr(entity_creator, "archived_at", None) is None
-            and not hasattr(entity_creator, "client_access")
+            and (
+                getattr(entity_creator, "is_superuser", False)
+                or not hasattr(entity_creator, "client_access")
+            )
         ):
             recipient_ids.add(entity_creator.id)
 
