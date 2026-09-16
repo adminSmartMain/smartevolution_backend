@@ -7,6 +7,7 @@ from apps.notifications.views import (
     NotificationRuleDetailView,
     NotificationRuleListView,
     NotificationRuleOptionsView,
+    NotificationRulePreviewView,
 )
 
 
@@ -25,6 +26,11 @@ urlpatterns = [
         "admin/rules/options/",
         NotificationRuleOptionsView.as_view(),
         name="notification-rule-options",
+    ),
+    path(
+        "admin/rules/preview/",
+        NotificationRulePreviewView.as_view(),
+        name="notification-rule-preview",
     ),
     path(
         "admin/rules/<uuid:rule_id>/",

@@ -8,12 +8,14 @@ from rest_framework.views import APIView
 from apps.authentication.access import permission_required
 from apps.authentication.models import AccessAudit, Permission, Role, User
 from apps.base.utils.index import gen_uuid
-from apps.notifications.models import Notification, NotificationRule
+from apps.notifications.models import NotificationRule
+from apps.notifications.serializers import NotificationRuleSerializer
+from apps.notifications.services.recipient_service import NotificationRecipientService
+
+from apps.notifications.models import Notification
 from apps.notifications.pagination import NotificationPagination
-from apps.notifications.serializers import (
-    NotificationRuleSerializer,
-    NotificationSerializer,
-)
+from apps.notifications.serializers import NotificationSerializer
+
 
 class NotificationListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -173,6 +175,50 @@ class NotificationRuleOptionsView(APIView):
                     for permission in permissions
                 ],
             },
+        })
+
+
+class NotificationRulePreviewView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @permission_required("security.access")
+    def post(self, request):
+        data = request.data
+
+        list_fields = (
+            "role_ids",
+            "include_user_ids",
+            "exclude_user_ids",
+        )
+        for field in list_fields:
+            value = data.get(field, [])
+            if value is not None and not isinstance(value, list):
+                return Response(
+                    {
+                        "error": True,
+                        "message": f"{field} debe ser una lista.",
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        try:
+            preview = NotificationRecipientService.preview_draft(
+                enabled=data.get("enabled", True),
+                permission_code=data.get("permission_code"),
+                role_ids=data.get("role_ids") or [],
+                include_user_ids=data.get("include_user_ids") or [],
+                exclude_user_ids=data.get("exclude_user_ids") or [],
+                include_entity_creator=data.get("include_entity_creator", False),
+            )
+        except ValueError as exc:
+            return Response(
+                {"error": True, "message": str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response({
+            "error": False,
+            "data": preview,
         })
 
 
