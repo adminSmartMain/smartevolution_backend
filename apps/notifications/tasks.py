@@ -229,7 +229,7 @@ def process_expiring_operations(reference_date=None, days_before=OPERATION_EXPIR
 
         seen_operations.add(logical_key)
 
-        entity_id = f"{operation.opId}:{operation.investor_id}"
+        entity_id = str(operation.id)
         entity_label = f"OP-{operation.opId}"
         expiration_date = operation.opExpiration
 

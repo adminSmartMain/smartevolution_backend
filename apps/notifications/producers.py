@@ -43,6 +43,12 @@ def notify_preoperation_pending_approval(preoperation):
             entity_label=entity_label,
             metadata={
                 "status": preoperation.status,
+                "op_id": str(preoperation.opId),
+                "investor_id": (
+                    str(preoperation.investor_id)
+                    if preoperation.investor_id
+                    else None
+                ),
             },
         )
         notified += 1
