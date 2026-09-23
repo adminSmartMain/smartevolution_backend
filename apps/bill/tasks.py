@@ -9,12 +9,17 @@ from django.utils import timezone
 from apps.bill.models import Bill
 from apps.bill.services.billy import (
     BillyLock,
+    BillyPollingState,
+    BillyRateLimiter,
     BillySyncService,
-    calculate_next_check,
+    calculate_bill_next_check,
+    filter_eligible_for_billy_polling,
+    is_bill_eligible_for_billy_polling,
 )
 from apps.bill.services.billy.polling import apply_watchlist_exit_rule
 from apps.bill.services.billy.exceptions import (
     BillyAPIError,
+    BillyAuthenticationError,
     BillyConnectionError,
     BillyLocalRateLimitError,
     BillyNotFoundError,
@@ -35,6 +40,18 @@ BACKOFF_SECONDS = (
     2 * 60 * 60,  # 2 horas
 )
 
+# 404 no dispara retries Celery. Se reprograma la factura con un backoff
+# progresivo para dejar de consultar agresivamente CUFEs aún no disponibles.
+NOT_FOUND_BACKOFF_SECONDS = (
+    15 * 60,
+    30 * 60,
+    60 * 60,
+    3 * 60 * 60,
+    6 * 60 * 60,
+    12 * 60 * 60,
+    24 * 60 * 60,
+)
+
 
 def _get_retry_countdown(retries):
     index = min(
@@ -43,6 +60,32 @@ def _get_retry_countdown(retries):
     )
 
     return BACKOFF_SECONDS[index]
+
+
+def _get_not_found_countdown(consecutive_errors):
+    index = min(
+        max(int(consecutive_errors or 1) - 1, 0),
+        len(NOT_FOUND_BACKOFF_SECONDS) - 1,
+    )
+    return NOT_FOUND_BACKOFF_SECONDS[index]
+
+
+def _defer_without_retry(bill_id, countdown, reason):
+    """Reprograma sin llenar la cola de retries de Celery."""
+    next_check = timezone.now() + timedelta(
+        seconds=max(int(countdown or 1), 1) + 30
+    )
+    Bill.objects.filter(id=bill_id).update(
+        billyEventsNextCheckAt=next_check,
+    )
+    logger.warning(
+        "Billy request deferred bill_id=%s reason=%s retry_in=%ss next_check=%s",
+        bill_id,
+        reason,
+        countdown,
+        next_check,
+    )
+    return next_check
 
 
 def _register_polling_error(bill_id):
@@ -63,33 +106,17 @@ def _register_polling_error(bill_id):
 
 
 def _schedule_by_business_rule(bill):
-    """
-    Programa el siguiente polling según el estado funcional actual
-    de la factura, independientemente de cómo terminó la última
-    llamada a Billy.
+    """Vuelve a la cadencia funcional preservando elegibilidad y Watchlist."""
+    bill.refresh_from_db(fields=["typeBill", "onWatchlist"])
 
-    La fuente de verdad de la frecuencia es calculate_next_check():
-    - FV / FV-TV: frecuencia normal
-    - ENDOSADA: frecuencia de endosada
-    - estados terminales: None
-    """
-    bill.refresh_from_db(
-            fields=[
-                "typeBill",
-                "onWatchlist",
-            ]
-        )
-
-    next_check = calculate_next_check(
-    bill.typeBill_id,
-    timezone.now(),
-    on_watchlist=bill.onWatchlist,
-)
+    next_check = calculate_bill_next_check(
+        bill,
+        timezone.now(),
+    )
 
     Bill.objects.filter(id=bill.id).update(
         billyEventsNextCheckAt=next_check,
     )
-
     return next_check
 
 
@@ -184,7 +211,7 @@ def _retry_or_defer(
     name="apps.bill.tasks.sync_bill_events",
     queue="billy",
 )
-def sync_bill_events(self, bill_id):
+def sync_bill_events(self, bill_id, queue_token=None):
     """
     Sincroniza una factura local contra Billy.
 
@@ -198,6 +225,8 @@ def sync_bill_events(self, bill_id):
     - calcula el próximo chequeo
     - libera siempre el lock
     """
+
+    polling_state = BillyPollingState()
 
     logger.info(
         "Starting Billy sync task bill_id=%s task_id=%s",
@@ -213,6 +242,7 @@ def sync_bill_events(self, bill_id):
             bill_id,
         )
 
+        polling_state.release_queue_slot(bill_id, queue_token)
         return {
             "ok": False,
             "reason": "bill_not_found",
@@ -225,9 +255,21 @@ def sync_bill_events(self, bill_id):
             bill_id,
         )
 
+        polling_state.release_queue_slot(bill_id, queue_token)
         return {
             "ok": False,
             "reason": "missing_cufe",
+            "bill_id": str(bill_id),
+        }
+
+    # Revalidación al ejecutar: una operación pudo cancelarse después de que
+    # Beat construyó su batch. Watchlist sigue siendo override manual.
+    if not is_bill_eligible_for_billy_polling(bill):
+        polling_state.release_queue_slot(bill_id, queue_token)
+        logger.info("Billy sync skipped: bill is not eligible bill_id=%s", bill_id)
+        return {
+            "ok": False,
+            "reason": "not_eligible",
             "bill_id": str(bill_id),
         }
 
@@ -239,6 +281,7 @@ def sync_bill_events(self, bill_id):
     )
 
     if not token:
+        polling_state.release_queue_slot(bill_id, queue_token)
         logger.info(
             "Billy sync skipped: CUFE already processing "
             "bill_id=%s cufe=%s",
@@ -278,10 +321,22 @@ def sync_bill_events(self, bill_id):
 
         apply_watchlist_exit_rule(bill)
 
-        next_check = calculate_next_check(
-            bill.typeBill_id,
+        changed = bool(
+            result.get("events_created")
+            or result.get("owner_changed")
+            or result.get("type_changed")
+        )
+
+        if changed:
+            polling_state.reset_unchanged(bill.id)
+            unchanged_streak = 0
+        else:
+            unchanged_streak = polling_state.register_unchanged(bill.id)
+
+        next_check = calculate_bill_next_check(
+            bill,
             now,
-            on_watchlist=bill.onWatchlist,
+            unchanged_streak=unchanged_streak,
         )
 
         Bill.objects.filter(id=bill.id).update(
@@ -303,49 +358,60 @@ def sync_bill_events(self, bill_id):
         return result
 
     # =========================================================
-    # RATE LIMIT LOCAL
+    # RATE LIMIT LOCAL / BLOQUEO GLOBAL
     # =========================================================
     except BillyLocalRateLimitError as exc:
-        errors = _register_polling_error(bill.id)
-
-        countdown = max(
-            int(exc.retry_after or 1),
-            1,
-        )
-
-        return _retry_or_defer(
-            self,
-            bill,
-            exc,
+        countdown = max(int(exc.retry_after or 60), 1)
+        next_check = _defer_without_retry(
+            bill.id,
             countdown,
-            errors,
-            "Billy local rate limit",
+            f"local_rate_limit:{exc.scope or 'unknown'}",
         )
+        return {
+            "ok": False,
+            "reason": "local_rate_limit",
+            "scope": exc.scope,
+            "bill_id": str(bill.id),
+            "next_check": next_check.isoformat(),
+        }
 
     # =========================================================
-    # RATE LIMIT DE BILLY
+    # 429 DE BILLY: BillyClient ya activó el circuit breaker global
     # =========================================================
     except BillyRateLimitError as exc:
-        errors = _register_polling_error(bill.id)
-
         try:
             countdown = int(exc.retry_after or 60)
         except (TypeError, ValueError):
             countdown = 60
 
-        countdown = max(
-            countdown,
-            1,
+        next_check = _defer_without_retry(
+            bill.id,
+            max(countdown, 1),
+            "billy_429",
         )
+        return {
+            "ok": False,
+            "reason": "billy_rate_limit",
+            "bill_id": str(bill.id),
+            "next_check": next_check.isoformat(),
+        }
 
-        return _retry_or_defer(
-            self,
-            bill,
-            exc,
-            countdown,
-            errors,
-            "Billy API rate limit",
+    # =========================================================
+    # AUTH: no insistimos con el mismo token rechazado
+    # =========================================================
+    except BillyAuthenticationError as exc:
+        next_check = _defer_without_retry(
+            bill.id,
+            getattr(settings, "BILLY_AUTH_RETRY_SECONDS", 60 * 60),
+            "authentication",
         )
+        logger.error("Billy authentication error bill_id=%s error=%s", bill.id, exc)
+        return {
+            "ok": False,
+            "reason": "authentication_error",
+            "bill_id": str(bill.id),
+            "next_check": next_check.isoformat(),
+        }
 
     # =========================================================
     # TIMEOUT / RED
@@ -373,13 +439,20 @@ def sync_bill_events(self, bill_id):
     # 404 - CUFE NO ENCONTRADO EN BILLY
     # =========================================================
     except BillyNotFoundError:
-        next_check = _schedule_by_business_rule(bill)
+        errors = _register_polling_error(bill.id)
+        countdown = _get_not_found_countdown(errors)
+        next_check = _defer_without_retry(
+            bill.id,
+            countdown,
+            "not_found",
+        )
 
         logger.warning(
-            "Billy invoice not found "
-            "bill_id=%s cufe=%s next_check=%s",
+            "Billy invoice not found bill_id=%s cufe=%s "
+            "consecutive_errors=%s next_check=%s",
             bill_id,
             bill.cufe,
+            errors,
             next_check,
         )
 
@@ -388,6 +461,7 @@ def sync_bill_events(self, bill_id):
             "reason": "not_found",
             "bill_id": str(bill.id),
             "cufe": bill.cufe,
+            "consecutive_errors": errors,
             "next_check": next_check.isoformat(),
         }
 
@@ -462,6 +536,7 @@ def sync_bill_events(self, bill_id):
             bill.cufe,
             token,
         )
+        polling_state.release_queue_slot(bill_id, queue_token)
 
 
 @shared_task(
@@ -470,86 +545,113 @@ def sync_bill_events(self, bill_id):
 )
 def schedule_due_billy_bills():
     now = timezone.now()
+    batch_size = getattr(settings, "BILLY_SCHEDULER_BATCH_SIZE", 100)
 
-    batch_size = getattr(
-        settings,
-        "BILLY_SCHEDULER_BATCH_SIZE",
-        100,
+    # Beat mira el presupuesto antes de encolar. El BillyClient vuelve a
+    # validarlo atómicamente justo antes de cada request HTTP; esta doble capa
+    # evita tanto colas inútiles como superar el límite por concurrencia.
+    budget = BillyRateLimiter().get_budget()
+    if not budget.get("available"):
+        logger.warning(
+            "Billy scheduler paused scope=%s retry_after=%s",
+            budget.get("scope"),
+            budget.get("retry_after"),
+        )
+        return {
+            "ok": True,
+            "due_total": 0,
+            "scheduled": 0,
+            "batch_size": batch_size,
+            "reason": budget.get("scope"),
+            "retry_after": budget.get("retry_after", 0),
+        }
+
+    allowed_batch = min(
+        batch_size,
+        budget.get("minute_remaining", 0),
+        budget.get("hour_remaining", 0),
     )
 
-    # Prioridad del scheduler:
-    #   0. Watchlist activa.
-    #   1. Facturas que nunca han tenido un intento de polling.
-    #   2. Resto de facturas vencidas.
-    #
-    # onWatchlist tiene un máximo funcional de 50 facturas, por lo que
-    # incluso si todas están vencidas todavía queda capacidad dentro del
-    # batch por defecto (100) para facturas nuevas. Esto evita que una
-    # factura recién creada quede detrás de miles de facturas históricas
-    # cuyo nextCheck ya estaba vencido.
-    due_queryset = (
+    if allowed_batch <= 0:
+        return {
+            "ok": True,
+            "due_total": 0,
+            "scheduled": 0,
+            "batch_size": batch_size,
+            "reason": "budget_exhausted",
+        }
+
+    # Nueva elegibilidad: solo facturas con al menos una operation viva
+    # (status != 4). Watchlist se conserva como override explícito.
+    due_queryset = filter_eligible_for_billy_polling(
         Bill.objects.filter(
             cufe__isnull=False,
             billyEventsNextCheckAt__isnull=False,
             billyEventsNextCheckAt__lte=now,
-        )
-        .exclude(cufe="")
+        ).exclude(cufe="")
+    )
+
+    # Prioridades existentes intactas: Watchlist > nunca intentada > resto.
+    due_queryset = (
+        due_queryset
         .annotate(
             schedulerPriority=Case(
                 When(onWatchlist=True, then=Value(0)),
-                When(
-                    billyEventsLastAttemptAt__isnull=True,
-                    then=Value(1),
-                ),
+                When(billyEventsLastAttemptAt__isnull=True, then=Value(1)),
                 default=Value(2),
                 output_field=IntegerField(),
             )
         )
-        .order_by(
-            "schedulerPriority",
-            "billyEventsNextCheckAt",
-        )
+        .order_by("schedulerPriority", "billyEventsNextCheckAt")
     )
 
     due_total = due_queryset.count()
-
     candidate_ids = list(
-        due_queryset.values_list(
-            "id",
-            flat=True,
-        )[:batch_size]
+        due_queryset.values_list("id", flat=True)[:allowed_batch]
     )
 
     scheduled_ids = []
-
-    claim_until = now + timedelta(minutes=10)
+    claim_until = now + timedelta(minutes=30)
+    polling_state = BillyPollingState()
 
     for bill_id in candidate_ids:
+        # Deduplicación antes del claim: una misma factura no puede quedar
+        # varias veces pendiente en la cola Billy.
+        queue_token = polling_state.acquire_queue_slot(bill_id)
+        if not queue_token:
+            continue
+
         claimed = Bill.objects.filter(
             id=bill_id,
             billyEventsNextCheckAt__isnull=False,
             billyEventsNextCheckAt__lte=now,
-        ).update(
-            billyEventsNextCheckAt=claim_until,
-        )
+        ).update(billyEventsNextCheckAt=claim_until)
 
         if not claimed:
+            polling_state.release_queue_slot(bill_id, queue_token)
             continue
 
-        sync_bill_events.delay(
-            str(bill_id)
-        )
+        try:
+            sync_bill_events.delay(str(bill_id), queue_token)
+        except Exception:
+            polling_state.release_queue_slot(bill_id, queue_token)
+            Bill.objects.filter(id=bill_id).update(
+                billyEventsNextCheckAt=now + timedelta(minutes=1),
+            )
+            logger.exception("Could not enqueue Billy task bill_id=%s", bill_id)
+            continue
 
-        scheduled_ids.append(
-            bill_id
-        )
+        scheduled_ids.append(bill_id)
 
     logger.info(
-        "Billy scheduler completed "
-        "due_total=%s scheduled=%s batch_size=%s",
+        "Billy scheduler completed due_total=%s scheduled=%s "
+        "batch_size=%s allowed_batch=%s minute_remaining=%s hour_remaining=%s",
         due_total,
         len(scheduled_ids),
         batch_size,
+        allowed_batch,
+        budget.get("minute_remaining"),
+        budget.get("hour_remaining"),
     )
 
     return {
@@ -557,4 +659,8 @@ def schedule_due_billy_bills():
         "due_total": due_total,
         "scheduled": len(scheduled_ids),
         "batch_size": batch_size,
+        "allowed_batch": allowed_batch,
+        "minute_remaining": budget.get("minute_remaining"),
+        "hour_remaining": budget.get("hour_remaining"),
     }
+

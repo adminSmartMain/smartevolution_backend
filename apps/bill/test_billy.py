@@ -42,7 +42,20 @@ class FakeRateLimiter:
             "retry_after": self.retry_after,
             "count": self.count,
             "limit": self.limit,
+            "scope": "minute" if not self.allowed else "allowed",
         }
+
+    def block_global(self, retry_after, reason="429"):
+        self.blocked_for = int(retry_after)
+        self.block_reason = reason
+        return self.blocked_for
+
+    @staticmethod
+    def parse_retry_after(value, default=60):
+        try:
+            return max(int(value), 1)
+        except (TypeError, ValueError):
+            return default
 
 
 class FakeResponse:
@@ -266,7 +279,7 @@ class BillyClientTests(SimpleTestCase):
 
         self.assertEqual(
             ctx.exception.retry_after,
-            "60",
+            60,
         )
 
     def test_500_genera_billy_api_error(self):
@@ -517,17 +530,18 @@ class BillyUploadServiceTests(
 class BillySchedulerTests(
     SimpleTestCase
 ):
-    @patch(
-        "apps.bill.tasks."
-        "sync_bill_events.delay"
-    )
-    @patch(
-        "apps.bill.tasks.Bill"
-    )
+    @patch("apps.bill.tasks.filter_eligible_for_billy_polling")
+    @patch("apps.bill.tasks.BillyPollingState")
+    @patch("apps.bill.tasks.BillyRateLimiter")
+    @patch("apps.bill.tasks.sync_bill_events.delay")
+    @patch("apps.bill.tasks.Bill")
     def test_scheduler_reclama_antes_de_encolar(
         self,
         bill_model,
         delay,
+        limiter_class,
+        state_class,
+        eligible_filter,
     ):
         import apps.bill.tasks as tasks
 
@@ -535,6 +549,17 @@ class BillySchedulerTests(
         bill_id_2 = "bill-2"
 
         due_queryset = MagicMock()
+        due_queryset.annotate.return_value = due_queryset
+        eligible_filter.return_value = due_queryset
+        limiter_class.return_value.get_budget.return_value = {
+            "available": True,
+            "minute_remaining": 400,
+            "hour_remaining": 4000,
+        }
+        state_class.return_value.acquire_queue_slot.side_effect = [
+            "token-1",
+            "token-2",
+        ]
 
         bill_model.objects.filter.return_value = (
             due_queryset
@@ -594,22 +619,31 @@ class BillySchedulerTests(
             2,
         )
 
-    @patch(
-        "apps.bill.tasks."
-        "sync_bill_events.delay"
-    )
-    @patch(
-        "apps.bill.tasks.Bill"
-    )
+    @patch("apps.bill.tasks.filter_eligible_for_billy_polling")
+    @patch("apps.bill.tasks.BillyPollingState")
+    @patch("apps.bill.tasks.BillyRateLimiter")
+    @patch("apps.bill.tasks.sync_bill_events.delay")
+    @patch("apps.bill.tasks.Bill")
     def test_scheduler_no_encola_si_claim_falla(
         self,
         bill_model,
         delay,
+        limiter_class,
+        state_class,
+        eligible_filter,
     ):
         import apps.bill.tasks as tasks
 
         due_queryset = MagicMock()
+        due_queryset.annotate.return_value = due_queryset
         claimed_queryset = MagicMock()
+        eligible_filter.return_value = due_queryset
+        limiter_class.return_value.get_budget.return_value = {
+            "available": True,
+            "minute_remaining": 400,
+            "hour_remaining": 4000,
+        }
+        state_class.return_value.acquire_queue_slot.return_value = "token-1"
 
         bill_model.objects.filter.side_effect = [
             due_queryset,

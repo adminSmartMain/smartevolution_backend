@@ -24,7 +24,7 @@ from apps.bill.services.billy import (
     BillySyncService,
     BillyUploadService,
     apply_watchlist_exit_rule,
-    calculate_next_check,
+    calculate_bill_next_check,
 )
 from apps.bill.services.billy.exceptions import (
     BillyAPIError,
@@ -600,10 +600,9 @@ class BillSyncNowAV(BaseAV):
                     bill.typeBill_id,
                 )
 
-            next_check = calculate_next_check(
-                bill.typeBill_id,
+            next_check = calculate_bill_next_check(
+                bill,
                 now,
-                on_watchlist=bill.onWatchlist,
             )
 
             Bill.objects.filter(id=bill.id).update(
@@ -736,8 +735,8 @@ class BillWatchlistAV(BaseAV):
                     bill.watchlistActivatedBy = None
                     # Al salir de Watchlist vuelve a la cadencia normal
                     # determinada por el estado actual de la factura.
-                    bill.billyEventsNextCheckAt = calculate_next_check(
-                        bill.typeBill_id,
+                    bill.billyEventsNextCheckAt = calculate_bill_next_check(
+                        bill,
                         now,
                     )
 
