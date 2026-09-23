@@ -26,7 +26,7 @@ ALLOWED_HOSTS = [
     "apis.smartevolution.com.co",
     "localhost",
     "127.0.0.1",
-    "0.0.0.0", 
+    "0.0.0.0", "web"
 ]
 
 # number format
@@ -309,6 +309,29 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 
 CELERY_TIMEZONE = TIME_ZONE
+
+# Billy API guardrails. El proveedor permite 500/min y 5000/h; trabajamos
+# con 20% de margen para no operar en el borde del bloqueo.
+BILLY_RATE_LIMIT_PER_MINUTE = env.int(
+    "BILLY_RATE_LIMIT_PER_MINUTE",
+    default=400,
+)
+BILLY_RATE_LIMIT_PER_HOUR = env.int(
+    "BILLY_RATE_LIMIT_PER_HOUR",
+    default=4000,
+)
+BILLY_SCHEDULER_BATCH_SIZE = env.int(
+    "BILLY_SCHEDULER_BATCH_SIZE",
+    default=100,
+)
+BILLY_AUTH_GLOBAL_BLOCK_SECONDS = env.int(
+    "BILLY_AUTH_GLOBAL_BLOCK_SECONDS",
+    default=900,
+)
+BILLY_AUTH_RETRY_SECONDS = env.int(
+    "BILLY_AUTH_RETRY_SECONDS",
+    default=3600,
+)
 
 CELERY_BEAT_SCHEDULE = {
     "schedule-due-billy-bills": {

@@ -2,8 +2,10 @@ from django.contrib import admin
 from django.urls import path, include
 from apps.misc.api.views.test.index import TestAV
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from core.metrics import prometheus_metrics
 
 urlpatterns = [
+    path('metrics/', prometheus_metrics, name='prometheus-metrics'),
     path('admin/', admin.site.urls),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),

@@ -43,9 +43,11 @@ class BillyLocalRateLimitError(BillyError):
         retry_after=None,
         count=None,
         limit=None,
+        scope=None,
     ):
         super().__init__(message)
 
         self.retry_after = retry_after
         self.count = count
         self.limit = limit
+        self.scope = scope
