@@ -58,6 +58,26 @@ class FakeRateLimiter:
             return default
 
 
+class FakeMetrics:
+    def record_http_attempt(self, *args, **kwargs):
+        pass
+
+    def record_http_response(self, *args, **kwargs):
+        pass
+
+    def record_transport_error(self, *args, **kwargs):
+        pass
+
+    def record_local_rejection(self, *args, **kwargs):
+        pass
+
+    def record_global_block(self, *args, **kwargs):
+        pass
+
+    def record_duration(self, *args, **kwargs):
+        pass
+
+
 class FakeResponse:
     def __init__(
         self,
@@ -171,6 +191,7 @@ class BillyClientTests(SimpleTestCase):
                 rate_limiter
                 or FakeRateLimiter()
             ),
+            metrics=FakeMetrics(),
         )
 
     def test_get_invoice_usa_v3(self):

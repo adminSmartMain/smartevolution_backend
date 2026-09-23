@@ -579,7 +579,7 @@ class BillSyncNowAV(BaseAV):
         )
 
         try:
-            sync_result = BillySyncService().sync_bill(bill)
+            sync_result = BillySyncService(origin="web").sync_bill(bill)
             now = timezone.now()
 
             bill.refresh_from_db(

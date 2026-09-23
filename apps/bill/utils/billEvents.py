@@ -32,7 +32,7 @@ def billEvents(cufe, update=False):
             cufe,
         )
 
-        billy_client = BillyClient()
+        billy_client = BillyClient(origin="legacy_bill_events")
 
         
 
