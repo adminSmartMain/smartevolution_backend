@@ -17,7 +17,6 @@ from apps.bill.services.billy import (
     is_bill_eligible_for_billy_polling,
 )
 from apps.bill.services.billy.polling import apply_watchlist_exit_rule
-from apps.bill.services.billy.metrics import BillyMetricsRecorder
 from apps.bill.services.billy.exceptions import (
     BillyAPIError,
     BillyAuthenticationError,
@@ -73,7 +72,6 @@ def _get_not_found_countdown(consecutive_errors):
 
 def _defer_without_retry(bill_id, countdown, reason):
     """Reprograma sin llenar la cola de retries de Celery."""
-    BillyMetricsRecorder().record_deferral(reason)
     next_check = timezone.now() + timedelta(
         seconds=max(int(countdown or 1), 1) + 30
     )
@@ -183,7 +181,6 @@ def _retry_or_defer(
             "next_check": next_check.isoformat(),
         }
 
-    BillyMetricsRecorder().record_retry(type(exc).__name__)
     next_check = _reserve_polling_until_retry(
         bill.id,
         countdown,
@@ -306,7 +303,7 @@ def sync_bill_events(self, bill_id, queue_token=None):
     )
 
     try:
-        result = BillySyncService(origin="worker").sync_bill(bill)
+        result = BillySyncService().sync_bill(bill)
 
         now = timezone.now()
 
@@ -549,7 +546,6 @@ def sync_bill_events(self, bill_id, queue_token=None):
 def schedule_due_billy_bills():
     now = timezone.now()
     batch_size = getattr(settings, "BILLY_SCHEDULER_BATCH_SIZE", 100)
-    metrics = BillyMetricsRecorder()
 
     # Beat mira el presupuesto antes de encolar. El BillyClient vuelve a
     # validarlo atómicamente justo antes de cada request HTTP; esta doble capa
@@ -560,13 +556,6 @@ def schedule_due_billy_bills():
             "Billy scheduler paused scope=%s retry_after=%s",
             budget.get("scope"),
             budget.get("retry_after"),
-        )
-        metrics.record_scheduler(
-            due_total=0,
-            scheduled=0,
-            minute_remaining=0,
-            hour_remaining=0,
-            reason=budget.get("scope") or "blocked",
         )
         return {
             "ok": True,
@@ -584,13 +573,6 @@ def schedule_due_billy_bills():
     )
 
     if allowed_batch <= 0:
-        metrics.record_scheduler(
-            due_total=0,
-            scheduled=0,
-            minute_remaining=budget.get("minute_remaining", 0),
-            hour_remaining=budget.get("hour_remaining", 0),
-            reason="budget_exhausted",
-        )
         return {
             "ok": True,
             "due_total": 0,
@@ -629,7 +611,6 @@ def schedule_due_billy_bills():
     )
 
     scheduled_ids = []
-    deduplicated = 0
     claim_until = now + timedelta(minutes=30)
     polling_state = BillyPollingState()
 
@@ -638,7 +619,6 @@ def schedule_due_billy_bills():
         # varias veces pendiente en la cola Billy.
         queue_token = polling_state.acquire_queue_slot(bill_id)
         if not queue_token:
-            deduplicated += 1
             continue
 
         claimed = Bill.objects.filter(
@@ -662,15 +642,6 @@ def schedule_due_billy_bills():
             continue
 
         scheduled_ids.append(bill_id)
-
-    metrics.record_scheduler(
-        due_total=due_total,
-        scheduled=len(scheduled_ids),
-        minute_remaining=budget.get("minute_remaining", 0),
-        hour_remaining=budget.get("hour_remaining", 0),
-        reason="completed",
-        deduplicated=deduplicated,
-    )
 
     logger.info(
         "Billy scheduler completed due_total=%s scheduled=%s "

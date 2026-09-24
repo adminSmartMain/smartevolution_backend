@@ -37,7 +37,7 @@ class BillyUploadService:
                 "transport_error": False,
             }
 
-        client = BillyClient(token=token, origin="upload") if token else BillyClient(origin="upload")
+        client = BillyClient(token=token) if token else BillyClient()
 
         try:
             response = client.upload_invoice_by_cufe(cufe)
