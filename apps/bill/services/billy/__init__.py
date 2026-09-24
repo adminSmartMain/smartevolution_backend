@@ -16,7 +16,6 @@ from .polling import (
 )
 from .rate_limiter import BillyRateLimiter
 from .state import BillyPollingState
-from .metrics import BillyMetricsRecorder, BillyRedisCollector
 
 __all__ = (
     "BillyClient",
@@ -28,8 +27,6 @@ __all__ = (
     "BillyLock",
     "BillyRateLimiter",
     "BillyPollingState",
-    "BillyMetricsRecorder",
-    "BillyRedisCollector",
     "calculate_next_check",
     "calculate_bill_next_check",
     "apply_watchlist_exit_rule",

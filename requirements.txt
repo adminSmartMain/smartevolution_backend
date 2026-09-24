@@ -40,4 +40,3 @@ gevent
 drf-spectacular
 celery==5.6.3
 redis==7.4.1
-prometheus-client==0.21.1

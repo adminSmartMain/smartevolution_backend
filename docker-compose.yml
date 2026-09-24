@@ -76,25 +76,8 @@ services:
         condition: service_healthy
     networks:
       - smartevolutionbackend_smartevolution_network
-  prometheus:
-    image: prom/prometheus:v2.55.1
-    restart: unless-stopped
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --storage.tsdb.path=/prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-    depends_on:
-      - web
-    networks:
-      - smartevolutionbackend_smartevolution_network
-
 volumes:
   redis_data:
-  prometheus_data:
 
 networks:
   smartevolutionbackend_smartevolution_network:

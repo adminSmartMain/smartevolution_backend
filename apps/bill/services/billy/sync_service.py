@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 
 
 class BillySyncService:
-    def __init__(self, client=None, origin="unknown"):
-        self.client = client or BillyClient(origin=origin)
+    def __init__(self, client=None):
+        self.client = client or BillyClient()
 
     @transaction.atomic
     def sync_bill(self, bill):
