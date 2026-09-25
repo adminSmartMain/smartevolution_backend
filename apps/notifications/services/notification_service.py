@@ -41,9 +41,27 @@ class NotificationService:
                 notification
             )
         )
+        transaction.on_commit(
+            lambda: NotificationService._safe_schedule_email(
+                notification
+            )
+        )
 
         return notification
 
+
+
+    @staticmethod
+    def _safe_schedule_email(notification):
+        try:
+            from apps.notifications.tasks import send_notification_email
+
+            send_notification_email.delay(str(notification.id))
+        except Exception:
+            logger.exception(
+                "Failed to enqueue email for notification %s",
+                notification.id,
+            )
 
     @staticmethod
     def _safe_publish_created(notification):

@@ -338,6 +338,16 @@ CELERY_BEAT_SCHEDULE = {
         },
     },
 
+    "notify-expiring-bills-reconciliation": {
+        "task": "apps.notifications.tasks.notify_expiring_bills",
+        # Realtime creation/update is handled by a Bill post_save hook.
+        # This periodic scan is only a reconciliation safety net.
+        "schedule": 900.0,
+        "options": {
+            "queue": "notifications",
+        },
+    },
+
     "notify-expiring-operations-daily": {
         "task": "apps.notifications.tasks.notify_expiring_operations",
         "schedule": crontab(

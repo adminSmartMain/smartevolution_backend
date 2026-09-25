@@ -240,6 +240,9 @@ class NotificationRuleDetailView(APIView):
         if "enabled" in data:
             rule.enabled = bool(data["enabled"])
 
+        if "send_email" in data:
+            rule.send_email = bool(data["send_email"])
+
         if "include_entity_creator" in data:
             rule.include_entity_creator = bool(data["include_entity_creator"])
 
@@ -294,6 +297,7 @@ class NotificationRuleDetailView(APIView):
             details={
                 "event_type": rule.event_type,
                 "enabled": rule.enabled,
+                "send_email": rule.send_email,
                 "permission_code": rule.permission.code if rule.permission else None,
                 "include_entity_creator": rule.include_entity_creator,
                 "role_ids": list(rule.roles.values_list("id", flat=True)),

@@ -50,6 +50,7 @@ class NotificationRuleSerializer(serializers.ModelSerializer):
             "label",
             "description",
             "enabled",
+            "send_email",
             "permission_code",
             "include_entity_creator",
             "role_ids",

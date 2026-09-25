@@ -86,6 +86,11 @@ class NotificationRule(models.Model):
         default=True,
     )
 
+    send_email = models.BooleanField(
+        default=False,
+        help_text="También envía la notificación al correo del destinatario.",
+    )
+
     permission = models.ForeignKey(
         "authentication.Permission",
         null=True,

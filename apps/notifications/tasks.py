@@ -4,58 +4,24 @@ from datetime import date, datetime, timedelta
 from celery import shared_task
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.html import escape
 
 from apps.bill.models import Bill
+from apps.base.utils.sendEmail import sendEmail
 from apps.notifications.events import NotificationEvent
-from apps.notifications.models import Notification
+from apps.notifications.models import Notification, NotificationRule
 from apps.notifications.services.notification_service import NotificationService
+from apps.notifications.services.bill_expiration import (
+    BILL_EXPIRING_DAYS,
+    is_upcoming_expiration,
+    parse_expiration_date,
+    process_expiring_bill,
+)
 from apps.notifications.services.recipient_service import NotificationRecipientService
 from apps.operation.models import PreOperation
 
 
 logger = logging.getLogger(__name__)
-
-
-def parse_expiration_date(value):
-    """
-    Convierte los distintos formatos históricos de expirationDate a date.
-
-    Valores conocidos:
-    - 2026-10-01
-    - 2024-08-16 00:00:00
-    - 2024-03-21T00:00:00
-    - SIN_FECHA
-    """
-
-    if not value:
-        return None
-
-    value = str(value).strip()
-
-    if value.upper() == "SIN_FECHA":
-        return None
-
-    formats = (
-        "%Y-%m-%d",
-        "%Y-%m-%d %H:%M:%S",
-        "%Y-%m-%dT%H:%M:%S",
-    )
-
-    for date_format in formats:
-        try:
-            return datetime.strptime(
-                value,
-                date_format,
-            ).date()
-        except ValueError:
-            continue
-
-    logger.warning(
-        "Unsupported bill expiration date format: %s",
-        value,
-    )
-
-    return None
 
 
 def process_expired_bills(reference_date=None):
@@ -174,10 +140,146 @@ def process_expired_bills(reference_date=None):
     name="apps.notifications.tasks.notify_expired_bills",
 )
 def notify_expired_bills():
-    """
-    Tarea Celery ejecutada con la fecha real del sistema.
-    """
+    """Tarea diaria para facturas que vencen hoy."""
     return process_expired_bills()
+
+
+
+def process_expiring_bills(reference_date=None, days_before=BILL_EXPIRING_DAYS):
+    """Periodic reconciliation for BILL_EXPIRING.
+
+    Realtime creation/update is handled by the Bill post_save hook. This scan
+    remains as a safety net for bulk imports, direct database changes or events
+    missed while services were unavailable.
+    """
+    today = reference_date or timezone.now().date()
+    if isinstance(today, datetime):
+        today = today.date()
+    if not isinstance(today, date):
+        raise ValueError("reference_date must be a date or datetime instance")
+    if not isinstance(days_before, int) or days_before < 1:
+        raise ValueError("days_before must be a positive integer")
+
+    window_end = today + timedelta(days=days_before)
+
+    bills = (
+        Bill.objects
+        .filter(
+            Q(typeBill__description__in=["FV", "FV-TV"])
+            | Q(endorsed=True)
+        )
+        .exclude(expirationDate__isnull=True)
+        .exclude(expirationDate="")
+        .select_related("user_created_at", "typeBill")
+    )
+
+    notified = 0
+    already_notified = 0
+    skipped_invalid_date = 0
+    skipped_without_recipient = 0
+    bills_in_window = 0
+
+    for bill in bills.iterator():
+        expiration_date = parse_expiration_date(bill.expirationDate)
+        if expiration_date is None:
+            skipped_invalid_date += 1
+            continue
+
+        if not is_upcoming_expiration(expiration_date, today, days_before):
+            continue
+
+        bills_in_window += 1
+        result = process_expiring_bill(
+            bill,
+            reference_date=today,
+            days_before=days_before,
+        )
+        notified += result["notified"]
+        already_notified += result["already_notified"]
+        skipped_without_recipient += result["skipped_without_recipient"]
+
+    result = {
+        "reference_date": today.isoformat(),
+        "window_end": window_end.isoformat(),
+        "days_before": days_before,
+        "bills_in_window": bills_in_window,
+        "notified": notified,
+        "already_notified": already_notified,
+        "skipped_invalid_date": skipped_invalid_date,
+        "skipped_without_recipient": skipped_without_recipient,
+    }
+    logger.info("Expiring bill notifications reconciliation completed: %s", result)
+    return result
+
+
+@shared_task(
+    name="apps.notifications.tasks.notify_expiring_bills",
+    queue="notifications",
+)
+def notify_expiring_bills():
+    """Daily Celery task for bills expiring within seven days."""
+    return process_expiring_bills()
+
+
+@shared_task(
+    name="apps.notifications.tasks.send_notification_email",
+    queue="notifications",
+)
+def send_notification_email(notification_id):
+    """Send the email channel for one already-created notification when enabled."""
+    try:
+        notification = (
+            Notification.objects
+            .select_related("recipient")
+            .get(id=notification_id)
+        )
+    except Notification.DoesNotExist:
+        logger.warning("Notification %s no longer exists; email skipped", notification_id)
+        return {"sent": False, "reason": "notification_not_found"}
+
+    rule = (
+        NotificationRule.objects
+        .filter(event_type=notification.event_type)
+        .only("enabled", "send_email")
+        .first()
+    )
+
+    if rule is None or not rule.enabled or not rule.send_email:
+        return {"sent": False, "reason": "email_disabled"}
+
+    recipient_email = (getattr(notification.recipient, "email", "") or "").strip()
+    if not recipient_email:
+        logger.warning(
+            "Notification %s recipient has no email; email skipped",
+            notification.id,
+        )
+        return {"sent": False, "reason": "recipient_without_email"}
+
+    html_message = (
+        f"<p>{escape(notification.message)}</p>"
+        f"<p><strong>Referencia:</strong> {escape(notification.entity_label)}</p>"
+    )
+
+    try:
+        delivered = sendEmail(
+            subject=f"Smart Evolution - {notification.title}",
+            message=f"{notification.message}\n\nReferencia: {notification.entity_label}",
+            email=recipient_email,
+            html_message=html_message,
+        )
+    except Exception:
+        logger.exception(
+            "Email delivery failed for notification %s recipient=%s",
+            notification.id,
+            recipient_email,
+        )
+        return {"sent": False, "reason": "delivery_error"}
+
+    return {
+        "sent": bool(delivered),
+        "recipient": recipient_email,
+        "notification_id": str(notification.id),
+    }
 
 OPERATION_EXPIRING_DAYS = 7
 

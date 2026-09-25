@@ -12,7 +12,7 @@ class NotificationAdmin(admin.ModelAdmin):
 
 @admin.register(NotificationRule)
 class NotificationRuleAdmin(admin.ModelAdmin):
-    list_display = ("event_type", "enabled", "permission", "include_entity_creator", "updated_at")
+    list_display = ("event_type", "enabled", "send_email", "permission", "include_entity_creator", "updated_at")
     list_filter = ("enabled", "include_entity_creator")
     search_fields = ("event_type", "label")
     filter_horizontal = ("roles", "include_users", "exclude_users")
