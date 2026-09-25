@@ -23,5 +23,5 @@ jobs:
             git reset --hard
             git pull origin main
             echo "${{ secrets.DOT_ENV_PROD }}" > core/.env
-            sudo docker compose --env-file docker.env up --build -d
+            sudo env BILLY_AWS_REGION=us-east-1 BILLY_LOG_GROUP=/smartevolution/prod/billy docker compose --env-file docker.env up --build -d
             exit
