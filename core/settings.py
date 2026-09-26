@@ -2,7 +2,7 @@ from pathlib import Path
 from datetime import timedelta
 import environ
 import os
-
+from celery.schedules import crontab
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -54,15 +54,18 @@ LOCAL_APPS = ['apps.base',
             'apps.bill', 
             'apps.report', 
             'apps.operation',
-            'apps.administration', ]
+            'apps.administration',
+            'apps.notifications', ]
 
 THIRD_PARTY_APPS = ['rest_framework',
                      'drf_spectacular',
+                     
                     'rest_framework.authtoken',
                     'corsheaders',
                     'gunicorn',
                     
-                    'import_export'
+                    'import_export',
+                    'channels',
                     ]
 
 INSTALLED_APPS = BASE_APPS + LOCAL_APPS + THIRD_PARTY_APPS
@@ -267,11 +270,16 @@ if DEBUG:
     ]
 # SMTP settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = env("EMAIL_HOST")
-EMAIL_PORT = env("EMAIL_PORT")
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = env("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = f'{env("EMAIL_HOST_PASSWORD")}'
+EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = env.int('EMAIL_PORT', default=587)
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
+EMAIL_TIMEOUT = env.int('EMAIL_TIMEOUT', default=20)
+
+# Frontend URL used in password reset / account emails.
+FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3000').rstrip('/')
 
 
 # Custom User Model
@@ -339,6 +347,55 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": 60.0,
         "options": {
             "queue": "billy",
+        },
+    },
+
+    "notify-expired-bills-daily": {
+        "task": "apps.notifications.tasks.notify_expired_bills",
+        "schedule": crontab(
+            hour=0,
+            minute=5,
+        ),
+        "options": {
+            "queue": "notifications",
+        },
+    },
+
+    "notify-expiring-bills-reconciliation": {
+        "task": "apps.notifications.tasks.notify_expiring_bills",
+        # Realtime creation/update is handled by a Bill post_save hook.
+        # This periodic scan is only a reconciliation safety net.
+        "schedule": 900.0,
+        "options": {
+            "queue": "notifications",
+        },
+    },
+
+    "notify-expiring-operations-daily": {
+        "task": "apps.notifications.tasks.notify_expiring_operations",
+        "schedule": crontab(
+            hour=0,
+            minute=10,
+        ),
+        "options": {
+            "queue": "notifications",
+        },
+    },
+}
+
+
+ASGI_APPLICATION = "core.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [
+                env(
+                    "CHANNEL_REDIS_URL",
+                    default="redis://redis:6379/2",
+                )
+            ],
         },
     },
 }
