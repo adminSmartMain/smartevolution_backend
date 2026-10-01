@@ -1,9 +1,10 @@
 # REST Framework imports
 from rest_framework.decorators import APIView
-from django.db.models import Q, Count, Avg, Sum
+from django.db.models import Q, Count, Avg, Sum, Max
 from rest_framework import serializers
 # Models
 from apps.client.models import Client, RiskProfile, Account, Broker
+from apps.client.api.models.client.index import ClientRoleAssignment
 from apps.operation.models import PreOperation, Receipt, BuyOrder
 from apps.bill.models import Bill
 from apps.misc.models import TypeBill
@@ -87,7 +88,8 @@ class DashboardAV(BaseAV):
             # 📦 Estructura de salida
             # ==========================
             data = {
-                **current_data, 
+                **current_data,
+                'clientes': self._get_client_analytics(),
                 'tendencias': trends,
                 'ultima_actualizacion': ultima_actualizacion
             }
@@ -105,6 +107,119 @@ class DashboardAV(BaseAV):
                 'success': False,
                 'error': 'Error al obtener datos del dashboard'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def _get_client_analytics(self):
+        """
+        Métricas generales de clientes.
+
+        Estas métricas son deliberadamente históricas/actuales y no dependen
+        del filtro de período del dashboard:
+        - distribución actual de clientes por rol;
+        - top emisores por valor nominal de facturas;
+        - top inversionistas por capital invertido.
+        """
+        active_clients = Client.objects.filter(state=True)
+        total_clients = active_clients.count()
+
+        role_rows = list(
+            ClientRoleAssignment.objects.filter(
+                state=True,
+                client__state=True,
+                role__state=1,
+            )
+            .values('role__name')
+            .annotate(count=Count('client_id', distinct=True))
+            .order_by('-count', 'role__name')
+        )
+
+        total_role_assignments = sum(row['count'] for row in role_rows)
+        roles = [
+            {
+                'role': row['role__name'],
+                'count': row['count'],
+                'percentage': round(
+                    (row['count'] / total_role_assignments) * 100, 2
+                ) if total_role_assignments else 0,
+            }
+            for row in role_rows
+        ]
+
+        top_emitters_qs = list(
+            Bill.objects.filter(state=True)
+            .exclude(emitterId='')
+            .values('emitterId')
+            .annotate(
+                emitterName=Max('emitterName'),
+                invoice_count=Count('id'),
+                invoice_value=Sum('billValue'),
+            )
+            .order_by('-invoice_value', '-invoice_count')[:5]
+        )
+
+        emitter_documents = [
+            str(row['emitterId']).strip()
+            for row in top_emitters_qs
+            if row.get('emitterId')
+        ]
+        client_ids_by_document = {
+            str(row['document_number']).strip(): row['id']
+            for row in active_clients.filter(document_number__in=emitter_documents)
+            .values('id', 'document_number')
+        }
+
+        top_emitters = [
+            {
+                'client_id': client_ids_by_document.get(str(row['emitterId']).strip()),
+                'document_number': row['emitterId'],
+                'name': row['emitterName'] or row['emitterId'] or 'Sin nombre',
+                'invoice_count': row['invoice_count'],
+                'invoice_value': round(float(row['invoice_value'] or 0), 2),
+            }
+            for row in top_emitters_qs
+        ]
+
+        top_investors_qs = list(
+            PreOperation.objects.filter(state=True, investor__state=True)
+            .values(
+                'investor_id',
+                'investor__document_number',
+                'investor__social_reason',
+                'investor__first_name',
+                'investor__last_name',
+            )
+            .annotate(
+                operations=Count('id'),
+                invested_value=Sum('presentValueInvestor'),
+            )
+            .order_by('-invested_value', '-operations')[:5]
+        )
+
+        top_investors = []
+        for row in top_investors_qs:
+            social_reason = (row.get('investor__social_reason') or '').strip()
+            full_name = ' '.join(
+                part.strip()
+                for part in [
+                    row.get('investor__first_name') or '',
+                    row.get('investor__last_name') or '',
+                ]
+                if part and part.strip()
+            )
+            top_investors.append({
+                'client_id': row['investor_id'],
+                'document_number': row['investor__document_number'],
+                'name': social_reason or full_name or row['investor__document_number'] or 'Sin nombre',
+                'operations': row['operations'],
+                'invested_value': round(float(row['invested_value'] or 0), 2),
+            })
+
+        return {
+            'total': total_clients,
+            'total_role_assignments': total_role_assignments,
+            'por_rol': roles,
+            'top_emitters': top_emitters,
+            'top_investors': top_investors,
+        }
 
     def _get_ultima_actualizacion(self, filters):
         """
@@ -157,7 +272,9 @@ class DashboardAV(BaseAV):
         # 🔄 NUEVAS MÉTRICAS AGREGADAS
         # ==========================
         plazo_recaudo_promedio = self._get_plazo_recaudo_promedio(filters)
-        valor_total_portafolio = self._get_valor_total_portafolio(saldo_disponible)
+        # Valor real pendiente del portafolio.
+        # Antes este KPI incluía un valor fijo de prueba de $5.000.000.
+        valor_total_portafolio = metrics['monto_pendiente'] or 0
         
         # ==========================
         # 📈 Volumen de negocio
@@ -413,22 +530,6 @@ class DashboardAV(BaseAV):
         except Exception as e:
             logger.error(f"Error calculando plazo recaudo promedio: {str(e)}")
             return 0
-
-    def _get_valor_total_portafolio(self, saldo_disponible):
-        """
-        Calcula el valor total del portafolio
-        Por ahora: saldo_disponible + valor ficticio
-        """
-        try:
-            # Valor ficticio para pruebas - puedes ajustar este cálculo
-            valor_ficticio = 5000000  # 5 millones adicionales para pruebas
-            
-            valor_total = saldo_disponible + valor_ficticio
-            return float(valor_total)
-            
-        except Exception as e:
-            logger.error(f"Error calculando valor total del portafolio: {str(e)}")
-            return saldo_disponible
 
     def _get_volumen_negocio(self, queryset, periodo):
         """
