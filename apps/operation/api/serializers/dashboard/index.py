@@ -18,7 +18,7 @@ class TendenciaSerializer(serializers.Serializer):
 class ClienteRolSerializer(serializers.Serializer):
     role = serializers.CharField()
     count = serializers.IntegerField()
-    percentage = serializers.FloatField()
+    percentage_of_clients = serializers.FloatField()
 
 
 class TopEmitterSerializer(serializers.Serializer):

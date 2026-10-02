@@ -137,9 +137,13 @@ class DashboardAV(BaseAV):
             {
                 'role': row['role__name'],
                 'count': row['count'],
-                'percentage': round(
-                    (row['count'] / total_role_assignments) * 100, 2
-                ) if total_role_assignments else 0,
+                # Los roles no son mutuamente excluyentes: cada porcentaje
+                # representa qué proporción del total de clientes activos
+                # tiene asignado este rol. Por eso los porcentajes de todos
+                # los roles no tienen que sumar 100%.
+                'percentage_of_clients': round(
+                    (row['count'] / total_clients) * 100, 2
+                ) if total_clients else 0,
             }
             for row in role_rows
         ]
