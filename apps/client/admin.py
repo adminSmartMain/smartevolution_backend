@@ -1,4 +1,10 @@
-from django.contrib import admin
+import logging
+
+from django.contrib import admin, messages
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import redirect
+from django.template.response import TemplateResponse
+from django.urls import path, reverse
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 from .api.models.index import (
@@ -183,6 +189,73 @@ class ClientAdmin(ImportExportModelAdmin):
     search_fields = ('type_client', 'first_name', 'last_name', 'social_reason', 'email', 'phone_number',)
     list_filter = ('type_client', 'first_name', 'last_name', 'social_reason', 'email', 'phone_number',)
     list_per_page = LIST_PER_PAGE
+    change_list_template = 'admin/client/client/change_list.html'
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                'sync-roles-from-operations/',
+                self.admin_site.admin_view(self.sync_roles_from_operations_view),
+                name='client_client_sync_roles',
+            ),
+        ]
+        return custom_urls + urls
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        if request.user.is_superuser:
+            extra_context['sync_roles_url'] = reverse('admin:client_client_sync_roles')
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def sync_roles_from_operations_view(self, request):
+        if not request.user.is_superuser:
+            raise PermissionDenied('Solo un superusuario puede sincronizar roles de clientes.')
+
+        from apps.client.services.role_assignment import (
+            RoleSyncError,
+            apply_role_sync,
+            build_role_sync_plan,
+        )
+
+        try:
+            plan = build_role_sync_plan()
+        except RoleSyncError as exc:
+            self.message_user(request, str(exc), level=messages.ERROR)
+            return redirect('admin:client_client_changelist')
+
+        if request.method == 'POST' and request.POST.get('action') == 'apply':
+            result = apply_role_sync(plan, user=request.user)
+            logging.getLogger(__name__).info(
+                'Sincronización de roles desde Django Admin ejecutada por user_id=%s email=%s: %s',
+                request.user.pk,
+                getattr(request.user, 'email', ''),
+                result,
+            )
+            self.message_user(
+                request,
+                (
+                    f"Sincronización completada. "
+                    f"{result['created']} asignaciones creadas, "
+                    f"{result['reactivated']} reactivadas y "
+                    f"{result['already_active']} ya existían."
+                ),
+                level=messages.SUCCESS,
+            )
+            return redirect('admin:client_client_changelist')
+
+        context = {
+            **self.admin_site.each_context(request),
+            'opts': self.model._meta,
+            'title': 'Sincronizar roles desde operaciones',
+            'plan': plan,
+            'changelist_url': reverse('admin:client_client_changelist'),
+        }
+        return TemplateResponse(
+            request,
+            'admin/client/client/sync_roles_confirmation.html',
+            context,
+        )
 
 @admin.register(Contact)
 class ContactAdmin(ImportExportModelAdmin):
