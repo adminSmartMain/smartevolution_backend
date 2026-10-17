@@ -54,10 +54,20 @@ class PlatformPermission(BasePermission):
     def has_permission(self, request, view):
         if request.path.startswith(PUBLIC_PREFIXES): return True
         if not request.user or not request.user.is_authenticated: return False
-        # A client identity belongs to a different application realm. This rule
-        # is intentionally evaluated before superuser/role permissions.
+        # Superusers are always internal platform identities. A stale or
+        # accidental ClientAccess relation must not downgrade them to the
+        # client-portal realm.
+        if request.user.is_superuser:
+            return True
+
+        # Non-superuser client identities belong to a separate application
+        # realm and must never inherit internal platform permissions.
         if hasattr(request.user, 'client_access'):
-            return bool(getattr(settings,'CLIENT_PORTAL_ENABLED',False) and request.path.startswith('/api/client-portal/'))
+            return bool(
+                getattr(settings, 'CLIENT_PORTAL_ENABLED', False)
+                and request.path.startswith('/api/client-portal/')
+            )
+
         required = required_permission_for_request(request)
         return True if required is None else user_has_permission(request.user, required)
 
@@ -77,14 +87,29 @@ def get_access_profile(user):
         )
     client_id, client_roles, account_scope, client_access_status = None, [], 'INTERNAL', None
     access = getattr(user, 'client_access', None)
+
+    # Superusers always belong to the INTERNAL realm. We still expose the
+    # related client id/status as metadata when one exists, but it must not
+    # change routing or strip internal permissions.
     if access:
-        account_scope, client_access_status = 'CLIENT_PORTAL', access.status
         client_id = access.client_id
+        client_access_status = access.status
+
+    if access and not user.is_superuser:
+        account_scope = 'CLIENT_PORTAL'
         if access.state:
-            client_roles = list(access.client.role_assignments.filter(state=True, role__state=True).values_list('role__code', flat=True))
-        # Never expose internal permissions to a client identity, even if a
-        # role was assigned by mistake.
-        permissions = {p for p in permissions if p.startswith('client_portal.')} if getattr(settings,'CLIENT_PORTAL_ENABLED',False) else set()
+            client_roles = list(
+                access.client.role_assignments
+                .filter(state=True, role__state=True)
+                .values_list('role__code', flat=True)
+            )
+        # Never expose internal permissions to a non-superuser client identity,
+        # even if an internal role was assigned by mistake.
+        permissions = (
+            {p for p in permissions if p.startswith('client_portal.')}
+            if getattr(settings, 'CLIENT_PORTAL_ENABLED', False)
+            else set()
+        )
     return {'roles': sorted(set(filter(None, roles + legacy_roles))), 'permissions': sorted(permissions), 'client': client_id, 'client_roles': client_roles, 'account_scope': account_scope, 'client_access_status': client_access_status, 'client_portal_enabled': bool(getattr(settings,'CLIENT_PORTAL_ENABLED',False)), 'profile_photo': getattr(user, 'profile_photo', None)}
 
 

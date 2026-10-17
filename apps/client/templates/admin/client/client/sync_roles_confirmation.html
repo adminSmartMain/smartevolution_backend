@@ -1,0 +1,68 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Inicio</a>
+  &rsaquo; <a href="{{ changelist_url }}">Clientes</a>
+  &rsaquo; Sincronizar roles
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <h1>Sincronizar roles desde operaciones</h1>
+
+  <p style="max-width: 900px; margin-bottom: 24px;">
+    Esta herramienta analiza todo el historial de <strong>operation</strong> y agrega los roles
+    que falten: Emisor, Pagador e Inversionista. Un cliente puede tener varios roles.
+    No elimina asignaciones existentes.
+  </p>
+
+  <fieldset class="module aligned" style="max-width: 900px; margin-bottom: 24px;">
+    <h2>Vista previa</h2>
+    <div style="padding: 16px 20px;">
+      <table style="width: 100%; max-width: 720px;">
+        <tbody>
+          <tr><th style="text-align:left; padding:8px;">Clientes activos</th><td style="padding:8px;">{{ plan.total_active_clients }}</td></tr>
+          <tr><th style="text-align:left; padding:8px;">Clientes con al menos un rol activo</th><td style="padding:8px;">{{ plan.clients_with_active_role }}</td></tr>
+          <tr><th style="text-align:left; padding:8px;">Clientes sin rol activo</th><td style="padding:8px;">{{ plan.clients_without_active_role }}</td></tr>
+          <tr><th style="text-align:left; padding:8px;">Clientes detectados en operaciones</th><td style="padding:8px;">{{ plan.selected_client_ids|length }}</td></tr>
+          <tr><th style="text-align:left; padding:8px;">Asignaciones nuevas o por reactivar</th><td style="padding:8px;"><strong>{{ plan.new_assignments }}</strong></td></tr>
+          <tr><th style="text-align:left; padding:8px;">Asignaciones correctas ya existentes</th><td style="padding:8px;">{{ plan.already_active }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </fieldset>
+
+  <fieldset class="module aligned" style="max-width: 900px; margin-bottom: 24px;">
+    <h2>Asignaciones pendientes por rol</h2>
+    <div style="padding: 16px 20px;">
+      <table style="width:100%; max-width:720px;">
+        <thead>
+          <tr><th style="text-align:left; padding:8px;">Rol</th><th style="text-align:right; padding:8px;">Por crear / reactivar</th></tr>
+        </thead>
+        <tbody>
+          {% for role, count in plan.role_new_counts.items %}
+            <tr><td style="padding:8px;">{{ role }}</td><td style="text-align:right; padding:8px;"><strong>{{ count }}</strong></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </fieldset>
+
+  <div class="messagelist" style="max-width: 900px; margin-bottom: 24px;">
+    <div class="warning" style="padding: 12px 16px;">
+      Confirma únicamente después de revisar la vista previa. La operación solo agrega o reactiva
+      roles inferidos desde el historial; no elimina roles existentes.
+    </div>
+  </div>
+
+  <form method="post" style="display:flex; gap:12px; align-items:center;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="apply">
+    <input type="submit" value="Aplicar sincronización" class="default">
+    <a href="{{ changelist_url }}" class="button cancel-link">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

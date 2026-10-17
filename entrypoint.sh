@@ -19,4 +19,4 @@ python manage.py migrate
 
 
 echo "Starting Django server with Gunicorn..."
-exec gunicorn -c gunicorn.conf.py core.wsgi:application
+exec daphne -b 0.0.0.0 -p 8000 core.asgi:application

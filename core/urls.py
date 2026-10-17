@@ -16,4 +16,8 @@ urlpatterns = [
     path('api/', include('apps.report.api.routes.index'), name='report'),
     path('api/', include('apps.administration.api.routes.index'), name='administration'),
     #path('api/migrate', TestAV.as_view(), name='migration'),
+    path(
+    "api/notifications/",
+    include("apps.notifications.urls"),
+),
 ]

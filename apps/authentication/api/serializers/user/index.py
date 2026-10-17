@@ -4,6 +4,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from django.template.loader import render_to_string
+from django.db import transaction
 # Rest Framework
 from rest_framework import serializers
 # Models
@@ -50,55 +51,75 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def save(self):
-        password = generatePassword(12)
-        code     = generatePassword(12) 
-        
-        if User.objects.filter(email=self.validated_data['email']).exists():
+        email = self.validated_data['email'].strip().lower()
+
+        if User.objects.filter(email__iexact=email).exists():
             raise HttpException(400, 'El correo ya se encuentra registrado')
-        
-        description = ""
-        if 'description' in self.validated_data:
-            description = self.validated_data['description'] if 'description' in self.validated_data else self.context['request'].data['social_reason']
 
-        # validate if password is not registered yet
-        validateCode = False
-        while validateCode:
-            if User.objects.filter(code=code).exists():
-                code = generatePassword(12)
-            else:
-                validateCode = True
+        temporary_password = generatePassword(12)
+        code = generatePassword(12)
+        while User.objects.filter(code=code).exists():
+            code = generatePassword(12)
 
-        account = User(id=gen_uuid(),email=self.validated_data['email'],first_name=self.validated_data['first_name'],
-                        last_name=self.validated_data['last_name'], description=description,phone_number=self.validated_data['phone_number'],
-                        profile_photo=self.validated_data.get('profile_photo'),
-                        code=code)
-        account.set_password(code)
-        account.save()
-        user = User.objects.get(id=account.id)
+        description = self.validated_data.get('description', '')
+        role_id = self.validated_data['role']
+
+        # User + role are one database operation. SMTP delivery is deliberately
+        # outside the transaction: an email outage must not delete a valid user.
         try:
-            role = UserRole.objects.create(id=gen_uuid(),user_id=user.id, role_id=self.validated_data['role'])
-            role.save()
-            if self.validated_data['role'] == '5da6b88d-c248-4840-815a-bed2dce6af50' or self.validated_data['role'] == '2f4aadaa-df75-408b-9d07-111c7ab4a042':
-                 # Renderizar el mensaje HTML
-                html_message = render_to_string('success_register.html', {
-                    'user': user,
-                    'password':code,
-                })
-            
-                sendEmail(
-                    
-                    subject='Credencial de acceso', 
-                    message=f'Hola {user.first_name if user.first_name else user.description}, te damos la bienvenida a smart evolution',
-                    email=user.email,
-                    html_message=html_message
-                    )
-            #sendWhatsApp(f'Hola {user.first_name if user.first_name else user.description}, te damos la bienvenida a smart evolution  '
-            #            + f'este es tu codigo de acceso - {code}', user.phone_number)
-            return user
-        except Exception as e:
-            if user:
-                user.delete()
-            raise HttpException(500, str(e))
+            with transaction.atomic():
+                account = User(
+                    id=gen_uuid(),
+                    email=email,
+                    first_name=self.validated_data['first_name'],
+                    last_name=self.validated_data['last_name'],
+                    description=description,
+                    phone_number=self.validated_data.get('phone_number'),
+                    profile_photo=self.validated_data.get('profile_photo'),
+                    code=code,
+                    is_active=True,
+                )
+                account.set_password(temporary_password)
+                account.save()
+
+                UserRole.objects.create(
+                    id=gen_uuid(),
+                    user_id=account.id,
+                    role_id=role_id,
+                )
+        except Exception as exc:
+            if isinstance(exc, HttpException):
+                raise
+            raise HttpException(500, str(exc))
+
+        # Every user created from Administration receives credentials. Do not
+        # couple persistence to SMTP: the account remains valid if delivery fails.
+        try:
+            html_message = render_to_string('success_register.html', {
+                'user': account,
+                'password': temporary_password,
+            })
+            delivered = sendEmail(
+                subject='Credencial de acceso',
+                message=(
+                    f'Hola {account.first_name or account.description}, '
+                    'te damos la bienvenida a Smart Evolution.'
+                ),
+                email=account.email,
+                html_message=html_message,
+            )
+            if delivered != 1:
+                logger.warning(
+                    'SMTP no confirmó el correo de bienvenida para el usuario %s',
+                    account.pk,
+                )
+        except Exception:
+            logger.exception(
+                'Usuario %s creado correctamente, pero falló el correo de bienvenida.',
+                account.pk,
+            )
+
+        return account
 
 
 class UserReadOnlySerializer(serializers.ModelSerializer):
