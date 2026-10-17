@@ -5,8 +5,11 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
+from django.utils import timezone
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
+from apps.base.utils.index import gen_uuid
+from .api.models.client.index import ClientRole
 from .api.models.index import (
     Broker,
     Client,
@@ -47,6 +50,11 @@ class BrokerResource(resources.ModelResource):
 class ClientResource(resources.ModelResource):
     class Meta:
         model = Client
+        import_id_fields = ('id',)
+
+class ClientRoleResource(resources.ModelResource):
+    class Meta:
+        model = ClientRole
         import_id_fields = ('id',)
 
 class ContactResource(resources.ModelResource):
@@ -256,6 +264,27 @@ class ClientAdmin(ImportExportModelAdmin):
             'admin/client/client/sync_roles_confirmation.html',
             context,
         )
+
+@admin.register(ClientRole)
+class ClientRoleAdmin(ImportExportModelAdmin):
+    resource_class = ClientRoleResource
+    list_display = ('code', 'name', 'description', 'state', 'created_at', 'updated_at')
+    search_fields = ('=code', 'name', 'description')
+    list_filter = ('state',)
+    readonly_fields = ('created_at', 'updated_at', 'user_created_at', 'user_updated_at')
+    list_per_page = LIST_PER_PAGE
+
+    def save_model(self, request, obj, form, change):
+        if not obj.id:
+            obj.id = gen_uuid()
+
+        if change:
+            obj.updated_at = timezone.now()
+            obj.user_updated_at = request.user
+        else:
+            obj.user_created_at = request.user
+
+        super().save_model(request, obj, form, change)
 
 @admin.register(Contact)
 class ContactAdmin(ImportExportModelAdmin):
