@@ -136,7 +136,7 @@ class NegotiationSummaryReadOnlySerializer(serializers.ModelSerializer):
         data['emitterDeposits']  = EmitterDepositSerializer(EmitterDeposit.objects.filter(operation__opId=instance.opId), many=True).data
         
         data['totalDeposits'] = sum(
-            (deposit.settledAmount if deposit.settledAmount is not None else deposit.amount
+            (as_decimal(deposit.settledAmount if deposit.settledAmount is not None else deposit.amount)
              for deposit in EmitterDeposit.objects.filter(operation__opId=instance.opId, state=True)),
             Decimal('0'),
         )
