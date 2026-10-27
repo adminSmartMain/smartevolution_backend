@@ -7,6 +7,7 @@ from apps.administration.api.serializers.index import EmitterDepositSerializer, 
 from apps.base.utils.index import response, BaseAV
 # Decorators
 from apps.base.decorators.index import checkRole
+from django.db import transaction
 
 
 class EmitterDepositAV(BaseAV):
@@ -54,6 +55,7 @@ class EmitterDepositAV(BaseAV):
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
     
     @checkRole(['admin'])
+    @transaction.atomic
     def post(self, request):
         try:
             serializer = EmitterDepositSerializer(data=request.data, context={'request': request})
@@ -65,6 +67,7 @@ class EmitterDepositAV(BaseAV):
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
 
     @checkRole(['admin'])
+    @transaction.atomic
     def patch(self, request, pk):
         try:
             emitterDeposit = EmitterDeposit.objects.get(pk=pk)
@@ -79,6 +82,7 @@ class EmitterDepositAV(BaseAV):
             return response({'error': True, 'message': str(e)}, e.status_code if hasattr(e, 'status_code') else 500)
 
     @checkRole(['admin'])
+    @transaction.atomic
     def delete(self, request, pk):
         try:
             emitterDeposit = EmitterDeposit.objects.get(pk=pk)
@@ -90,6 +94,8 @@ class EmitterDepositAV(BaseAV):
             # set the state to false
             emitterDeposit.state = False # esto no elimina, solo pasa a 0
             emitterDeposit.save()
+            if emitterDeposit.operation:
+                EmitterDepositSerializer._sync_summary_balance(emitterDeposit.operation.opId)
             return response({'error': False, 'message': 'giro eliminado'}, 200)
         except EmitterDeposit.DoesNotExist:
             return response({'error': True, 'message': 'giro no encontrado'}, 500)

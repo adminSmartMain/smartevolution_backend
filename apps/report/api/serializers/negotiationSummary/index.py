@@ -88,7 +88,8 @@ class NegotiationSummarySerializer(serializers.ModelSerializer):
             (as_decimal(item.get('amount')) for item in pending_accounts), Decimal('0')
         )
         total_deposits = sum(
-            (as_decimal(deposit.amount) for deposit in EmitterDeposit.objects.filter(operation__opId=op_id, state=1)),
+            (as_decimal(deposit.settledAmount if deposit.settledAmount is not None else deposit.amount)
+             for deposit in EmitterDeposit.objects.filter(operation__opId=op_id, state=1)),
             Decimal('0'),
         )
         settlement['totalDiscounts'] = round_cop(total_discounts)
@@ -120,8 +121,16 @@ class NegotiationSummaryReadOnlySerializer(serializers.ModelSerializer):
      
         data['emitterDeposits']  = EmitterDepositSerializer(EmitterDeposit.objects.filter(operation__opId=instance.opId), many=True).data
         
-        data['totalDeposits']    = sum([x['amount'] for x in data['emitterDeposits']]) if len(data['emitterDeposits']) > 0 else data['totalDeposits']
-        data['pendingToDeposit'] = data['total'] - data['totalDeposits']  
+        data['totalDeposits'] = sum(
+            (deposit.settledAmount if deposit.settledAmount is not None else deposit.amount
+             for deposit in EmitterDeposit.objects.filter(operation__opId=instance.opId, state=True)),
+            Decimal('0'),
+        )
+        data['pendingToDeposit'] = (
+            instance.settledPendingToDeposit
+            if instance.settledPendingToDeposit is not None
+            else data['total'] - data['totalDeposits']
+        )
         # get the account control of the emitter deposits
         #for x in data['emitterDeposits']:
             # get the account control of the emitter deposit
