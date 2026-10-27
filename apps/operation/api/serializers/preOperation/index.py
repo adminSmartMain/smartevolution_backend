@@ -21,6 +21,7 @@ import datetime
 from apps.base.exceptions import HttpException
 #utils
 from apps.base.utils.logBalanceAccount import log_balance_change
+from apps.operation.utils.penny_allocation import settle_operations
 import logging
 import uuid
 
@@ -118,7 +119,11 @@ class PreOperationSerializer(serializers.ModelSerializer):
                 validated_data['opPendingAmount'] = validated_data['payedAmount']
             
             instance = super().create(validated_data)
-       
+            # Settlement is backend-owned and is repeated for the operation so
+            # a later row can absorb the penny delta deterministically.
+            settle_operations(
+                PreOperation.objects.select_for_update().filter(opId=instance.opId).order_by('id')
+            )
             return instance
 
         except Exception as e:

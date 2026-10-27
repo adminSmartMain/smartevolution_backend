@@ -31,7 +31,26 @@ class NegotiationSummary(BaseModel):
     totalDeposits  = models.FloatField(default=0)
     total     = models.FloatField(default=0)
     pendingToDeposit = models.FloatField(default=0)
+    manualAdjustment = models.DecimalField(max_digits=18, decimal_places=0, default=0)
     observations     = models.TextField(blank=True)
+    # Immutable COP settlement used by legal documents.  Legacy float columns
+    # remain only to avoid modifying historic records.
+    settledFutureValue = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledValueToDiscount = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledSMDiscount = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledInvestorValue = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledInvestorDiscount = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledCommissionValueBeforeTaxes = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledOperationValue = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledTableCommission = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledIva = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledRetIva = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledRetIca = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledRetFte = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledBillValue = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledTotalDiscounts = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledTotal = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledPendingToDeposit = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
 
 
     class Meta:
