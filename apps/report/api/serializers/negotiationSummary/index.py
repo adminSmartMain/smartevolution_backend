@@ -54,6 +54,10 @@ class NegotiationSummarySerializer(serializers.ModelSerializer):
         return NegotiationSummary.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
+        if instance.settledTotal is not None:
+            raise serializers.ValidationError({
+                'opId': 'La liquidación confirmada es inmutable; cree una nueva versión para modificarla.'
+            })
         self._apply_settlement(validated_data, fallback_op_id=instance.opId)
         validated_data['user_updated_at'] = self.context['request'].user
         validated_data['updated_at']      = timezone.now()
@@ -112,6 +116,19 @@ class NegotiationSummarySerializer(serializers.ModelSerializer):
                 'manualAdjustment': 'El ajuste manual supera el saldo autorizado para desembolsar.'
             })
         validated_data['manualAdjustment'] = manual_adjustment
+        validated_data['settlementVersion'] = 1
+        validated_data['roundingPolicy'] = 'LARGEST_NOMINAL_HALF_UP_V1'
+        validated_data['settlementDimensions'] = {
+            'by_bill': {},
+            'by_investor': {},
+        }
+        for operation in operations:
+            for group, key in (('by_bill', str(operation.bill_id)), ('by_investor', str(operation.investor_id))):
+                bucket = validated_data['settlementDimensions'][group].setdefault(
+                    key, {'settledPresentValueInvestor': 0, 'settledPayedAmount': 0}
+                )
+                bucket['settledPresentValueInvestor'] += int(operation.settledPresentValueInvestor)
+                bucket['settledPayedAmount'] += int(operation.settledPayedAmount)
         settlement['pendingToDeposit'] = round_cop(settlement['total'] - total_deposits - manual_adjustment)
         for field, value in settlement.items():
             # The legacy fields remain integer-valued for compatibility with

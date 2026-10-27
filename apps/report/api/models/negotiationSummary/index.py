@@ -51,6 +51,9 @@ class NegotiationSummary(BaseModel):
     settledTotalDiscounts = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
     settledTotal = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
     settledPendingToDeposit = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settlementVersion = models.PositiveIntegerField(default=1)
+    roundingPolicy = models.CharField(max_length=64, default='LARGEST_NOMINAL_HALF_UP_V1')
+    settlementDimensions = models.JSONField(null=True, blank=True)
 
 
     class Meta:
