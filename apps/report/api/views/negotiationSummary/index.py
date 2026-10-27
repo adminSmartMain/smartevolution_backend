@@ -474,7 +474,7 @@ class NegotiationSummaryAV(BaseAV):
                         'beneficiary': x.beneficiary,
                         'bankAccount':f'{x.bank.description} - {x.accountNumber}',
                         'date': x.date,
-                        'amount': x.amount,
+                        'amount': x.settledAmount if x.settledAmount is not None else x.amount,
                         'state':x.state,# este es el que permite tener los depositos que corresponden
                     })
 
