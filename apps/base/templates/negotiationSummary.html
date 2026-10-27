@@ -228,15 +228,15 @@
                         <tbody>
                             <tr>
                                 <td style="height: 20px;">Descuento Pronto Pago para Inversionistas</td>
-                                <td style="text-align: right;">{{negotiationSummary.investorDiscount|floatformat|intcomma}}</td>
+                                <td style="text-align: right;">{{negotiationSummary.investorDiscount|intcomma}}</td>
                             </tr>
                             <tr>
                                 <td style="height: 20px;">Valor Comisión Mesa Antes de Impuestos</td>
-                                <td style="text-align: right;">{{negotiationSummary.commissionValueBeforeTaxes|floatformat|intcomma}}</td>
+                                <td style="text-align: right;">{{negotiationSummary.commissionValueBeforeTaxes|intcomma}}</td>
                             </tr>
                             <tr style="font-weight: bold;">
                                 <td style="height: 20px;">Costo Operación (Descuento Pronto Pago + Comisión)</td>
-                                <td style="text-align: right;">{{negotiationSummary.operationValue|floatformat|intcomma}}</td>
+                                <td style="text-align: right;">{{negotiationSummary.operationValue|intcomma}}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -253,28 +253,28 @@
                         <tbody>
                             <tr style="height: 20px;">
                                 <td colspan="2">Comisión Mesa</td>
-                                <td style="text-align: right;">{{negotiationSummary.tableCommission|floatformat|intcomma}}</td>
+                                <td style="text-align: right;">{{negotiationSummary.tableCommission|intcomma}}</td>
                             </tr>
                             <tr style="height: 20px;">
                                 <td colspan="2">IVA</td>
-                                <td style="text-align: right;">{{negotiationSummary.iva|floatformat|intcomma}}</td>
+                                <td style="text-align: right;">{{negotiationSummary.iva|intcomma}}</td>
                             </tr>
                             <tr style="height: 20px;">
                                 <td colspan="2">Retención IVA</td>
-                                <td style="text-align: right;">{{negotiationSummary.retIva|floatformat|intcomma}}</td>
+                                <td style="text-align: right;">{{negotiationSummary.retIva|intcomma}}</td>
                             </tr>
                             <tr style="height: 20px;">
                                 <td colspan="2">Retención en la fuente</td>
-                                <td style="text-align: right;">{{negotiationSummary.retFte|floatformat|intcomma}}</td>
+                                <td style="text-align: right;">{{negotiationSummary.retFte|intcomma}}</td>
                             </tr>
                             <tr style="height: 20px;">
                                 <td colspan="2">ICA</td>
-                                <td style="text-align: right;">{{negotiationSummary.retIca|floatformat|intcomma}}</td>
+                                <td style="text-align: right;">{{negotiationSummary.retIca|intcomma}}</td>
                             </tr>
                             <tr style="height: 20px; font-weight: bold;">
                                 <td>Valor Factura</td>
                                 <td style="text-align: center;">{{negotiationSummary.billId}} </td> 
-                                <td style="text-align: right;">{{negotiationSummary.billValue|floatformat|intcomma}}</td>
+                                <td style="text-align: right;">{{negotiationSummary.billValue|intcomma}}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -338,11 +338,11 @@
                         <tbody>
                             <tr style="font-weight: bold;">
                                 <td style="height: 20px;">Total Descuentos</td>
-                                <td style="text-align: right;">{{negotiationSummary.totalDiscounts|floatformat|intcomma}}</td>
+                                <td style="text-align: right;">{{negotiationSummary.totalDiscounts|intcomma}}</td>
                             </tr>
                             <tr style="font-weight: bold; background-color: #e7e7e7;">
                                 <td style="height: 20px;">TOTAL A DESEMBOLSAR</td>
-                                <td style="text-align: right;">{{negotiationSummary.total|floatformat|intcomma}}</td>
+                                <td style="text-align: right;">{{negotiationSummary.total|intcomma}}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -416,11 +416,11 @@
                         <tbody>
                             <tr style="font-weight: bold;">
                                 <td style="height: 20px;">Total Consignaciones</td>
-                                <td style="text-align: right;">{{negotiationSummary.totalDeposits|floatformat|intcomma}}</td>
+                                <td style="text-align: right;">{{negotiationSummary.totalDeposits|intcomma}}</td>
                             </tr>
                             <tr style="font-weight: bold; background-color: #e7e7e7;">
                                 <td style="height: 20px;">PENDIENTE POR DESEMBOLSAR</td>
-                                <td>{{negotiationSummary.pendingToDeposit|floatformat|intcomma}}</td>
+                                <td>{{negotiationSummary.pendingToDeposit|intcomma}}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -596,9 +596,9 @@
                                 <td style="text-align: center;font-size: 8px;">{{x.Desc}}</td>
                                 <td style="text-align: center;font-size: 8px;">{{x.TasaDesc}}</td>
                                 <td style="text-align: center;font-size: 8px;">{{x.daysOP}}</td>
-                                <td style="text-align: center; width: 10%;font-size: 8px;">{{x.VRBuy|floatformat|intcomma}}</td>
-                                <td style="text-align: center; width: 10%;font-size: 8px;">{{x.VRFuture|floatformat|intcomma}}</td>
-                                <td style="text-align: center; width: 10%;font-size: 8px;">{{x.totalGM|floatformat|intcomma}}</td>
+                                <td style="text-align: center; width: 10%;font-size: 8px;">{{x.VRBuy|intcomma}}</td>
+                                <td style="text-align: center; width: 10%;font-size: 8px;">{{x.VRFuture|intcomma}}</td>
+                                <td style="text-align: center; width: 10%;font-size: 8px;">{{x.totalGM|intcomma}}</td>
                             </tr>
                             {% endfor %}
                         </table>

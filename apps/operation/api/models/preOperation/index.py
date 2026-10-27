@@ -35,6 +35,15 @@ class PreOperation(BaseModel):
     investorProfit       = models.FloatField(default=0, error_messages={'required': 'El beneficio del inversionista es requerido'})
     commissionSF         = models.FloatField(default=0, error_messages={'required': 'La comisión del SF es requerido'})
     GM                   = models.FloatField(default=0, error_messages={'required': 'La GM es requerido'})
+    # Integer COP values settled by the backend.  They are nullable exclusively
+    # to preserve historic operations, which are explicitly out of scope.
+    settledAmount                 = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledPayedAmount            = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledPresentValueInvestor   = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledPresentValueSF         = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledInvestorProfit         = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledCommissionSF           = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    settledGM                     = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
     status               = models.IntegerField(default=0,)
     isRebuy              = models.BooleanField(default=False, blank=True, null=True)
     insufficientAccountBalance = models.BooleanField(default=False, blank=True, null=True)
