@@ -68,9 +68,9 @@ class OperationIntegrationAV(GenericAPIView):
                 'emitterPhoneNumber': operation[0].emitter.phone_number,
                 'emitterBroker': operation[0].emitter.broker.first_name + ' ' + operation[0].emitter.broker.last_name if operation[0].emitter.broker.first_name else operation[0].emitter.broker.social_reason,
                 'bills' : 0,
-                'sell' : 0,
-                'nominal': 0,
-                'future'    : 0,
+                'sell': negotiationSummary.settledInvestorValue if negotiationSummary.settledInvestorValue is not None else negotiationSummary.investorValue,
+                'nominal': negotiationSummary.settledValueToDiscount if negotiationSummary.settledValueToDiscount is not None else negotiationSummary.valueToDiscount,
+                'future': negotiationSummary.settledFutureValue if negotiationSummary.settledFutureValue is not None else negotiationSummary.futureValue,
                 'billsList' : [],
                 'legalRepresentative': legalRepresentative[0].first_name + ' ' + legalRepresentative[0].last_name if legalRepresentative[0].first_name else legalRepresentative[0].social_reason,
                 'legalRepresentativeDocumentNumber': legalRepresentative[0].document_number,
@@ -85,25 +85,25 @@ class OperationIntegrationAV(GenericAPIView):
                 'emitterId': negotiationSummary.emitterId,
                 'payer': negotiationSummary.payer,
                 'payerId': negotiationSummary.payerId,
-                'futureValue': round(negotiationSummary.futureValue),
+                'futureValue': negotiationSummary.settledFutureValue if negotiationSummary.settledFutureValue is not None else negotiationSummary.futureValue,
                 'payedPercent': negotiationSummary.payedPercent,
-                'valueToDiscount': round(negotiationSummary.valueToDiscount),
+                'valueToDiscount': negotiationSummary.settledValueToDiscount if negotiationSummary.settledValueToDiscount is not None else negotiationSummary.valueToDiscount,
                 'discountTax': negotiationSummary.discountTax,
                 'discountedDays': negotiationSummary.discountedDays,
-                'SMDiscount': round(negotiationSummary.SMDiscount),
-                'investorValue': round(negotiationSummary.investorValue),
-                'investorDiscount': round(negotiationSummary.investorDiscount),
-                'commissionValueBeforeTaxes': round(negotiationSummary.commissionValueBeforeTaxes),
-                'operationValue': round(negotiationSummary.operationValue),
-                'tableCommission': round(negotiationSummary.tableCommission),
-                'iva': round(negotiationSummary.iva),
-                'retIva': round(negotiationSummary.retIva),
-                'retIca': round(negotiationSummary.retIca),
-                'retFte': round(negotiationSummary.retFte),
-                'billValue': round(negotiationSummary.billValue),
-                'totalDiscounts': round(negotiationSummary.totalDiscounts),
-                'total' : round(negotiationSummary.total),
-                'pendingToDeposit': round(negotiationSummary.pendingToDeposit),
+                'SMDiscount': negotiationSummary.settledSMDiscount if negotiationSummary.settledSMDiscount is not None else negotiationSummary.SMDiscount,
+                'investorValue': negotiationSummary.settledInvestorValue if negotiationSummary.settledInvestorValue is not None else negotiationSummary.investorValue,
+                'investorDiscount': negotiationSummary.settledInvestorDiscount if negotiationSummary.settledInvestorDiscount is not None else negotiationSummary.investorDiscount,
+                'commissionValueBeforeTaxes': negotiationSummary.settledCommissionValueBeforeTaxes if negotiationSummary.settledCommissionValueBeforeTaxes is not None else negotiationSummary.commissionValueBeforeTaxes,
+                'operationValue': negotiationSummary.settledOperationValue if negotiationSummary.settledOperationValue is not None else negotiationSummary.operationValue,
+                'tableCommission': negotiationSummary.settledTableCommission if negotiationSummary.settledTableCommission is not None else negotiationSummary.tableCommission,
+                'iva': negotiationSummary.settledIva if negotiationSummary.settledIva is not None else negotiationSummary.iva,
+                'retIva': negotiationSummary.settledRetIva if negotiationSummary.settledRetIva is not None else negotiationSummary.retIva,
+                'retIca': negotiationSummary.settledRetIca if negotiationSummary.settledRetIca is not None else negotiationSummary.retIca,
+                'retFte': negotiationSummary.settledRetFte if negotiationSummary.settledRetFte is not None else negotiationSummary.retFte,
+                'billValue': negotiationSummary.settledBillValue if negotiationSummary.settledBillValue is not None else negotiationSummary.billValue,
+                'totalDiscounts': negotiationSummary.settledTotalDiscounts if negotiationSummary.settledTotalDiscounts is not None else negotiationSummary.totalDiscounts,
+                'total': negotiationSummary.settledTotal if negotiationSummary.settledTotal is not None else negotiationSummary.total,
+                'pendingToDeposit': negotiationSummary.settledPendingToDeposit if negotiationSummary.settledPendingToDeposit is not None else negotiationSummary.pendingToDeposit,
                 'observations': negotiationSummary.observations if negotiationSummary.observations else 'SIN OBSERVACIONES',
             },
             'emitterDeposits': [],
@@ -111,9 +111,6 @@ class OperationIntegrationAV(GenericAPIView):
             }
             for x in serializer.data:
                 data['sellReport']['bills']  += 1
-                data['sellReport']['sell']  += x['presentValueInvestor']
-                data['sellReport']['nominal'] += x['payedAmount']
-                data['sellReport']['future']     += x['amount']
                 data['sellReport']['billsList'].append({
                     'id': x['bill']['id'],
                     'dateOP': x['opDate'],
@@ -125,9 +122,9 @@ class OperationIntegrationAV(GenericAPIView):
                     'payer': x['bill']['payerName'],
                     'invTax': x['investorTax'],
                     'daysOP': x['operationDays'],
-                    'VRBuy': x['presentValueInvestor'],
-                    'VRFuture': x['payedAmount'],
-                    'totalGM': x['amount']
+                    'VRBuy': x['settledPresentValueInvestor'] if x['settledPresentValueInvestor'] is not None else x['presentValueInvestor'],
+                    'VRFuture': x['settledPayedAmount'] if x['settledPayedAmount'] is not None else x['payedAmount'],
+                    'totalGM': x['settledGM'] if x['settledGM'] is not None else x['GM']
                 })        
             for x in emitterDeposits:
                 data['emitterDeposits'].append({
