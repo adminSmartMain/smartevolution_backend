@@ -44,6 +44,9 @@ class PreOperation(BaseModel):
     settledInvestorProfit         = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
     settledCommissionSF           = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
     settledGM                     = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
+    # Exact, initially rounded and final values are stored as decimal strings
+    # so the settlement can be audited without binary float conversion.
+    settlementAudit               = models.JSONField(null=True, blank=True)
     status               = models.IntegerField(default=0,)
     isRebuy              = models.BooleanField(default=False, blank=True, null=True)
     insufficientAccountBalance = models.BooleanField(default=False, blank=True, null=True)

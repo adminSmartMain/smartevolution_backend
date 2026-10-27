@@ -94,15 +94,24 @@ def settle_operations(operations):
     raw_by_operation = [calculate_operation_values(operation) for operation in operations]
     nominals = [values["payedAmount"] for values in raw_by_operation]
     for money_field in MONEY_FIELDS:
+        raw_values = [values[money_field] for values in raw_by_operation]
         allocated = allocate_pennies(
-            [values[money_field] for values in raw_by_operation], nominals
+            raw_values, nominals
         )
         settled_field = SETTLED_FIELD[money_field]
-        for operation, value in zip(operations, allocated):
+        for operation, raw_value, value in zip(operations, raw_values, allocated):
             setattr(operation, settled_field, value)
+            audit = operation.settlementAudit or {}
+            audit[money_field] = {
+                'exact_amount': str(raw_value),
+                'rounded_amount': str(round_cop(raw_value)),
+                'rounding_adjustment': str(value - round_cop(raw_value)),
+                'settled_amount': str(value),
+            }
+            operation.settlementAudit = audit
 
     for operation in operations:
-        operation.save(update_fields=list(SETTLED_FIELD.values()) + ["updated_at"])
+        operation.save(update_fields=list(SETTLED_FIELD.values()) + ["settlementAudit", "updated_at"])
     return operations
 
 
