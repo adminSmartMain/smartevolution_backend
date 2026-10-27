@@ -6,6 +6,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from apps.bill.models import Bill
+from apps.authentication.models import User
 from apps.client.models import Account, Broker, Client, RiskProfile
 from apps.misc.models import TypeBill, TypeOperation
 from apps.operation.models import PreOperation
@@ -33,6 +34,12 @@ def model_values(model, row, *, keep_id=True):
     for field in model._meta.fields:
         if field.get_internal_type() == 'BooleanField' and values.get(field.attname) is not None:
             values[field.attname] = str(values[field.attname]).lower() in {'1', 'true'}
+    # Audit actors are not part of the financial relationship graph. Preserve
+    # them when available locally, but do not let a historic missing user make
+    # an otherwise valid test fixture impossible to import.
+    for name in ('user_created_at_id', 'user_updated_at_id', 'user_id', 'watchlistActivatedBy_id'):
+        if values.get(name) and not User.objects.filter(pk=values[name]).exists():
+            values[name] = None
     return values
 
 
