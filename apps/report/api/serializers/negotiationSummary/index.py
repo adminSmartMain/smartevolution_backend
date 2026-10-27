@@ -143,7 +143,7 @@ class NegotiationSummaryReadOnlySerializer(serializers.ModelSerializer):
         data['pendingToDeposit'] = (
             instance.settledPendingToDeposit
             if instance.settledPendingToDeposit is not None
-            else data['total'] - data['totalDeposits']
+            else as_decimal(data['total']) - data['totalDeposits']
         )
         # get the account control of the emitter deposits
         #for x in data['emitterDeposits']:
