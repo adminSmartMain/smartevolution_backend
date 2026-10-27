@@ -58,10 +58,12 @@ class NegotiationSummarySerializer(serializers.ModelSerializer):
         validated_data['user_updated_at'] = self.context['request'].user
         validated_data['updated_at']      = timezone.now()
         if 'pendingAccounts' in self.context['request'].data:
-            pendingAccount = PendingAccount.objects.filter(opId=validated_data['opId']).delete()
+            pendingAccount = PendingAccount.objects.filter(
+                opId=validated_data.get('opId', instance.opId)
+            ).delete()
             for x in self.context['request'].data['pendingAccounts']:
                 # add op id to the pending account
-                x['opId'] = validated_data['opId']
+                x['opId'] = validated_data.get('opId', instance.opId)
                 serializer = PendingAccountSerializer(data=x, context={'request': self.context['request']})
                 if serializer.is_valid():
                     serializer.save()
@@ -81,6 +83,14 @@ class NegotiationSummarySerializer(serializers.ModelSerializer):
         if not operations:
             raise serializers.ValidationError({'opId': 'La operación no tiene detalles para liquidar.'})
 
+        # The locked operation rows serialize concurrent confirmations.  Once
+        # the first transaction creates its summary, a repeated confirmation
+        # observes it here and cannot apply a second settlement.
+        if self.instance is None and NegotiationSummary.objects.filter(opId=op_id).exists():
+            raise serializers.ValidationError({
+                'opId': 'La operación ya cuenta con una liquidación confirmada.'
+            })
+
         settle_operations(operations)
         settlement = build_summary_settlement(operations, validated_data)
         pending_accounts = self.context['request'].data.get('pendingAccounts', [])
@@ -97,6 +107,10 @@ class NegotiationSummarySerializer(serializers.ModelSerializer):
             settlement['valueToDiscount'] - settlement['investorDiscount'] - settlement['billValue'] - settlement['totalDiscounts']
         )
         manual_adjustment = round_cop(validated_data.get('manualAdjustment', 0))
+        if manual_adjustment > settlement['total'] - total_deposits:
+            raise serializers.ValidationError({
+                'manualAdjustment': 'El ajuste manual supera el saldo autorizado para desembolsar.'
+            })
         validated_data['manualAdjustment'] = manual_adjustment
         settlement['pendingToDeposit'] = round_cop(settlement['total'] - total_deposits - manual_adjustment)
         for field, value in settlement.items():
