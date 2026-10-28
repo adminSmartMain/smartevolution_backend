@@ -54,14 +54,20 @@ class NegotiationSummarySerializer(serializers.ModelSerializer):
         return NegotiationSummary.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
+        if instance.settledTotal is not None:
+            raise serializers.ValidationError({
+                'opId': 'La liquidación confirmada es inmutable; cree una nueva versión para modificarla.'
+            })
         self._apply_settlement(validated_data, fallback_op_id=instance.opId)
         validated_data['user_updated_at'] = self.context['request'].user
         validated_data['updated_at']      = timezone.now()
         if 'pendingAccounts' in self.context['request'].data:
-            pendingAccount = PendingAccount.objects.filter(opId=validated_data['opId']).delete()
+            pendingAccount = PendingAccount.objects.filter(
+                opId=validated_data.get('opId', instance.opId)
+            ).delete()
             for x in self.context['request'].data['pendingAccounts']:
                 # add op id to the pending account
-                x['opId'] = validated_data['opId']
+                x['opId'] = validated_data.get('opId', instance.opId)
                 serializer = PendingAccountSerializer(data=x, context={'request': self.context['request']})
                 if serializer.is_valid():
                     serializer.save()
@@ -81,6 +87,14 @@ class NegotiationSummarySerializer(serializers.ModelSerializer):
         if not operations:
             raise serializers.ValidationError({'opId': 'La operación no tiene detalles para liquidar.'})
 
+        # The locked operation rows serialize concurrent confirmations.  Once
+        # the first transaction creates its summary, a repeated confirmation
+        # observes it here and cannot apply a second settlement.
+        if self.instance is None and NegotiationSummary.objects.filter(opId=op_id).exists():
+            raise serializers.ValidationError({
+                'opId': 'La operación ya cuenta con una liquidación confirmada.'
+            })
+
         settle_operations(operations)
         settlement = build_summary_settlement(operations, validated_data)
         pending_accounts = self.context['request'].data.get('pendingAccounts', [])
@@ -88,7 +102,8 @@ class NegotiationSummarySerializer(serializers.ModelSerializer):
             (as_decimal(item.get('amount')) for item in pending_accounts), Decimal('0')
         )
         total_deposits = sum(
-            (as_decimal(deposit.amount) for deposit in EmitterDeposit.objects.filter(operation__opId=op_id, state=1)),
+            (as_decimal(deposit.settledAmount if deposit.settledAmount is not None else deposit.amount)
+             for deposit in EmitterDeposit.objects.filter(operation__opId=op_id, state=1)),
             Decimal('0'),
         )
         settlement['totalDiscounts'] = round_cop(total_discounts)
@@ -96,7 +111,24 @@ class NegotiationSummarySerializer(serializers.ModelSerializer):
             settlement['valueToDiscount'] - settlement['investorDiscount'] - settlement['billValue'] - settlement['totalDiscounts']
         )
         manual_adjustment = round_cop(validated_data.get('manualAdjustment', 0))
+        if manual_adjustment > settlement['total'] - total_deposits:
+            raise serializers.ValidationError({
+                'manualAdjustment': 'El ajuste manual supera el saldo autorizado para desembolsar.'
+            })
         validated_data['manualAdjustment'] = manual_adjustment
+        validated_data['settlementVersion'] = 1
+        validated_data['roundingPolicy'] = 'LARGEST_NOMINAL_HALF_UP_V1'
+        validated_data['settlementDimensions'] = {
+            'by_bill': {},
+            'by_investor': {},
+        }
+        for operation in operations:
+            for group, key in (('by_bill', str(operation.bill_id)), ('by_investor', str(operation.investor_id))):
+                bucket = validated_data['settlementDimensions'][group].setdefault(
+                    key, {'settledPresentValueInvestor': 0, 'settledPayedAmount': 0}
+                )
+                bucket['settledPresentValueInvestor'] += int(operation.settledPresentValueInvestor)
+                bucket['settledPayedAmount'] += int(operation.settledPayedAmount)
         settlement['pendingToDeposit'] = round_cop(settlement['total'] - total_deposits - manual_adjustment)
         for field, value in settlement.items():
             # The legacy fields remain integer-valued for compatibility with
@@ -120,8 +152,16 @@ class NegotiationSummaryReadOnlySerializer(serializers.ModelSerializer):
      
         data['emitterDeposits']  = EmitterDepositSerializer(EmitterDeposit.objects.filter(operation__opId=instance.opId), many=True).data
         
-        data['totalDeposits']    = sum([x['amount'] for x in data['emitterDeposits']]) if len(data['emitterDeposits']) > 0 else data['totalDeposits']
-        data['pendingToDeposit'] = data['total'] - data['totalDeposits']  
+        data['totalDeposits'] = sum(
+            (as_decimal(deposit.settledAmount if deposit.settledAmount is not None else deposit.amount)
+             for deposit in EmitterDeposit.objects.filter(operation__opId=instance.opId, state=True)),
+            Decimal('0'),
+        )
+        data['pendingToDeposit'] = (
+            instance.settledPendingToDeposit
+            if instance.settledPendingToDeposit is not None
+            else as_decimal(data['total']) - data['totalDeposits']
+        )
         # get the account control of the emitter deposits
         #for x in data['emitterDeposits']:
             # get the account control of the emitter deposit

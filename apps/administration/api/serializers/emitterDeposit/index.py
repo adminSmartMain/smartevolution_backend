@@ -11,12 +11,50 @@ from django.utils import timezone
 from apps.base.utils.index import gen_uuid
 # Exceptions
 from apps.base.exceptions import HttpException
+from apps.operation.utils.penny_allocation import as_decimal, round_cop
+from apps.report.models import NegotiationSummary
 
 
 class EmitterDepositSerializer(serializers.ModelSerializer):
     class Meta:
         model  = EmitterDeposit
         fields = "__all__"
+
+    def validate_amount(self, value):
+        amount = as_decimal(value)
+        if amount != round_cop(amount):
+            raise serializers.ValidationError('El desembolso COP debe ser un valor entero, sin centavos.')
+        if amount <= 0:
+            raise serializers.ValidationError('El desembolso debe ser mayor que cero.')
+        # Keep the legacy float column integer-valued while consumers migrate to
+        # settledAmount, which is the authoritative decimal representation.
+        return float(amount)
+
+    def validate(self, attrs):
+        operation = attrs.get('operation', getattr(self.instance, 'operation', None))
+        amount = attrs.get('amount', getattr(self.instance, 'amount', None))
+        if not operation or amount is None:
+            return attrs
+
+        summary = NegotiationSummary.objects.filter(opId=operation.opId).first()
+        if not summary:
+            return attrs
+
+        deposits = EmitterDeposit.objects.filter(operation__opId=operation.opId, state=True)
+        if self.instance:
+            deposits = deposits.exclude(pk=self.instance.pk)
+        already_assigned = sum(
+            (as_decimal(deposit.settledAmount if deposit.settledAmount is not None else deposit.amount) for deposit in deposits),
+            as_decimal(0),
+        )
+        total_to_disburse = as_decimal(
+            summary.settledTotal if summary.settledTotal is not None else summary.total
+        ) - as_decimal(getattr(summary, 'manualAdjustment', 0))
+        if already_assigned + as_decimal(amount) > total_to_disburse:
+            raise serializers.ValidationError({
+                'amount': 'El desembolso supera el saldo disponible de la operación.'
+            })
+        return attrs
     
     def create(self, validated_data):
         # validate amount of the deposit is lesser than the amount of the operation
@@ -26,6 +64,7 @@ class EmitterDepositSerializer(serializers.ModelSerializer):
         validated_data['id'] = gen_uuid()
         validated_data['created_at'] = timezone.now()
         validated_data['user_created_at'] = self.context['request'].user
+        validated_data['settledAmount'] = round_cop(validated_data['amount'])
 
         # get the last deposit id
         try:
@@ -39,6 +78,8 @@ class EmitterDepositSerializer(serializers.ModelSerializer):
 
         # create the deposit
         EmitterDeposit.objects.create(**validated_data)
+        if validated_data.get('operation'):
+            self._sync_summary_balance(validated_data['operation'].opId)
         # Create the accounting control for the deposit
         
         if self.context['request'].data['account'] != None:  
@@ -59,6 +100,8 @@ class EmitterDepositSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.updated_at      = timezone.now()
         instance.user_updated_at = self.context['request'].user
+        if 'amount' in validated_data:
+            validated_data['settledAmount'] = round_cop(validated_data['amount'])
         # update the accounting control for the deposit
         if self.context['request'].data['account'] != None:
             try:
@@ -86,7 +129,28 @@ class EmitterDepositSerializer(serializers.ModelSerializer):
                 serializer.save()
             else:
                 raise HttpException(400, serializer.errors)
-        return super().update(instance, validated_data)
+        updated = super().update(instance, validated_data)
+        if updated.operation:
+            self._sync_summary_balance(updated.operation.opId)
+        return updated
+
+    @staticmethod
+    def _sync_summary_balance(op_id):
+        summary = NegotiationSummary.objects.filter(opId=op_id).first()
+        if not summary:
+            return
+        total_deposits = sum(
+            (as_decimal(deposit.settledAmount if deposit.settledAmount is not None else deposit.amount)
+             for deposit in EmitterDeposit.objects.filter(operation__opId=op_id, state=True)),
+            as_decimal(0),
+        )
+        total = as_decimal(summary.settledTotal if summary.settledTotal is not None else summary.total)
+        adjustment = as_decimal(getattr(summary, 'manualAdjustment', 0))
+        pending = round_cop(total - total_deposits - adjustment)
+        summary.totalDeposits = int(total_deposits)
+        summary.pendingToDeposit = int(pending)
+        summary.settledPendingToDeposit = pending
+        summary.save(update_fields=['totalDeposits', 'pendingToDeposit', 'settledPendingToDeposit', 'updated_at'])
 
 
 

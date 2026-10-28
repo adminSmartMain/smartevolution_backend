@@ -460,7 +460,7 @@ class BuyOrderWebhookAV(BaseAV):
                             'beneficiary': x.beneficiary,
                             'bankAccount':f'{x.bank.description} - {x.accountNumber}',
                             'date': x.date,
-                            'amount': x.amount,
+                            'amount': x.settledAmount if x.settledAmount is not None else x.amount,
                         })
                     
                 logger.debug('For de emitterDeposits') 
