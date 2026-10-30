@@ -48,6 +48,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ci-only-key
       AWS_SECRET_ACCESS_KEY: ci-only-secret
       AWS_STORAGE_BUCKET_NAME: ci-only-bucket
+      AUCO_API_PROD_URL: "https://example.invalid"
       EMAIL_HOST: localhost
       EMAIL_PORT: "25"
       EMAIL_HOST_USER: ""
