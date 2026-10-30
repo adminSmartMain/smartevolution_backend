@@ -1,0 +1,52 @@
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: smartevolution_test
+      MYSQL_USER: smartevolution
+      MYSQL_PASSWORD: smartevolution
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./qa/mysql-init.sql:/docker-entrypoint-initdb.d/10-qa-grants.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    environment:
+      DEBUG: "True"
+      ENGINE: django.db.backends.mysql
+      DB_NAME: smartevolution_test
+      DB_USER: smartevolution
+      DB_PASSWORD: smartevolution
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      SECRET_KEY: local-test-secret
+      AWS_ACCESS_KEY_ID: local-test-key
+      AWS_SECRET_ACCESS_KEY: local-test-secret
+      AWS_STORAGE_BUCKET_NAME: local-test-bucket
+      EMAIL_HOST: localhost
+      EMAIL_PORT: "25"
+      EMAIL_HOST_USER: ""
+      EMAIL_HOST_PASSWORD: ""
+      CHANNEL_REDIS_URL: redis://redis:6379/2
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
