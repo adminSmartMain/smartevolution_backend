@@ -20,6 +20,7 @@ El workflow ejecuta `python manage.py check` y después `pytest` con Python
 | Notificaciones | `apps/notifications/tests.py` | Creación, lectura y comportamiento de notificaciones. |
 | Asignación de centavos | `apps/operation/test_penny_allocation.py`, `apps/operation/tests/test_penny_allocation*.py` | Distribución, normalización, redondeo positivo/negativo, desbalances, filas vacías y resúmenes. |
 | Carga masiva de operaciones | `apps/operation/tests/test_excel_upload_validation.py` | Fila Excel válida, campos obligatorios vacíos y fracciones duplicadas/no consecutivas. |
+| Depósitos y devoluciones | `apps/administration/tests/test_deposit_refund_balances.py` | Depósito incrementa saldo, devolución descuenta monto/GM y devolución mayor al saldo se rechaza sin alterar la cuenta. |
 
 ## Frontend — check `Frontend checks`
 
