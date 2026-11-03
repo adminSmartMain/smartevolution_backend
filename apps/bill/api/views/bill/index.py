@@ -454,6 +454,16 @@ class BillAV(BaseAV):
     def patch(self, request, pk):
         try:
             bill = Bill.objects.get(pk=pk)
+
+            # An invoice becomes accounting evidence once it is part of a
+            # pre-operation.  Editing it afterwards would make the operation
+            # and its settlement inconsistent, so it must be immutable.
+            if PreOperation.objects.filter(bill=bill, state=True).exists():
+                return response({
+                    'error': True,
+                    'message': 'La factura no se puede editar porque está asociada a una preoperación',
+                }, 409)
+
             previous_cufe = (bill.cufe or '').strip()
 
             serializer = BillSerializer(

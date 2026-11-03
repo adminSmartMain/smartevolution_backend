@@ -12,8 +12,9 @@ El workflow ejecuta `python manage.py check` y después `pytest` con Python
 | Área | Archivo(s) | Casos cubiertos |
 | --- | --- | --- |
 | Recuperación de contraseña | `apps/authentication/test_password_reset.py` | Solicitud, token, cambio de contraseña, token reutilizado, correo desconocido y enlace de frontend. |
-| Autenticación y usuarios | `apps/authentication/tests.py`, `apps/authentication/tests/test_jwt_revocation.py` | Login/validaciones de usuario y revocación de JWT. |
-| Extracción de facturas XML | `apps/bill/tests/test_xml_invoice_extraction.py` | XML `text/xml` y `application/xml` válidos; rechazo de PDF base64, XML malformado y base64 inválido; el endpoint devuelve el archivo rechazado sin extraerlo. |
+| Autenticación y usuarios | `apps/authentication/tests.py`, `apps/authentication/tests/test_jwt_revocation.py`, `apps/authentication/tests/test_login_session_security.py` | Login válido/inválido, token vencido, validaciones de usuario y revocación de JWT. |
+| Clientes y cuentas | `apps/client/tests/test_client_account_rules.py` | Campos obligatorios, documento de cliente activo duplicado, reutilización tras archivar y bloqueo de segunda cuenta primaria. |
+| Facturas | `apps/bill/tests/test_xml_invoice_extraction.py`, `apps/bill/tests/test_bill_operation_lock.py` | XML `text/xml` y `application/xml` válidos; rechazo de PDF base64, XML malformado y base64 inválido; y bloqueo 409 al intentar editar una factura asociada a una preoperación. |
 | Sincronización Billy | `apps/bill/test_billy.py`, `apps/bill/test_billy_guardrails.py` | Reintentos, polling, cliente, carga, límites globales y guardas de sincronización. |
 | Notificaciones | `apps/notifications/tests.py` | Creación, lectura y comportamiento de notificaciones. |
 | Asignación de centavos | `apps/operation/test_penny_allocation.py`, `apps/operation/tests/test_penny_allocation*.py` | Distribución, normalización, redondeo positivo/negativo, desbalances, filas vacías y resúmenes. |
