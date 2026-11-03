@@ -1,4 +1,3 @@
-from base64 import b64decode
 import logging
 import os
 
@@ -38,6 +37,7 @@ from apps.bill.services.billy.exceptions import (
 from apps.bill.utils.billEvents import billEvents
 from apps.bill.utils.index import parseBill, parseCreditNote
 from apps.bill.utils.updateBillEvents import updateBillEvents
+from apps.bill.utils.xml_upload import decode_xml_invoice_payload
 from apps.client.models import Client
 from apps.operation.api.serializers.index import PreOperationReadOnlySerializer
 from apps.operation.models import PreOperation
@@ -884,33 +884,30 @@ class readBillAV(BaseAV):
 
         try:
             for file in request.data['bills']:
-
-                # -------------------- DECODIFICAR XML --------------------
-                if file.startswith('data:text/xml;base64,'):
-                    file = file.replace('data:text/xml;base64,', '')
-
-                fileName = f"{gen_uuid()}.xml"
-                xmlData = None
-
-                for codec in ['utf-8', 'utf-16', 'utf-32', 'utf-32-le']:
-                    try:
-                        xmlData = b64decode(file, validate=True).decode(codec)
-                        break
-                    except:
-                        pass
-
-                if xmlData is None:
-                    failedBills.append({"message": "No se pudo decodificar XML"})
+                # The extraction endpoint deliberately accepts only an XML
+                # data URI.  Attachments in other bill endpoints are not
+                # affected by this restriction.
+                try:
+                    xml_data, normalized_file = decode_xml_invoice_payload(file)
+                except ValueError as error:
+                    failedBills.append({'message': str(error)})
                     continue
 
-                with open(fileName, 'w') as f:
-                    f.write(xmlData)
+                fileName = f"{gen_uuid()}.xml"
+                with open(fileName, 'wb') as xml_file:
+                    xml_file.write(xml_data)
 
                 # -------------------- PARSEAR XML --------------------
                 parsed = parseBill(fileName)
                 os.remove(fileName)
 
-                parsed['file'] = f"data:text/xml;base64,{file}"
+                if parsed.get('error'):
+                    failedBills.append({
+                        'message': parsed.get('message', 'No se pudo procesar el XML'),
+                    })
+                    continue
+
+                parsed['file'] = normalized_file
                 parsed['fideicomiso'] = fideicomiso
 
                 # -------------------- VALIDAR CUFE --------------------
