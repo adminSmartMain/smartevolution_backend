@@ -14,10 +14,12 @@ El workflow ejecuta `python manage.py check` y después `pytest` con Python
 | Recuperación de contraseña | `apps/authentication/test_password_reset.py` | Solicitud, token, cambio de contraseña, token reutilizado, correo desconocido y enlace de frontend. |
 | Autenticación y usuarios | `apps/authentication/tests.py`, `apps/authentication/tests/test_jwt_revocation.py`, `apps/authentication/tests/test_login_session_security.py` | Login válido/inválido, token vencido, validaciones de usuario y revocación de JWT. |
 | Clientes y cuentas | `apps/client/tests/test_client_account_rules.py` | Campos obligatorios, documento de cliente activo duplicado, reutilización tras archivar y bloqueo de segunda cuenta primaria. |
+| Roles y permisos | `apps/authentication/tests/test_role_authorization.py` | Un usuario autenticado sin rol/permiso de facturas recibe 403 de la API. |
 | Facturas | `apps/bill/tests/test_xml_invoice_extraction.py`, `apps/bill/tests/test_bill_operation_lock.py` | XML `text/xml` y `application/xml` válidos; rechazo de PDF base64, XML malformado y base64 inválido; y bloqueo 409 al intentar editar una factura asociada a una preoperación. |
 | Sincronización Billy | `apps/bill/test_billy.py`, `apps/bill/test_billy_guardrails.py` | Reintentos, polling, cliente, carga, límites globales y guardas de sincronización. |
 | Notificaciones | `apps/notifications/tests.py` | Creación, lectura y comportamiento de notificaciones. |
 | Asignación de centavos | `apps/operation/test_penny_allocation.py`, `apps/operation/tests/test_penny_allocation*.py` | Distribución, normalización, redondeo positivo/negativo, desbalances, filas vacías y resúmenes. |
+| Carga masiva de operaciones | `apps/operation/tests/test_excel_upload_validation.py` | Fila Excel válida, campos obligatorios vacíos y fracciones duplicadas/no consecutivas. |
 
 ## Frontend — check `Frontend checks`
 
