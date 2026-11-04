@@ -1,8 +1,9 @@
 # Reporte de pruebas CI
 
-Última verificación local: **66 pruebas backend aprobadas** con MySQL 8 y
-Redis efímeros. La única advertencia actual procede de la dependencia externa
-`PyPDF2` deprecada; no representa un fallo de una prueba.
+Última verificación local: **80 pruebas backend aprobadas** con MySQL 8 y
+Redis efímeros. Las advertencias actuales proceden de la dependencia externa
+`PyPDF2` deprecada y de la llave corta usada solamente en JWT de QA; no
+representan fallos de prueba.
 
 ## Backend — check `Backend tests`
 
@@ -41,7 +42,7 @@ intenten iniciar sesión contra datos reales ni escriban en la base de datos.
 
 ## Límite actual y siguiente cobertura
 
-El CI ya bloquea el merge si fallan el chequeo Django, las 66 pruebas backend,
+El CI ya bloquea el merge si fallan el chequeo Django, las 80 pruebas backend,
 lint, build o cualquiera de las 19 pruebas E2E. Las siguientes pruebas de
 prioridad deben ser reglas de negocio: una factura asociada a una operación no
 puede editarse, permisos por rol, importación de XML DIAN completo, campos
