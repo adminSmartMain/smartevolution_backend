@@ -82,7 +82,9 @@ RUN cd /app/apps/base/scripts/pdf_parser \
     && node -e "const p=require('puppeteer'); console.log('Puppeteer:', require('./node_modules/puppeteer/package.json').version); console.log('Chrome:', p.executablePath())"
 
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# The repository is developed on Windows too; normalize CRLF before executing
+# the script in the Linux image so its shebang resolves to /bin/sh.
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 EXPOSE 8000
 

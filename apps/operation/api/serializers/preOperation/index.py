@@ -28,6 +28,7 @@ import uuid
 from apps.bill.api.models.bill.index import Bill
 
 from django.conf import settings
+from django.db import transaction
 
 
 from rest_framework import serializers
@@ -92,39 +93,51 @@ class PreOperationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         logger.info("Iniciando creación de PreOperation")
-      
-        
+
         try:
-            validated_data['id'] = gen_uuid()
-            validated_data['created_at'] = timezone.now()
-            validated_data['user_created_at'] = self.context['request'].user
+            # The browser's balance check is only advisory. Locking the bill here
+            # makes the read, validation and debit one atomic operation for every
+            # creation path (single and bulk).
+            with transaction.atomic():
+                validated_data['id'] = gen_uuid()
+                validated_data['created_at'] = timezone.now()
+                validated_data['user_created_at'] = self.context['request'].user
 
-            if validated_data.get('bill'):
-                bill = validated_data['bill']
-                
-                
-                client_account = validated_data.get('clientAccount')
-                if client_account:
-                    total_operation = validated_data['payedAmount'] + validated_data.get('GM', 0)
-                    validated_data['insufficientAccountBalance'] = client_account.balance < total_operation
+                if validated_data.get('bill'):
+                    bill = Bill.objects.select_for_update().get(pk=validated_data['bill'].pk)
+                    validated_data['bill'] = bill
+                    amount = float(validated_data.get('amount') or 0)
 
+                    if amount <= 0:
+                        raise serializers.ValidationError({
+                            'amount': 'El monto de la operación debe ser mayor a cero.'
+                        })
 
-                if bill.currentBalance != 0:
-                    
-                    bill.currentBalance -= validated_data['amount']
-                    bill.save()
+                    current_balance = float(bill.currentBalance or 0)
+                    if amount > current_balance:
+                        raise serializers.ValidationError({
+                            'amount': (
+                                'El monto de la operación excede el saldo disponible '
+                                f'de la factura ({current_balance}).'
+                            )
+                        })
 
+                    client_account = validated_data.get('clientAccount')
+                    if client_account:
+                        total_operation = validated_data['payedAmount'] + validated_data.get('GM', 0)
+                        validated_data['insufficientAccountBalance'] = client_account.balance < total_operation
 
-                
-                validated_data['opPendingAmount'] = validated_data['payedAmount']
-            
-            instance = super().create(validated_data)
-            # Settlement is backend-owned and is repeated for the operation so
-            # a later row can absorb the penny delta deterministically.
-            settle_operations(
-                PreOperation.objects.select_for_update().filter(opId=instance.opId).order_by('id')
-            )
-            return instance
+                    bill.currentBalance = current_balance - amount
+                    bill.save(update_fields=['currentBalance'])
+                    validated_data['opPendingAmount'] = validated_data['payedAmount']
+
+                instance = super().create(validated_data)
+                # Settlement is backend-owned and repeated for the operation so
+                # a later row can absorb the penny delta deterministically.
+                settle_operations(
+                    PreOperation.objects.select_for_update().filter(opId=instance.opId).order_by('id')
+                )
+                return instance
 
         except Exception as e:
             logger.error(f"Error al crear PreOperation: {str(e)}", exc_info=True)
