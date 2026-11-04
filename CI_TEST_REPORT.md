@@ -34,15 +34,15 @@ y ejecuta Playwright. Si falla, adjunta el reporte de Playwright como artefacto.
 | `tests/e2e/auth-flow.spec.js` | Error de credenciales, sesión exitosa, persistencia del token, navegación al dashboard y mostrar/ocultar contraseña. |
 | `tests/e2e/password-recovery.spec.js` | Correo obligatorio, solicitud exitosa/fallida de recuperación, contraseñas no coincidentes y actualización con token válido. |
 | `tests/e2e/route-and-bill-guards.spec.js` | Redirección sin sesión, bloqueo de facturas sin permiso y filtro XML del cargador de extracción. |
-| `tests/e2e/critical-workflows.spec.js` | Renderizado autorizado de los formularios críticos de cliente, factura y preoperación; distingue adjunto manual de extracción XML. |
+| `tests/e2e/critical-workflows.spec.js` | Renderizado autorizado de los formularios críticos de cliente, factura y preoperación; rechaza un cliente vacío y distingue adjunto manual de extracción XML. |
 
-Actualmente son **18 pruebas E2E**. Usan respuestas API simuladas para que no
+Actualmente son **19 pruebas E2E**. Usan respuestas API simuladas para que no
 intenten iniciar sesión contra datos reales ni escriban en la base de datos.
 
 ## Límite actual y siguiente cobertura
 
 El CI ya bloquea el merge si fallan el chequeo Django, las 66 pruebas backend,
-lint, build o cualquiera de las 18 pruebas E2E. Las siguientes pruebas de
+lint, build o cualquiera de las 19 pruebas E2E. Las siguientes pruebas de
 prioridad deben ser reglas de negocio: una factura asociada a una operación no
 puede editarse, permisos por rol, importación de XML DIAN completo, campos
 obligatorios y transiciones de estado de preoperaciones/operaciones.
