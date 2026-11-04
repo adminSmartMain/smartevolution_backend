@@ -106,6 +106,21 @@ class ClientSerializer(serializers.ModelSerializer):
         model = Client
         fields = "__all__"
 
+    def validate_document_number(self, value):
+        """Keep one active client per identification document.
+
+        Historic inactive records are deliberately ignored, so correcting an
+        archived record does not prevent a legitimate new registration.
+        """
+        existing = Client.objects.filter(document_number=value, state=True)
+        if self.instance:
+            existing = existing.exclude(pk=self.instance.pk)
+        if existing.exists():
+            raise serializers.ValidationError(
+                'Ya existe un cliente activo con este número de identificación.'
+            )
+        return value
+
     def create(self, validated_data):
         try:
             validated_data["id"] = gen_uuid()

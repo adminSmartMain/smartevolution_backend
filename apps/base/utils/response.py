@@ -20,6 +20,8 @@ def response(data, status):
             return Response(data, status=http_status.HTTP_404_NOT_FOUND)
         elif status == 405:
             return Response(data, status=http_status.HTTP_405_METHOD_NOT_ALLOWED)
+        elif status == 409:
+            return Response(data, status=http_status.HTTP_409_CONFLICT)
         elif status == 500:
             return Response(data, status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
     except Exception as e:

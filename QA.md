@@ -27,5 +27,11 @@ Para ejecutar solo una prueba, reemplazar el comando del servicio `test`:
 docker compose -f docker-compose.qa.yml run --rm test pytest apps/operation/tests/test_penny_allocation.py
 ```
 
+Por ejemplo, para validar solo la regla de extracción de facturas XML:
+
+```bash
+docker compose -f docker-compose.qa.yml run --build --rm test pytest apps/bill/tests/test_xml_invoice_extraction.py
+```
+
 El workflow de GitHub ejecuta el mismo conjunto de pruebas con MySQL y Redis de
 GitHub Actions. No realiza despliegues.

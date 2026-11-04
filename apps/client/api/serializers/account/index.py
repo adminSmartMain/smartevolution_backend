@@ -31,6 +31,10 @@ class AccountSerializer(serializers.ModelSerializer):
                 validated_data['user_created_at'] = self.context['request'].user
                 account = Account.objects.create(**validated_data)
                 return account
+            except HttpException:
+                # Preserve the business-rule status (for example, a second
+                # primary account) instead of turning it into a generic 500.
+                raise
             except Exception as e:
                 raise HttpException(500, str(e))
         

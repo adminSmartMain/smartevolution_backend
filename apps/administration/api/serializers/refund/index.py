@@ -22,11 +22,13 @@ class RefundSerializer(serializers.ModelSerializer):
         validated_data['id'] = gen_uuid()
         validated_data['created_at'] = timezone.now()
         validated_data['user_created_at'] = self.context['request'].user
-        # validate account amount
-        #if validated_data['account'].balance < (validated_data['amount'] + validated_data['gmAmount']):
-        #    raise HttpException(400, 'El monto del reintegro no puede ser mayor al saldo de la cuenta')
-        # substract amount from account
-        validated_data['account'].balance -= validated_data['amount'] + validated_data['gmAmount']
+        refund_total = (validated_data.get('amount') or 0) + (validated_data.get('gmAmount') or 0)
+        if validated_data['account'].balance < refund_total:
+            raise HttpException(400, 'El monto del reintegro no puede ser mayor al saldo de la cuenta')
+
+        # Subtract only after the balance rule has passed, so a rejected refund
+        # can never leave the account with a negative balance.
+        validated_data['account'].balance -= refund_total
         validated_data['account'].save()
 
         # get the last refund id
