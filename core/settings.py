@@ -340,6 +340,13 @@ BILLY_AUTH_RETRY_SECONDS = env.int(
     "BILLY_AUTH_RETRY_SECONDS",
     default=3600,
 )
+BILLY_AUTH_GLOBAL_BLOCK_MAX_SECONDS = env.int(
+    "BILLY_AUTH_GLOBAL_BLOCK_MAX_SECONDS",
+    # Las credenciales las rota el equipo operativo. Mantener el mismo TTL
+    # evita ciclos agresivos sin convertir un 401 persistente en una espera
+    # de horas.
+    default=15 * 60,
+)
 
 CELERY_BEAT_SCHEDULE = {
     "schedule-due-billy-bills": {

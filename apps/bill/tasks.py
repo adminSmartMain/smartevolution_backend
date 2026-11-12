@@ -20,6 +20,7 @@ from apps.bill.services.billy.polling import apply_watchlist_exit_rule
 from apps.bill.services.billy.exceptions import (
     BillyAPIError,
     BillyAuthenticationError,
+    BillyAuthenticationGuardrailError,
     BillyConnectionError,
     BillyLocalRateLimitError,
     BillyNotFoundError,
@@ -358,7 +359,23 @@ def sync_bill_events(self, bill_id, queue_token=None):
         return result
 
     # =========================================================
-    # RATE LIMIT LOCAL / BLOQUEO GLOBAL
+    # BLOQUEO GLOBAL POR AUTH: no es rate limiting y se reintenta solo tras TTL.
+    # =========================================================
+    except BillyAuthenticationGuardrailError as exc:
+        countdown = max(int(exc.retry_after or 60), 1)
+        next_check = _defer_without_retry(
+            bill.id, countdown, "authentication_guardrail_active",
+        )
+        return {
+            "ok": False,
+            "reason": "authentication_guardrail_active",
+            "retry_after": countdown,
+            "bill_id": str(bill.id),
+            "next_check": next_check.isoformat(),
+        }
+
+    # =========================================================
+    # RATE LIMIT LOCAL
     # =========================================================
     except BillyLocalRateLimitError as exc:
         countdown = max(int(exc.retry_after or 60), 1)
@@ -552,8 +569,14 @@ def schedule_due_billy_bills():
     # evita tanto colas inútiles como superar el límite por concurrencia.
     budget = BillyRateLimiter().get_budget()
     if not budget.get("available"):
+        reason = (
+            "authentication_guardrail_active"
+            if budget.get("block_reason") == "authentication"
+            else budget.get("scope")
+        )
         logger.warning(
-            "Billy scheduler paused scope=%s retry_after=%s",
+            "Billy scheduler paused reason=%s scope=%s retry_after=%s",
+            reason,
             budget.get("scope"),
             budget.get("retry_after"),
         )
@@ -562,7 +585,7 @@ def schedule_due_billy_bills():
             "due_total": 0,
             "scheduled": 0,
             "batch_size": batch_size,
-            "reason": budget.get("scope"),
+            "reason": reason,
             "retry_after": budget.get("retry_after", 0),
         }
 

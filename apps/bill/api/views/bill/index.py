@@ -1,5 +1,6 @@
 import logging
 import os
+import uuid
 
 import environ
 from django.db import transaction
@@ -22,12 +23,14 @@ from apps.bill.services.billy import (
     BillyLock,
     BillySyncService,
     BillyUploadService,
+    BillyRateLimiter,
     apply_watchlist_exit_rule,
     calculate_bill_next_check,
 )
 from apps.bill.services.billy.exceptions import (
     BillyAPIError,
     BillyAuthenticationError,
+    BillyAuthenticationGuardrailError,
     BillyConnectionError,
     BillyLocalRateLimitError,
     BillyNotFoundError,
@@ -531,6 +534,17 @@ class BillAV(BaseAV):
 
 
 
+class BillyStatusAV(BaseAV):
+    """Indicadores seguros de la integración para soporte y monitoreo."""
+
+    @checkRole(['admin'])
+    def get(self, request):
+        return response({
+            'error': False,
+            'billy': BillyRateLimiter().get_indicators(),
+        }, 200)
+
+
 class BillSyncNowAV(BaseAV):
     """Sincronización inmediata solicitada por una acción del usuario.
 
@@ -629,42 +643,57 @@ class BillSyncNowAV(BaseAV):
                 'data': current_data(),
             }, 200)
 
+        except BillyAuthenticationGuardrailError as exc:
+            reason = 'authentication_guardrail_active'
+            detail = 'La integración con Billy está temporalmente bloqueada por autenticación.'
+            retry_after = exc.retry_after
         except BillyLocalRateLimitError as exc:
             reason = 'local_rate_limit'
-            detail = str(exc)
+            detail = 'La capacidad local de Billy está temporalmente agotada.'
+            retry_after = exc.retry_after
         except BillyRateLimitError as exc:
-            reason = 'rate_limit'
-            detail = str(exc)
+            reason = 'provider_rate_limit'
+            detail = 'Billy limitó temporalmente las solicitudes.'
+            retry_after = exc.retry_after
         except BillyTimeoutError as exc:
             reason = 'timeout'
-            detail = str(exc)
+            detail = 'Billy no respondió a tiempo.'
+            retry_after = None
         except BillyConnectionError as exc:
             reason = 'connection_error'
-            detail = str(exc)
+            detail = 'No fue posible conectar con Billy.'
+            retry_after = None
         except BillyAuthenticationError as exc:
-            reason = 'authentication_error'
-            detail = str(exc)
+            reason = 'authentication_rejected'
+            detail = 'Billy rechazó las credenciales configuradas.'
+            retry_after = None
         except BillyNotFoundError as exc:
             reason = 'not_found'
             detail = str(exc)
+            retry_after = None
         except BillyAPIError as exc:
-            reason = 'api_error'
-            detail = str(exc)
+            if exc.status_code and exc.status_code >= 500:
+                reason = 'provider_unavailable'
+                detail = 'Billy no está disponible temporalmente.'
+            else:
+                reason = 'provider_api_error'
+                detail = 'Billy respondió con un error no esperado.'
+            retry_after = None
         except Exception as exc:
             logger.exception(
                 'Unexpected Billy sync-now error bill_id=%s',
                 bill.id,
             )
             reason = 'unexpected_error'
-            detail = str(exc)
+            detail = 'Error inesperado al comunicarse con Billy.'
+            retry_after = None
         finally:
             lock.release(bill.cufe, token)
 
+        correlation_id = str(uuid.uuid4())
         logger.warning(
-            'Billy sync-now failed bill_id=%s reason=%s detail=%s',
-            bill.id,
-            reason,
-            detail,
+            'Billy sync-now failed bill_id=%s reason=%s correlation_id=%s',
+            bill.id, reason, correlation_id,
         )
 
         return response({
@@ -676,6 +705,17 @@ class BillSyncNowAV(BaseAV):
                 'Se muestra la última información disponible.'
             ),
             'detail': detail,
+            'billy_error': {
+                'code': reason,
+                'message': detail,
+                'retryable': reason in {
+                    'authentication_guardrail_active', 'local_rate_limit',
+                    'provider_rate_limit', 'timeout', 'connection_error',
+                    'provider_unavailable',
+                },
+                'retry_after': retry_after,
+                'correlation_id': correlation_id,
+            },
             'data': current_data(),
         }, 200)
 
@@ -883,6 +923,7 @@ class PendingBillyBillsAV(BaseAV):
 class readBillAV(BaseAV):
     @checkRole(['admin', 'third'])
     def post(self, request):
+        correlation_id = request.headers.get('X-Correlation-ID') or str(uuid.uuid4())
         parsedBills = []
         duplicatedLocalBills = []
         duplicatedBillyBills = []
@@ -958,7 +999,10 @@ class readBillAV(BaseAV):
                         'message': 'Factura ya existía en Billy (409)',
                     })
 
-                elif billy_status == '401':
+                elif billy_status in {
+                    'authentication_rejected',
+                    'authentication_guardrail_active',
+                }:
                     parsed['billySyncStatus'] = 'pending'
                     parsed['billyErrorCode'] = billy_status
                     parsed['billyErrorDetail'] = billy_detail
@@ -967,7 +1011,11 @@ class readBillAV(BaseAV):
 
                     pendingBillyBills.append({
                         'cufe': parsed['cufe'],
+                        'correlation_id': correlation_id,
                         'status': billy_status,
+                        'code': upload_result.get('error_code', billy_status),
+                        'retryable': upload_result.get('retryable', False),
+                        'retry_after': upload_result.get('retry_after'),
                         'details': billy_detail,
                         'message': (
                             'Factura extraída; pendiente de carga en Billy'
@@ -977,8 +1025,12 @@ class readBillAV(BaseAV):
                 elif not upload_result['ok']:
                     failedBills.append({
                         'cufe': parsed['cufe'],
+                        'correlation_id': correlation_id,
                         'message': 'Error al subir factura a Billy',
                         'status': billy_status,
+                        'code': upload_result.get('error_code', billy_status),
+                        'retryable': upload_result.get('retryable', False),
+                        'retry_after': upload_result.get('retry_after'),
                         'details': billy_detail,
                     })
                     continue
@@ -1019,11 +1071,18 @@ class readBillAV(BaseAV):
                 "duplicatedLocalBills": duplicatedLocalBills,
                 "duplicatedBillyBills": duplicatedBillyBills,
                 "pendingBillyBills": pendingBillyBills,
-                "failedBills": failedBills
+                "failedBills": failedBills,
+                "correlation_id": correlation_id,
             }, status=status.HTTP_200_OK)
 
         except Exception as e:
-            return Response({"error": True, "message": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.exception('Bill read failed correlation_id=%s', correlation_id)
+            return Response({
+                "error": True,
+                "code": "bill_read_failed",
+                "message": "No fue posible procesar las facturas.",
+                "correlation_id": correlation_id,
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class readCreditNoteAV(BaseAV):
