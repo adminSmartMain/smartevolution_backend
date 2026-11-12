@@ -13,6 +13,20 @@ class BillyConnectionError(BillyError):
 class BillyAuthenticationError(BillyError):
     """El token de Billy es inválido o expiró."""
 
+    code = "authentication_rejected"
+    retryable = False
+
+
+class BillyAuthenticationGuardrailError(BillyError):
+    """Un 401 previo activó el bloqueo distribuido de autenticación."""
+
+    code = "authentication_guardrail_active"
+    retryable = True
+
+    def __init__(self, message, retry_after=None):
+        super().__init__(message)
+        self.retry_after = retry_after
+
 
 class BillyRateLimitError(BillyError):
     """Billy rechazó la petición por rate limiting."""
@@ -51,3 +65,6 @@ class BillyLocalRateLimitError(BillyError):
         self.count = count
         self.limit = limit
         self.scope = scope
+
+    code = "local_rate_limit"
+    retryable = True

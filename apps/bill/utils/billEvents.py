@@ -7,7 +7,9 @@ from .events import normalize_description, ts_to_datetime
 from apps.bill.services.billy.exceptions import (
     BillyAPIError,
     BillyAuthenticationError,
+    BillyAuthenticationGuardrailError,
     BillyConnectionError,
+    BillyLocalRateLimitError,
     BillyNotFoundError,
     BillyRateLimitError,
     BillyTimeoutError,
@@ -151,6 +153,28 @@ def billEvents(cufe, update=False):
             "currentOwner": None,
             "current_ownerId": None,
             "bill": None,
+        }
+
+    except BillyAuthenticationGuardrailError as exc:
+        logger.warning("Billy authentication guardrail active for CUFE %s", cufe)
+        return {
+            "ok": False,
+            "error": "authentication_guardrail_active",
+            "retry_after": exc.retry_after,
+            "warning": "La integración con Billy está temporalmente bloqueada por autenticación.",
+            "type": None, "events": None, "currentOwner": None,
+            "current_ownerId": None, "bill": None,
+        }
+
+    except BillyLocalRateLimitError as exc:
+        logger.warning("Billy local capacity exhausted for CUFE %s scope=%s", cufe, exc.scope)
+        return {
+            "ok": False,
+            "error": "local_rate_limit",
+            "retry_after": exc.retry_after,
+            "warning": "La capacidad local de Billy está temporalmente agotada.",
+            "type": None, "events": None, "currentOwner": None,
+            "current_ownerId": None, "bill": None,
         }
 
     except BillyRateLimitError as exc:

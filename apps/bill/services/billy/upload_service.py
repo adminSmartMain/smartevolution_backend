@@ -6,6 +6,7 @@ from .client import BillyClient
 from .exceptions import (
     BillyAPIError,
     BillyAuthenticationError,
+    BillyAuthenticationGuardrailError,
     BillyConnectionError,
     BillyLocalRateLimitError,
     BillyNotFoundError,
@@ -44,44 +45,93 @@ class BillyUploadService:
             code, detail = self._get_functional_result(response)
             ok = code in self.SUCCESS_CODES
 
+            if not ok:
+                # Billy puede informar errores funcionales dentro de HTTP 200.
+                # Los normalizamos igual que los errores HTTP para no filtrar
+                # detalles del proveedor ni obligar al frontend a interpretar
+                # códigos HTTP en el body.
+                if code == "401":
+                    return self._functional_error_result(
+                        "authentication_rejected", code,
+                        "Billy rechazó las credenciales configuradas.", False,
+                    )
+                if code == "429":
+                    return self._functional_error_result(
+                        "provider_rate_limit", code,
+                        "Billy limitó temporalmente las solicitudes.", True,
+                    )
+                return self._functional_error_result(
+                    "provider_request_rejected", code,
+                    "Billy rechazó la solicitud.", False,
+                )
+
             return {
                 "ok": ok,
                 "status": "synced" if ok else "pending",
                 "code": code,
                 "detail": detail,
                 "transport_error": False,
+                "error_code": None,
+                "retryable": False,
+                "retry_after": None,
             }
 
         except BillyAuthenticationError as exc:
-            return self._error_result("401", exc)
+            return self._error_result(
+                "authentication_rejected", exc, retryable=False,
+                message="Billy rechazó las credenciales configuradas.",
+            )
+
+        except BillyAuthenticationGuardrailError as exc:
+            return self._error_result(
+                "authentication_guardrail_active", exc,
+                retryable=True, retry_after=exc.retry_after,
+                message="La integración con Billy está temporalmente bloqueada por autenticación.",
+            )
 
         except BillyNotFoundError as exc:
             return self._error_result("404", exc)
 
         except BillyRateLimitError as exc:
-            return self._error_result("429", exc)
+            return self._error_result(
+                "provider_rate_limit", exc, retryable=True,
+                retry_after=exc.retry_after,
+                message="Billy limitó temporalmente las solicitudes.",
+            )
 
         except BillyLocalRateLimitError as exc:
-            return self._error_result("local_rate_limit", exc)
+            return self._error_result(
+                "local_rate_limit", exc, retryable=True,
+                retry_after=exc.retry_after,
+                message="La capacidad local de Billy está temporalmente agotada.",
+            )
 
         except BillyTimeoutError as exc:
             return self._error_result(
                 "timeout",
                 exc,
-                transport_error=True,
+                transport_error=True, retryable=True,
+                message="Billy no respondió a tiempo.",
             )
 
         except BillyConnectionError as exc:
             return self._error_result(
                 "connection_error",
                 exc,
-                transport_error=True,
+                transport_error=True, retryable=True,
+                message="No fue posible conectar con Billy.",
             )
 
         except BillyAPIError as exc:
+            if exc.status_code and exc.status_code >= 500:
+                return self._error_result(
+                    "provider_unavailable", exc, retryable=True,
+                    message="Billy no está disponible temporalmente.",
+                )
             return self._error_result(
-                str(exc.status_code or "billy_api_error"),
+                "provider_api_error",
                 exc,
+                message="Billy respondió con un error no esperado.",
             )
 
     def upload_bill(self, bill, token=None, token_scope="smart"):
@@ -168,17 +218,36 @@ class BillyUploadService:
         return code, detail
 
     @staticmethod
-    def _error_result(code, exc, transport_error=False):
-        logger.warning(
-            "Billy upload failed code=%s error=%s",
-            code,
-            str(exc),
-        )
+    def _functional_error_result(error_code, provider_status, message, retryable):
+        return {
+            "ok": False,
+            "status": "pending",
+            "code": error_code,
+            "provider_status": str(provider_status),
+            "detail": message,
+            "transport_error": False,
+            "error_code": error_code,
+            "retryable": retryable,
+            "retry_after": None,
+        }
+
+    @staticmethod
+    def _error_result(
+        code, exc, transport_error=False, retryable=False, retry_after=None,
+        message=None,
+    ):
+        logger.warning("Billy upload failed code=%s error_type=%s", code, type(exc).__name__)
 
         return {
             "ok": False,
             "status": "pending",
             "code": str(code),
-            "detail": str(exc),
+            "provider_status": None,
+            # Nunca se devuelve el texto del proveedor: puede contener
+            # contexto sensible. El detalle completo queda solo en logs.
+            "detail": message or "No fue posible completar la operación con Billy.",
             "transport_error": transport_error,
+            "error_code": str(code),
+            "retryable": retryable,
+            "retry_after": retry_after,
         }

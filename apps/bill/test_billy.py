@@ -7,6 +7,8 @@ from django.test import SimpleTestCase
 from apps.bill.services.billy.client import BillyClient
 from apps.bill.services.billy.exceptions import (
     BillyAPIError,
+    BillyAuthenticationError,
+    BillyAuthenticationGuardrailError,
     BillyLocalRateLimitError,
     BillyNotFoundError,
     BillyRateLimitError,
@@ -35,6 +37,7 @@ class FakeRateLimiter:
         self.retry_after = retry_after
         self.count = count
         self.limit = limit
+        self.events = []
 
     def acquire(self):
         return {
@@ -49,6 +52,9 @@ class FakeRateLimiter:
         self.blocked_for = int(retry_after)
         self.block_reason = reason
         return self.blocked_for
+
+    def record_event(self, event):
+        self.events.append(event)
 
     @staticmethod
     def parse_retry_after(value, default=60):
@@ -282,6 +288,35 @@ class BillyClientTests(SimpleTestCase):
             60,
         )
 
+    def test_401_es_autenticacion_y_activa_guardrail(self):
+        limiter = FakeRateLimiter()
+        client = self.make_client(limiter)
+        client.session.request = MagicMock(return_value=FakeResponse(status_code=401))
+
+        with self.assertRaises(BillyAuthenticationError):
+            client.get_invoice_by_cufe("ABC")
+
+        self.assertEqual(limiter.block_reason, "authentication")
+        self.assertIn("authentication_rejected", limiter.events)
+
+    def test_bloqueo_auth_no_se_reporta_como_rate_limit_local(self):
+        limiter = FakeRateLimiter(allowed=False, retry_after=42)
+        limiter.acquire = MagicMock(return_value={
+            "allowed": False,
+            "retry_after": 42,
+            "scope": "global_block",
+            "block_reason": "authentication",
+        })
+        client = self.make_client(limiter)
+        client.session.request = MagicMock()
+
+        with self.assertRaises(BillyAuthenticationGuardrailError) as ctx:
+            client.get_invoice_by_cufe("ABC")
+
+        self.assertEqual(ctx.exception.retry_after, 42)
+        self.assertIn("authentication_guardrail_active", limiter.events)
+        client.session.request.assert_not_called()
+
     def test_500_genera_billy_api_error(self):
         client = self.make_client()
 
@@ -486,10 +521,38 @@ class BillyUploadServiceTests(
             "pending",
         )
 
-        self.assertEqual(
-            result["code"],
-            "401",
+        self.assertEqual(result["code"], "authentication_rejected")
+        self.assertFalse(result["retryable"])
+
+    @patch(
+        "apps.bill.services.billy."
+        "upload_service.BillyClient"
+    )
+    def test_guardrail_auth_expone_codigo_estable_y_ttl(self, client_class):
+        client_class.return_value.upload_invoice_by_cufe.side_effect = (
+            BillyAuthenticationGuardrailError("blocked", retry_after=90)
         )
+
+        result = BillyUploadService().upload_cufe("ABC")
+
+        self.assertEqual(result["error_code"], "authentication_guardrail_active")
+        self.assertTrue(result["retryable"])
+        self.assertEqual(result["retry_after"], 90)
+
+    @patch(
+        "apps.bill.services.billy."
+        "upload_service.BillyClient"
+    )
+    def test_500_se_normaliza_como_proveedor_no_disponible(self, client_class):
+        client_class.return_value.upload_invoice_by_cufe.side_effect = BillyAPIError(
+            "upstream detail that must not reach the client", status_code=500,
+        )
+
+        result = BillyUploadService().upload_cufe("ABC")
+
+        self.assertEqual(result["error_code"], "provider_unavailable")
+        self.assertTrue(result["retryable"])
+        self.assertNotIn("upstream detail", result["detail"])
 
     @patch(
         "apps.bill.services.billy."
@@ -530,6 +593,26 @@ class BillyUploadServiceTests(
 class BillySchedulerTests(
     SimpleTestCase
 ):
+    @patch("apps.bill.tasks.BillyRateLimiter")
+    @patch("apps.bill.tasks.sync_bill_events.delay")
+    def test_scheduler_no_encola_durante_guardrail_auth(
+        self, delay, limiter_class,
+    ):
+        import apps.bill.tasks as tasks
+
+        limiter_class.return_value.get_budget.return_value = {
+            "available": False,
+            "scope": "global_block",
+            "block_reason": "authentication",
+            "retry_after": 90,
+        }
+
+        result = tasks.schedule_due_billy_bills.run()
+
+        self.assertEqual(result["reason"], "authentication_guardrail_active")
+        self.assertEqual(result["retry_after"], 90)
+        delay.assert_not_called()
+
     @patch("apps.bill.tasks.filter_eligible_for_billy_polling")
     @patch("apps.bill.tasks.BillyPollingState")
     @patch("apps.bill.tasks.BillyRateLimiter")
