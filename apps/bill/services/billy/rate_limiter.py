@@ -21,6 +21,9 @@ class BillyRateLimiter:
     MINUTE_KEY = "billy:rate:minute"
     HOUR_KEY = "billy:rate:hour"
     GLOBAL_BLOCK_KEY = "billy:global:block"
+    AUTH_FAILURE_KEY = "billy:auth:failures"
+    METRIC_PREFIX = "billy:metrics"
+    METRIC_TTL = 7 * 24 * 60 * 60
 
     MINUTE_WINDOW_MS = 60_000
     HOUR_WINDOW_MS = 3_600_000
@@ -42,7 +45,7 @@ class BillyRateLimiter:
     if blocked then
         local ttl = redis.call("TTL", block_key)
         if ttl < 1 then ttl = 1 end
-        return {0, 0, 0, ttl, "global_block"}
+        return {0, 0, 0, ttl, "global_block", blocked}
     end
 
     local t = redis.call("TIME")
@@ -88,7 +91,7 @@ class BillyRateLimiter:
     redis.call("PEXPIRE", minute_key, minute_window + 1000)
     redis.call("PEXPIRE", hour_key, hour_window + 1000)
 
-    return {1, minute_count + 1, hour_count + 1, 0, "allowed"}
+    return {1, minute_count + 1, hour_count + 1, 0, "allowed", ""}
     """
 
     SNAPSHOT_SCRIPT = """
@@ -104,7 +107,7 @@ class BillyRateLimiter:
     if blocked then
         local ttl = redis.call("TTL", block_key)
         if ttl < 1 then ttl = 1 end
-        return {0, 0, 0, 0, ttl, "global_block"}
+        return {0, 0, 0, 0, ttl, "global_block", blocked}
     end
 
     local t = redis.call("TIME")
@@ -119,7 +122,7 @@ class BillyRateLimiter:
     if minute_remaining < 0 then minute_remaining = 0 end
     if hour_remaining < 0 then hour_remaining = 0 end
 
-    return {1, minute_count, hour_count, minute_remaining, hour_remaining, "available"}
+    return {1, minute_count, hour_count, minute_remaining, hour_remaining, "available", ""}
     """
 
     def __init__(self, redis_client=None, minute_limit=None, hour_limit=None):
@@ -143,7 +146,7 @@ class BillyRateLimiter:
 
         member = str(uuid.uuid4())
         try:
-            allowed, minute_count, hour_count, retry_after, scope = self.redis.eval(
+            result = self.redis.eval(
                 self.ACQUIRE_SCRIPT,
                 3,
                 self.MINUTE_KEY,
@@ -165,8 +168,11 @@ class BillyRateLimiter:
                 "hour_limit": self.hour_limit,
                 "retry_after": 60,
                 "scope": "redis_unavailable",
+                "block_reason": "",
             }
 
+        allowed, minute_count, hour_count, retry_after, scope = result[:5]
+        block_reason = result[5] if len(result) > 5 else ""
         return {
             "allowed": bool(allowed),
             "minute_count": int(minute_count),
@@ -178,6 +184,7 @@ class BillyRateLimiter:
             "limit": self.minute_limit,
             "retry_after": int(retry_after),
             "scope": str(scope),
+            "block_reason": str(block_reason or ""),
         }
 
     def get_budget(self):
@@ -202,6 +209,7 @@ class BillyRateLimiter:
                 "hour_remaining": 0,
                 "retry_after": 60,
                 "scope": "redis_unavailable",
+                "block_reason": "",
             }
 
         if not bool(result[0]):
@@ -211,6 +219,7 @@ class BillyRateLimiter:
                 "hour_remaining": 0,
                 "retry_after": int(result[4]),
                 "scope": str(result[5]),
+                "block_reason": str(result[6] if len(result) > 6 else ""),
             }
 
         return {
@@ -221,19 +230,87 @@ class BillyRateLimiter:
             "hour_remaining": int(result[4]),
             "retry_after": 0,
             "scope": str(result[5]),
+            "block_reason": "",
         }
 
     def block_global(self, retry_after, reason="429"):
         seconds = max(int(retry_after or 1), 1)
         try:
+            # NX conserva el TTL y el motivo del primer bloqueo: una ráfaga
+            # concurrente nunca debe prolongar indefinidamente el guardrail.
             self.redis.set(
                 self.GLOBAL_BLOCK_KEY,
                 reason,
                 ex=seconds,
+                nx=True,
             )
         except redis.RedisError:
             logger.exception("Could not persist Billy global block in Redis")
         return seconds
+
+    def block_authentication(self, base_seconds, max_seconds):
+        """Aplica backoff exponencial para credenciales persistentemente malas."""
+        try:
+            failures = int(self.redis.incr(self.AUTH_FAILURE_KEY))
+            self.redis.expire(self.AUTH_FAILURE_KEY, 24 * 60 * 60)
+            seconds = min(
+                max(int(base_seconds), 1) * (2 ** max(failures - 1, 0)),
+                max(int(max_seconds), 1),
+            )
+            self.block_global(seconds, reason="authentication")
+            return seconds
+        except redis.RedisError:
+            logger.exception("Could not persist Billy authentication failure")
+            return self.block_global(base_seconds, reason="authentication")
+
+    def record_success(self):
+        """Una respuesta válida permite que un futuro 401 vuelva al backoff base."""
+        try:
+            self.redis.delete(self.AUTH_FAILURE_KEY)
+        except redis.RedisError:
+            logger.exception("Could not clear Billy authentication failure counter")
+
+    def record_event(self, event):
+        """Contadores Redis de bajo costo para alertas y diagnóstico seguro."""
+        key = f"{self.METRIC_PREFIX}:{event}"
+        try:
+            pipe = self.redis.pipeline()
+            pipe.incr(key)
+            pipe.expire(key, self.METRIC_TTL)
+            pipe.execute()
+        except redis.RedisError:
+            logger.exception("Could not record Billy metric event=%s", event)
+
+    def get_indicators(self):
+        """Estado no sensible consumible por monitoreo o soporte."""
+        budget = self.get_budget()
+        events = (
+            "authentication_rejected",
+            "authentication_guardrail_active",
+            "provider_rate_limit",
+            "timeout",
+            "connection_error",
+        )
+        try:
+            values = self.redis.mget(
+                [f"{self.METRIC_PREFIX}:{event}" for event in events]
+            )
+            counters = {
+                event: int(value or 0)
+                for event, value in zip(events, values)
+            }
+        except redis.RedisError:
+            logger.exception("Could not read Billy indicators")
+            counters = {event: 0 for event in events}
+
+        return {
+            "guardrail": {
+                "active": not budget.get("available", False),
+                "reason": budget.get("block_reason") or budget.get("scope"),
+                "retry_after": budget.get("retry_after", 0),
+            },
+            "counters": counters,
+        }
 
     @staticmethod
     def parse_retry_after(value, default=60):

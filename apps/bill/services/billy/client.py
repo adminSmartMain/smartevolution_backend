@@ -7,6 +7,7 @@ from django.conf import settings
 from .exceptions import (
     BillyAPIError,
     BillyAuthenticationError,
+    BillyAuthenticationGuardrailError,
     BillyConnectionError,
     BillyLocalRateLimitError,
     BillyNotFoundError,
@@ -68,6 +69,12 @@ class BillyClient:
         # + 4000/h. Si no hay presupuesto, no sale tráfico HTTP.
         rate = self.rate_limiter.acquire()
         if not rate["allowed"]:
+            if rate.get("scope") == "global_block" and rate.get("block_reason") == "authentication":
+                self._record_event("authentication_guardrail_active")
+                raise BillyAuthenticationGuardrailError(
+                    "Billy está temporalmente bloqueado por autenticación",
+                    retry_after=rate["retry_after"],
+                )
             raise BillyLocalRateLimitError(
                 "Billy bloqueado por guardrail interno",
                 retry_after=rate["retry_after"],
@@ -84,20 +91,25 @@ class BillyClient:
                 **kwargs,
             )
         except requests.exceptions.Timeout as exc:
+            self._record_event("timeout")
             logger.warning("Billy timeout method=%s path=%s", method, path)
             raise BillyTimeoutError(f"Timeout consultando Billy: {path}") from exc
         except requests.exceptions.RequestException as exc:
+            self._record_event("connection_error")
             logger.error(
-                "Billy network error method=%s path=%s error=%s",
+                "Billy network error method=%s path=%s error_type=%s",
                 method,
                 path,
-                str(exc),
+                type(exc).__name__,
             )
             raise BillyConnectionError(
                 f"Error de conexión consultando Billy: {path}"
             ) from exc
 
         if response.status_code in expected_statuses:
+            record_success = getattr(self.rate_limiter, "record_success", None)
+            if record_success:
+                record_success()
             return response
 
         if response.status_code in (401, 403):
@@ -105,7 +117,13 @@ class BillyClient:
             # evitamos que miles de tareas repitan el mismo error mientras
             # se corrige el acceso.
             auth_block = getattr(settings, "BILLY_AUTH_GLOBAL_BLOCK_SECONDS", 15 * 60)
-            self.rate_limiter.block_global(auth_block, reason="authentication")
+            max_auth_block = getattr(settings, "BILLY_AUTH_GLOBAL_BLOCK_MAX_SECONDS", 24 * 60 * 60)
+            block_authentication = getattr(self.rate_limiter, "block_authentication", None)
+            if block_authentication:
+                block_authentication(auth_block, max_auth_block)
+            else:  # Compatibilidad con adaptadores de Redis anteriores.
+                self.rate_limiter.block_global(auth_block, reason="authentication")
+            self._record_event("authentication_rejected")
             raise BillyAuthenticationError(
                 f"Billy rechazó la autenticación ({response.status_code})"
             )
@@ -114,6 +132,7 @@ class BillyClient:
             raise BillyNotFoundError(f"Recurso no encontrado en Billy: {path}")
 
         if response.status_code == 429:
+            self._record_event("provider_rate_limit")
             retry_after = self.rate_limiter.parse_retry_after(
                 response.headers.get("Retry-After"),
                 default=60,
@@ -137,3 +156,8 @@ class BillyClient:
             status_code=response.status_code,
             response_data=response_data,
         )
+
+    def _record_event(self, event):
+        record_event = getattr(self.rate_limiter, "record_event", None)
+        if record_event:
+            record_event(event)

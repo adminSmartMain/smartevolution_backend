@@ -1,10 +1,11 @@
 # views
 from django.urls import path
-from apps.bill.api.views.index import BillAV, readBillAV, readCreditNoteAV, BillCreationManualAV, PendingBillyBillsAV, BillWatchlistAV, BillSyncNowAV
+from apps.bill.api.views.index import BillAV, readBillAV, readCreditNoteAV, BillCreationManualAV, PendingBillyBillsAV, BillWatchlistAV, BillSyncNowAV, BillyStatusAV
 
 urlpatterns = [
     path('read', readBillAV.as_view(), name='bill'),
     path('billy-pending', PendingBillyBillsAV.as_view(), name='billy-pending'),
+    path('billy-status', BillyStatusAV.as_view(), name='billy-status'),
     path('watchlist/<uuid:pk>', BillWatchlistAV.as_view(), name='bill-watchlist'),
     path('sync-now/<uuid:pk>', BillSyncNowAV.as_view(), name='bill-sync-now'),
     path('', BillAV.as_view(), name='bill'),
