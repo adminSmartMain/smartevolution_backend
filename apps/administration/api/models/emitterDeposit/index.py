@@ -11,8 +11,8 @@ class EmitterDeposit(BaseModel):
     client        = models.ForeignKey(Client, on_delete=models.CASCADE)
     operation     = models.ForeignKey(PreOperation, on_delete=models.CASCADE, blank=True, null=True)
     amount        = models.FloatField(blank=False, null=False)
-    # Legal settlement value for COP disbursements. Legacy ``amount`` remains
-    # for historic compatibility; new disbursements always populate this field.
+    # Deprecated compatibility field. New deposits keep their integer COP value
+    # in amount, so reports do not need two monetary sources.
     settledAmount = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
     bank          = models.ForeignKey(Bank, on_delete=models.CASCADE)
     beneficiary   = models.CharField(max_length=255, blank=False, null=False)

@@ -26,8 +26,7 @@ class EmitterDepositSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('El desembolso COP debe ser un valor entero, sin centavos.')
         if amount <= 0:
             raise serializers.ValidationError('El desembolso debe ser mayor que cero.')
-        # Keep the legacy float column integer-valued while consumers migrate to
-        # settledAmount, which is the authoritative decimal representation.
+        # Monetary source columns are persisted in COP whole units.
         return float(amount)
 
     def validate(self, attrs):
@@ -44,12 +43,10 @@ class EmitterDepositSerializer(serializers.ModelSerializer):
         if self.instance:
             deposits = deposits.exclude(pk=self.instance.pk)
         already_assigned = sum(
-            (as_decimal(deposit.settledAmount if deposit.settledAmount is not None else deposit.amount) for deposit in deposits),
+            (as_decimal(deposit.amount) for deposit in deposits),
             as_decimal(0),
         )
-        total_to_disburse = as_decimal(
-            summary.settledTotal if summary.settledTotal is not None else summary.total
-        ) - as_decimal(getattr(summary, 'manualAdjustment', 0))
+        total_to_disburse = as_decimal(summary.total) - as_decimal(getattr(summary, 'manualAdjustment', 0))
         if already_assigned + as_decimal(amount) > total_to_disburse:
             raise serializers.ValidationError({
                 'amount': 'El desembolso supera el saldo disponible de la operación.'
@@ -64,7 +61,6 @@ class EmitterDepositSerializer(serializers.ModelSerializer):
         validated_data['id'] = gen_uuid()
         validated_data['created_at'] = timezone.now()
         validated_data['user_created_at'] = self.context['request'].user
-        validated_data['settledAmount'] = round_cop(validated_data['amount'])
 
         # get the last deposit id
         try:
@@ -100,8 +96,6 @@ class EmitterDepositSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.updated_at      = timezone.now()
         instance.user_updated_at = self.context['request'].user
-        if 'amount' in validated_data:
-            validated_data['settledAmount'] = round_cop(validated_data['amount'])
         # update the accounting control for the deposit
         if self.context['request'].data['account'] != None:
             try:
@@ -140,17 +134,16 @@ class EmitterDepositSerializer(serializers.ModelSerializer):
         if not summary:
             return
         total_deposits = sum(
-            (as_decimal(deposit.settledAmount if deposit.settledAmount is not None else deposit.amount)
+            (as_decimal(deposit.amount)
              for deposit in EmitterDeposit.objects.filter(operation__opId=op_id, state=True)),
             as_decimal(0),
         )
-        total = as_decimal(summary.settledTotal if summary.settledTotal is not None else summary.total)
+        total = as_decimal(summary.total)
         adjustment = as_decimal(getattr(summary, 'manualAdjustment', 0))
         pending = round_cop(total - total_deposits - adjustment)
         summary.totalDeposits = int(total_deposits)
         summary.pendingToDeposit = int(pending)
-        summary.settledPendingToDeposit = pending
-        summary.save(update_fields=['totalDeposits', 'pendingToDeposit', 'settledPendingToDeposit', 'updated_at'])
+        summary.save(update_fields=['totalDeposits', 'pendingToDeposit', 'updated_at'])
 
 
 
