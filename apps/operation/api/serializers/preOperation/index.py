@@ -21,7 +21,6 @@ import datetime
 from apps.base.exceptions import HttpException
 #utils
 from apps.base.utils.logBalanceAccount import log_balance_change
-from apps.operation.utils.penny_allocation import settle_operations
 import logging
 import uuid
 
@@ -124,19 +123,26 @@ class PreOperationSerializer(serializers.ModelSerializer):
 
                     client_account = validated_data.get('clientAccount')
                     if client_account:
-                        total_operation = validated_data['payedAmount'] + validated_data.get('GM', 0)
-                        validated_data['insufficientAccountBalance'] = client_account.balance < total_operation
+                        # Lock the account as well as the bill.  The browser's
+                        # availability figure is advisory; the server must add
+                        # every already-created detail of this operation before
+                        # deciding whether the selected account can cover it.
+                        client_account = type(client_account).objects.select_for_update().get(pk=client_account.pk)
+                        validated_data['clientAccount'] = client_account
+                        already_reserved = sum(
+                            float(row.presentValueInvestor or 0) + float(row.GM or 0)
+                            for row in PreOperation.objects.select_for_update().filter(
+                                opId=validated_data['opId'], clientAccount=client_account
+                            )
+                        )
+                        total_operation = float(validated_data.get('presentValueInvestor') or 0) + float(validated_data.get('GM') or 0)
+                        validated_data['insufficientAccountBalance'] = client_account.balance < (already_reserved + total_operation)
 
                     bill.currentBalance = current_balance - amount
                     bill.save(update_fields=['currentBalance'])
                     validated_data['opPendingAmount'] = validated_data['payedAmount']
 
                 instance = super().create(validated_data)
-                # Settlement is backend-owned and repeated for the operation so
-                # a later row can absorb the penny delta deterministically.
-                settle_operations(
-                    PreOperation.objects.select_for_update().filter(opId=instance.opId).order_by('id')
-                )
                 return instance
 
         except Exception as e:

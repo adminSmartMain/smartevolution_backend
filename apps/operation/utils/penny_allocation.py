@@ -1,8 +1,9 @@
 """Deterministic COP settlement for operation rows.
 
 This module is deliberately the only place where an operation's monetary rows
-are rounded.  Renderers consume the ``settled*`` fields and must never derive
-or round a total themselves.
+are rounded.  Confirmation replaces those original monetary values with their
+final COP values; the pre-rounding evidence is returned to the caller so it can
+be saved once in ``operation_log``.
 """
 from decimal import Decimal, ROUND_HALF_UP, localcontext
 
@@ -17,16 +18,6 @@ MONEY_FIELDS = (
     "commissionSF",
     "GM",
 )
-SETTLED_FIELD = {
-    "amount": "settledAmount",
-    "payedAmount": "settledPayedAmount",
-    "presentValueInvestor": "settledPresentValueInvestor",
-    "presentValueSF": "settledPresentValueSF",
-    "investorProfit": "settledInvestorProfit",
-    "commissionSF": "settledCommissionSF",
-    "GM": "settledGM",
-}
-
 
 def as_decimal(value):
     """Convert inputs without importing binary float noise into calculations."""
@@ -81,46 +72,56 @@ def calculate_operation_values(operation):
 
 
 def settle_operations(operations):
-    """Persist a balanced, integer settlement for all rows of an operation.
+    """Persist a balanced, integer settlement and return its audit payload.
 
-    ``operations`` must be a deterministic iterable (normally a locked queryset).
-    Existing legacy columns are intentionally left untouched so historic records
-    are not recalculated.  New documents use only the settled columns.
+    ``operations`` must be a deterministic iterable (normally locked and
+    ordered by id).  Monetary source columns are the single source of truth;
+    rate columns intentionally retain decimals.
     """
     operations = list(operations)
     if not operations:
-        return operations
+        return operations, {"policy": "LARGEST_NOMINAL_HALF_UP_V1", "rows": []}
 
     raw_by_operation = [calculate_operation_values(operation) for operation in operations]
     nominals = [values["payedAmount"] for values in raw_by_operation]
+    audit_rows = [
+        {
+            "operation_id": str(operation.id),
+            "bill_id": str(operation.bill_id),
+            "investor_id": str(operation.investor_id),
+            "fields": {},
+        }
+        for operation in operations
+    ]
     for money_field in MONEY_FIELDS:
         raw_values = [values[money_field] for values in raw_by_operation]
         allocated = allocate_pennies(
             raw_values, nominals
         )
-        settled_field = SETTLED_FIELD[money_field]
-        for operation, raw_value, value in zip(operations, raw_values, allocated):
-            setattr(operation, settled_field, value)
-            audit = operation.settlementAudit or {}
-            audit[money_field] = {
+        for audit_row, operation, raw_value, value in zip(audit_rows, operations, raw_values, allocated):
+            setattr(operation, money_field, float(value))
+            audit_row["fields"][money_field] = {
                 'exact_amount': str(raw_value),
                 'rounded_amount': str(round_cop(raw_value)),
                 'rounding_adjustment': str(value - round_cop(raw_value)),
-                'settled_amount': str(value),
+                'final_amount': str(value),
             }
-            operation.settlementAudit = audit
 
     for operation in operations:
-        operation.save(update_fields=list(SETTLED_FIELD.values()) + ["settlementAudit", "updated_at"])
-    return operations
+        operation.save(update_fields=list(MONEY_FIELDS) + ["updated_at"])
+    return operations, {
+        "policy": "LARGEST_NOMINAL_HALF_UP_V1",
+        "allocation_target": "largest_payed_amount_then_detail_order",
+        "rows": audit_rows,
+    }
 
 
 def build_summary_settlement(operations, requested_values):
     """Build persisted header values from already-settled detail rows."""
     totals = {}
-    for money_field, settled_field in SETTLED_FIELD.items():
+    for money_field in MONEY_FIELDS:
         totals[money_field] = sum(
-            (as_decimal(getattr(operation, settled_field)) for operation in operations),
+            (as_decimal(getattr(operation, money_field)) for operation in operations),
             Decimal("0"),
         )
 

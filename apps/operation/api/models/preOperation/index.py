@@ -35,8 +35,8 @@ class PreOperation(BaseModel):
     investorProfit       = models.FloatField(default=0, error_messages={'required': 'El beneficio del inversionista es requerido'})
     commissionSF         = models.FloatField(default=0, error_messages={'required': 'La comisión del SF es requerido'})
     GM                   = models.FloatField(default=0, error_messages={'required': 'La GM es requerido'})
-    # Integer COP values settled by the backend.  They are nullable exclusively
-    # to preserve historic operations, which are explicitly out of scope.
+    # Deprecated compatibility fields. New settlements never write or read
+    # these columns; their audit lives in operation_log.
     settledAmount                 = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
     settledPayedAmount            = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
     settledPresentValueInvestor   = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
@@ -44,8 +44,6 @@ class PreOperation(BaseModel):
     settledInvestorProfit         = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
     settledCommissionSF           = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
     settledGM                     = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
-    # Exact, initially rounded and final values are stored as decimal strings
-    # so the settlement can be audited without binary float conversion.
     settlementAudit               = models.JSONField(null=True, blank=True)
     status               = models.IntegerField(default=0,)
     isRebuy              = models.BooleanField(default=False, blank=True, null=True)
@@ -86,6 +84,7 @@ class OperationLog(BaseModel):
         ("PATCH", "Patch Operation"),
         ("DELETE", "Delete Operation"),
         ("BILL", "Bill"),
+        ("SETTLEMENT", "Settlement"),
     )
 
     opId = models.BigIntegerField(null=True, blank=True)

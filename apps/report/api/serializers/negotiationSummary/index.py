@@ -15,7 +15,7 @@ from apps.base.exceptions import HttpException
 # Models 
 from apps.report.api.models.pendingAccounts.index import PendingAccount
 from apps.administration.api.models.emitterDeposit.index import EmitterDeposit
-from apps.operation.models import PreOperation
+from apps.operation.models import PreOperation, OperationLog
 from apps.operation.utils.penny_allocation import as_decimal, build_summary_settlement, round_cop, settle_operations
 import logging
 
@@ -51,10 +51,12 @@ class NegotiationSummarySerializer(serializers.ModelSerializer):
                 serializer = PendingAccountSerializer(data=x, context={'request': self.context['request']})
                 if serializer.is_valid():
                     serializer.save()
+                else:
+                    raise serializers.ValidationError({'pendingAccounts': serializer.errors})
         return NegotiationSummary.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
-        if instance.settledTotal is not None:
+        if instance.pk:
             raise serializers.ValidationError({
                 'opId': 'La liquidación confirmada es inmutable; cree una nueva versión para modificarla.'
             })
@@ -95,14 +97,14 @@ class NegotiationSummarySerializer(serializers.ModelSerializer):
                 'opId': 'La operación ya cuenta con una liquidación confirmada.'
             })
 
-        settle_operations(operations)
+        operations, settlement_audit = settle_operations(operations)
         settlement = build_summary_settlement(operations, validated_data)
         pending_accounts = self.context['request'].data.get('pendingAccounts', [])
         total_discounts = sum(
             (as_decimal(item.get('amount')) for item in pending_accounts), Decimal('0')
         )
         total_deposits = sum(
-            (as_decimal(deposit.settledAmount if deposit.settledAmount is not None else deposit.amount)
+            (as_decimal(deposit.amount)
              for deposit in EmitterDeposit.objects.filter(operation__opId=op_id, state=1)),
             Decimal('0'),
         )
@@ -125,17 +127,28 @@ class NegotiationSummarySerializer(serializers.ModelSerializer):
         for operation in operations:
             for group, key in (('by_bill', str(operation.bill_id)), ('by_investor', str(operation.investor_id))):
                 bucket = validated_data['settlementDimensions'][group].setdefault(
-                    key, {'settledPresentValueInvestor': 0, 'settledPayedAmount': 0}
+                    key, {'presentValueInvestor': 0, 'payedAmount': 0}
                 )
-                bucket['settledPresentValueInvestor'] += int(operation.settledPresentValueInvestor)
-                bucket['settledPayedAmount'] += int(operation.settledPayedAmount)
+                bucket['presentValueInvestor'] += int(operation.presentValueInvestor)
+                bucket['payedAmount'] += int(operation.payedAmount)
         settlement['pendingToDeposit'] = round_cop(settlement['total'] - total_deposits - manual_adjustment)
         for field, value in settlement.items():
-            # The legacy fields remain integer-valued for compatibility with
-            # existing clients. The settled fields are the legal-document SSOT.
             validated_data[field] = int(value)
-            settled_field = 'settled' + field[0].upper() + field[1:]
-            validated_data[settled_field] = value
+
+        # This is intentionally a regular database write, not the best-effort
+        # helper: an auditable settlement must fail atomically if its log cannot
+        # be persisted.
+        OperationLog.objects.create(
+            id=gen_uuid(),
+            opId=op_id,
+            source='SETTLEMENT',
+            action='PENNY_ALLOCATION',
+            status='SUCCESS',
+            message='Penny allocation applied',
+            extra_data=settlement_audit,
+            user_email=getattr(self.context['request'].user, 'email', None),
+            user_id_ref=str(getattr(self.context['request'].user, 'id', '')),
+        )
 
 
 class NegotiationSummaryReadOnlySerializer(serializers.ModelSerializer):
@@ -153,15 +166,11 @@ class NegotiationSummaryReadOnlySerializer(serializers.ModelSerializer):
         data['emitterDeposits']  = EmitterDepositSerializer(EmitterDeposit.objects.filter(operation__opId=instance.opId), many=True).data
         
         data['totalDeposits'] = sum(
-            (as_decimal(deposit.settledAmount if deposit.settledAmount is not None else deposit.amount)
+            (as_decimal(deposit.amount)
              for deposit in EmitterDeposit.objects.filter(operation__opId=instance.opId, state=True)),
             Decimal('0'),
         )
-        data['pendingToDeposit'] = (
-            instance.settledPendingToDeposit
-            if instance.settledPendingToDeposit is not None
-            else as_decimal(data['total']) - data['totalDeposits']
-        )
+        data['pendingToDeposit'] = as_decimal(data['total']) - data['totalDeposits']
         # get the account control of the emitter deposits
         #for x in data['emitterDeposits']:
             # get the account control of the emitter deposit

@@ -554,6 +554,7 @@ class NegotiationSummaryAV(BaseAV):
             else:
                 return response({'error': True, 'message': serializer.errors}, 500)
         except Exception as e:
+            transaction.set_rollback(True)
             return response({'error': True, 'message': str(e)}, 500)
 
     @checkRole(['admin'])
@@ -577,4 +578,5 @@ class NegotiationSummaryAV(BaseAV):
             else:
                 return response({'error': True, 'message': serializer.errors}, 500)
         except Exception as e:
+            transaction.set_rollback(True)
             return response({'error': True, 'message': str(e)}, 500)
