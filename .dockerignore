@@ -1,0 +1,18 @@
+# Smart Evolution - Proteccion local de build
+.git
+.github
+.env
+.env.*
+**/.env
+**/.env.*
+docker.env
+**/docker.env
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+__pycache__
+*.pyc
+logs
