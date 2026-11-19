@@ -33,8 +33,8 @@ class NegotiationSummary(BaseModel):
     pendingToDeposit = models.FloatField(default=0)
     manualAdjustment = models.DecimalField(max_digits=18, decimal_places=0, default=0)
     observations     = models.TextField(blank=True)
-    # Immutable COP settlement used by legal documents.  Legacy float columns
-    # remain only to avoid modifying historic records.
+    # Deprecated compatibility fields. New settlements use the original
+    # monetary columns and operation_log is the audit source of truth.
     settledFutureValue = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
     settledValueToDiscount = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)
     settledSMDiscount = models.DecimalField(max_digits=18, decimal_places=0, null=True, blank=True)

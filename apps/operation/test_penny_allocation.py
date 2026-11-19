@@ -2,7 +2,29 @@ from decimal import Decimal
 
 from django.test import SimpleTestCase
 
-from apps.operation.utils.penny_allocation import allocate_pennies, round_cop
+from apps.operation.utils.penny_allocation import allocate_pennies, round_cop, settle_operations
+
+
+class OperationStub:
+    def __init__(self, identifier, nominal):
+        self.id = identifier
+        self.bill_id = f"bill-{identifier}"
+        self.investor_id = f"investor-{identifier}"
+        self.amount = nominal
+        self.payedAmount = nominal
+        self.investorTax = 10
+        self.discountTax = 20
+        self.operationDays = 30
+        self.applyGm = False
+        self.presentValueInvestor = 0
+        self.presentValueSF = 0
+        self.investorProfit = 0
+        self.commissionSF = 0
+        self.GM = 0
+        self.saved_fields = None
+
+    def save(self, update_fields):
+        self.saved_fields = update_fields
 
 
 class PennyAllocationTests(SimpleTestCase):
@@ -29,3 +51,15 @@ class PennyAllocationTests(SimpleTestCase):
 
         self.assertEqual(result, [Decimal('2'), Decimal('1')])
         self.assertEqual(sum(result), round_cop(sum(values)))
+
+    def test_settlement_replaces_source_amounts_and_returns_a_single_audit_payload(self):
+        operations = [OperationStub("a", 100), OperationStub("b", 300)]
+
+        settled, audit = settle_operations(operations)
+
+        self.assertEqual(settled, operations)
+        self.assertEqual(audit["policy"], "LARGEST_NOMINAL_HALF_UP_V1")
+        self.assertEqual(len(audit["rows"]), 2)
+        self.assertIn("exact_amount", audit["rows"][0]["fields"]["presentValueInvestor"])
+        self.assertIn("amount", operations[0].saved_fields)
+        self.assertNotIn("settledAmount", operations[0].saved_fields)

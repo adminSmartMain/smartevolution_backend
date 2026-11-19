@@ -31,15 +31,15 @@ def test_returns_no_rows_when_there_are_no_amounts_to_settle():
     assert allocate_pennies([], []) == []
 
 
-def test_builds_summary_only_from_already_settled_values():
+def test_builds_summary_from_the_final_operation_values():
     operation = SimpleNamespace(
-        settledAmount=Decimal("100"),
-        settledPayedAmount=Decimal("90"),
-        settledPresentValueInvestor=Decimal("80"),
-        settledPresentValueSF=Decimal("70"),
-        settledInvestorProfit=Decimal("10"),
-        settledCommissionSF=Decimal("10"),
-        settledGM=Decimal("0"),
+        amount=Decimal("100"),
+        payedAmount=Decimal("90"),
+        presentValueInvestor=Decimal("80"),
+        presentValueSF=Decimal("70"),
+        investorProfit=Decimal("10"),
+        commissionSF=Decimal("10"),
+        GM=Decimal("0"),
     )
 
     summary = build_summary_settlement(
