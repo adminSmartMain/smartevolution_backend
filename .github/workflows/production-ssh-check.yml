@@ -1,0 +1,37 @@
+name: Verify Production SSH
+
+on:
+  pull_request:
+    branches:
+      - development
+    paths:
+      - '.github/workflows/production-ssh-check.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-production-ssh:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'test/production-ssh-connection'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Verify SSH connection to Ubuntu Production
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST_PROD }}
+          username: ${{ secrets.SSH_USERNAME_PROD }}
+          key: ${{ secrets.SSH_KEY_PROD }}
+          port: ${{ secrets.SSH_PORT_PROD }}
+          script: |
+            set -eu
+            echo "=== USER ==="
+            whoami
+            echo "=== BACKEND DIRECTORY ==="
+            cd "${{ secrets.PROD_FOLDER }}"
+            pwd
+            echo "=== GIT STATUS ==="
+            git branch --show-current
+            git status -sb
+            echo "=== SSH VERIFICATION PASSED ==="
