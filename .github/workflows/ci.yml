@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - development
+      - main
+
+jobs:
+  test:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: smartevolution_test
+          MYSQL_USER: smartevolution
+          MYSQL_PASSWORD: smartevolution
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DEBUG: "True"
+      ENGINE: django.db.backends.mysql
+      DB_NAME: smartevolution_test
+      DB_USER: smartevolution
+      DB_PASSWORD: smartevolution
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+      SECRET_KEY: ci-only-secret-key
+      AWS_ACCESS_KEY_ID: ci-only-key
+      AWS_SECRET_ACCESS_KEY: ci-only-secret
+      AWS_STORAGE_BUCKET_NAME: ci-only-bucket
+      AUCO_API_PROD_URL: "https://example.invalid"
+      AUCO_USER_EMAIL: qa@invalid.local
+      PRIVATE_KEY: ci-only-private-key
+      PUBLIC_KEY: ci-only-public-key
+      EMAIL_HOST: localhost
+      EMAIL_PORT: "25"
+      EMAIL_HOST_USER: ""
+      EMAIL_HOST_PASSWORD: ""
+      CHANNEL_REDIS_URL: redis://127.0.0.1:6379/2
+      CELERY_BROKER_URL: redis://127.0.0.1:6379/0
+      CELERY_RESULT_BACKEND: redis://127.0.0.1:6379/1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-test.txt
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y default-libmysqlclient-dev pkg-config
+      - name: Install dependencies
+        run: pip install -r requirements-test.txt
+      - name: Grant test-database permissions
+        run: mysql --host=127.0.0.1 --port=3306 --user=root --password=root -e "GRANT ALL PRIVILEGES ON *.* TO 'smartevolution'@'%'; FLUSH PRIVILEGES;"
+      - name: Check Django configuration
+        run: python manage.py check
+      - name: Run tests
+        run: pytest
