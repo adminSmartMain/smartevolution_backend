@@ -24,6 +24,13 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
             echo "${{ secrets.DOT_ENV_PROD }}" > core/.env
+            test -s core/.env
+            test -s docker.production.env
+            sudo env BILLY_AWS_REGION=us-east-1 BILLY_LOG_GROUP=/smartevolution/prod/billy docker compose \
+              --env-file docker.env \
+              -f docker-compose.yml \
+              -f docker-compose.production.yml \
+              config --quiet
             sudo env BILLY_AWS_REGION=us-east-1 BILLY_LOG_GROUP=/smartevolution/prod/billy docker compose \
               --env-file docker.env \
               -f docker-compose.yml \
