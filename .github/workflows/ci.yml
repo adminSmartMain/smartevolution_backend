@@ -74,5 +74,35 @@ jobs:
         run: mysql --host=127.0.0.1 --port=3306 --user=root --password=root -e "GRANT ALL PRIVILEGES ON *.* TO 'smartevolution'@'%'; FLUSH PRIVILEGES;"
       - name: Check Django configuration
         run: python manage.py check
+      - name: Validate development and production Compose overrides
+        shell: bash
+        run: |
+          set -eu
+          export JWT_PRIVATE_KEY_HOST_PATH=/tmp/ci-jwt-private.pem
+          export JWT_PUBLIC_KEY_HOST_PATH=/tmp/ci-jwt-public.pem
+          export BILLY_LOG_GROUP=ci
+          # This is an ephemeral CI placeholder, not a deployment secret.
+          trap 'rm -f docker.production.env' EXIT
+          printf '%s\n' 'AUTH_CAPTCHA_ENABLED=False' > docker.production.env
+          docker compose --env-file docker.env -f docker-compose.yml -f docker-compose.development.yml config --quiet
+          docker compose --env-file docker.env -f docker-compose.yml -f docker-compose.production.yml config --quiet
       - name: Run tests
         run: pytest
+      - name: Verify RS256 sessions with PEM files and CAPTCHA disabled
+        shell: bash
+        run: |
+          set -eu
+          key_dir=$(mktemp -d)
+          trap 'rm -f "$key_dir/private.pem" "$key_dir/public.pem"; rmdir "$key_dir"' EXIT
+          openssl genpkey -quiet -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out "$key_dir/private.pem"
+          openssl pkey -in "$key_dir/private.pem" -pubout -out "$key_dir/public.pem"
+          export DEBUG=False AUTH_SECURITY_ENVIRONMENT=production AUTH_JWT_ALGORITHM=RS256
+          export AUTH_JWT_SIGNING_KEY_FILE="$key_dir/private.pem"
+          export AUTH_JWT_VERIFYING_KEY_FILE="$key_dir/public.pem"
+          export AUTH_CAPTCHA_ENABLED=False
+          export AUTH_REDIS_URL=redis://127.0.0.1:6379/3
+          export RUN_RS256_SESSION_INTEGRATION=1
+          pytest apps/authentication/tests/test_jwt_file_secrets.py \
+            apps/authentication/tests/test_rs256_session_integration.py \
+            apps/authentication/tests.py::LoginSecurityServiceTests \
+            apps/authentication/tests.py::LoginSessionSecurityTests

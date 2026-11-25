@@ -3,5 +3,10 @@ __pycache__
 smart_env
 **/node_modules/
 .env*
+!.env.example
+*.pem
+*.key
+secrets/
+jwt-paths.env
 venv
 *-lock.json

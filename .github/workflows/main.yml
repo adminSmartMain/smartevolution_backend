@@ -22,11 +22,7 @@ jobs:
             set -eu
             cd "${{secrets.PROD_FOLDER}}"
             git fetch origin main
-            git reset --hard origin/main
-            echo "${{ secrets.DOT_ENV_PROD }}" > core/.env
-            sudo env BILLY_AWS_REGION=us-east-1 BILLY_LOG_GROUP=/smartevolution/prod/billy docker compose \
-              --env-file docker.env \
-              -f docker-compose.yml \
-              -f docker-compose.production.yml \
-              up --build -d
-            exit
+            script_file=$(mktemp)
+            trap 'rm -f "$script_file"' EXIT
+            git show origin/main:scripts/deploy_compose.sh > "$script_file"
+            sh "$script_file" main docker-compose.production.yml /smartevolution/prod/billy

@@ -1,5 +1,11 @@
 services:
   web:
+    environment: &jwt_environment
+      AUTH_JWT_SIGNING_KEY_FILE: /run/secrets/jwt-private.pem
+      AUTH_JWT_VERIFYING_KEY_FILE: /run/secrets/jwt-public.pem
+    secrets: &jwt_secrets
+      - jwt-private.pem
+      - jwt-public.pem
     env_file: !override
       - docker.production.env
     volumes:
@@ -14,6 +20,8 @@ services:
       - "127.0.0.1:8000:8000"
 
   worker-billy:
+    environment: *jwt_environment
+    secrets: *jwt_secrets
     env_file: !override
       - docker.production.env
     volumes:
@@ -25,6 +33,8 @@ services:
         max-file: "3"
 
   worker-notifications:
+    environment: *jwt_environment
+    secrets: *jwt_secrets
     logging:
       driver: local
       options:
@@ -36,6 +46,8 @@ services:
       - ./core/.env:/app/core/.env:ro
 
   beat-billy:
+    environment: *jwt_environment
+    secrets: *jwt_secrets
     logging:
       driver: local
       options:
@@ -45,3 +57,9 @@ services:
       - docker.production.env
     volumes:
       - ./core/.env:/app/core/.env:ro
+
+secrets:
+  jwt-private.pem:
+    file: ${JWT_PRIVATE_KEY_HOST_PATH:?Set JWT_PRIVATE_KEY_HOST_PATH in jwt-paths.env}
+  jwt-public.pem:
+    file: ${JWT_PUBLIC_KEY_HOST_PATH:?Set JWT_PUBLIC_KEY_HOST_PATH in jwt-paths.env}

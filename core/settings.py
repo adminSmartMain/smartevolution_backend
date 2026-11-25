@@ -9,7 +9,7 @@ from django.core.exceptions import ImproperlyConfigured
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Initialise environment variables
-env = environ.Env()
+env = environ.FileAwareEnv()
 environ.Env.read_env()
 
 # SECURITY WARNING: keep the secret key used in production secret!
@@ -243,6 +243,8 @@ if AUTH_IS_PRODUCTION:
         raise ImproperlyConfigured('Production authentication requires AUTH_JWT_ALGORITHM=RS256 or ES256.')
     if not AUTH_JWT_SIGNING_KEY or not AUTH_JWT_VERIFYING_KEY:
         raise ImproperlyConfigured('Production authentication requires asymmetric JWT signing and verification keys.')
+    from core.auth_keys import validate_jwt_key_pair
+    validate_jwt_key_pair(AUTH_JWT_SIGNING_KEY, AUTH_JWT_VERIFYING_KEY, AUTH_JWT_ALGORITHM)
 
 # JWT settings
 SIMPLE_JWT = {

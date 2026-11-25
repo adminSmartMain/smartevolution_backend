@@ -1,5 +1,11 @@
 services:
   web:
+    environment: &jwt_environment
+      AUTH_JWT_SIGNING_KEY_FILE: /run/secrets/jwt-private.pem
+      AUTH_JWT_VERIFYING_KEY_FILE: /run/secrets/jwt-public.pem
+    secrets: &jwt_secrets
+      - jwt-private.pem
+      - jwt-public.pem
     volumes:
       - ./core/.env:/app/core/.env:ro
     entrypoint:
@@ -12,6 +18,8 @@ services:
       - "127.0.0.1:8000:8000"
 
   worker-billy:
+    environment: *jwt_environment
+    secrets: *jwt_secrets
     volumes:
       - ./core/.env:/app/core/.env:ro
     restart: unless-stopped
@@ -22,11 +30,21 @@ services:
         max-file: "3"
 
   worker-notifications:
+    environment: *jwt_environment
+    secrets: *jwt_secrets
     volumes:
       - ./core/.env:/app/core/.env:ro
     restart: unless-stopped
 
   beat-billy:
+    environment: *jwt_environment
+    secrets: *jwt_secrets
     volumes:
       - ./core/.env:/app/core/.env:ro
     restart: unless-stopped
+
+secrets:
+  jwt-private.pem:
+    file: ${JWT_PRIVATE_KEY_HOST_PATH:?Set JWT_PRIVATE_KEY_HOST_PATH in jwt-paths.env}
+  jwt-public.pem:
+    file: ${JWT_PUBLIC_KEY_HOST_PATH:?Set JWT_PUBLIC_KEY_HOST_PATH in jwt-paths.env}

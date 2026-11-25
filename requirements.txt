@@ -3,13 +3,13 @@ asgiref
 dj-database-url
 django-cors-headers
 django-discover-runner
-django-environ
+django-environ==0.14.0
 django-role-permissions
 djangorestframework
 djangorestframework-simplejwt
 gunicorn
 mysqlclient==2.1.1
-PyJWT
+PyJWT[crypto]
 pytz
 six
 sqlparse

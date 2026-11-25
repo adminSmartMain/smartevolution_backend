@@ -211,7 +211,7 @@ def check_login_attempt(request, email, captcha_token):
 
     backoff_ttl = client.ttl(f"auth:login:backoff:{identifier}")
     if backoff_ttl > 0:
-        raise LoginRejected(retry_after=backoff_ttl, captcha_required=max(failures, ip_failures) >= settings.AUTH_CAPTCHA_AFTER_FAILURES)
+        raise LoginRejected(retry_after=backoff_ttl, captcha_required=settings.AUTH_CAPTCHA_ENABLED and max(failures, ip_failures) >= settings.AUTH_CAPTCHA_AFTER_FAILURES)
 
 
 def verify_captcha(captcha_token, request, email=""):
@@ -321,8 +321,8 @@ def record_failed_login(request, email, user=None):
         # password verification. Later attempts are rejected from Redis before
         # authentication work, preventing worker exhaustion during an attack.
         time.sleep(retry_after)
-        raise LoginRejected(retry_after=retry_after, captcha_required=failures >= settings.AUTH_CAPTCHA_AFTER_FAILURES)
-    return failures >= settings.AUTH_CAPTCHA_AFTER_FAILURES
+        raise LoginRejected(retry_after=retry_after, captcha_required=settings.AUTH_CAPTCHA_ENABLED and failures >= settings.AUTH_CAPTCHA_AFTER_FAILURES)
+    return settings.AUTH_CAPTCHA_ENABLED and failures >= settings.AUTH_CAPTCHA_AFTER_FAILURES
 
 
 def reset_failed_logins(email):
