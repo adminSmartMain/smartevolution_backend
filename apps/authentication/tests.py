@@ -1,5 +1,5 @@
 from django.test import TestCase
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, override_settings
 from django.utils import timezone
 from datetime import timedelta
 from unittest.mock import patch
@@ -149,6 +149,27 @@ class AuthFakeRedis:
 
 
 class LoginSecurityServiceTests(SimpleTestCase):
+    @override_settings(AUTH_CAPTCHA_ENABLED=False, AUTH_CAPTCHA_AFTER_FAILURES=3)
+    @patch('apps.authentication.services.login_security.time.sleep')
+    @patch('apps.authentication.services.login_security.audit')
+    @patch('apps.authentication.services.login_security._redis')
+    def test_disabled_captcha_never_requested_but_backoff_and_lock_remain(self, redis_factory, audit, sleep):
+        from apps.authentication.services.login_security import check_login_attempt, record_failed_login
+        store = AuthFakeRedis()
+        redis_factory.return_value = store
+        request = type('Request', (), {'META': {}})()
+        for _ in range(3):
+            self.assertFalse(record_failed_login(request, 'user@example.com'))
+        with self.assertRaises(LoginRejected) as fourth:
+            record_failed_login(request, 'user@example.com')
+        self.assertFalse(fourth.exception.captcha_required)
+        with self.assertRaises(LoginRejected) as backoff:
+            check_login_attempt(request, 'user@example.com', None)
+        self.assertFalse(backoff.exception.captcha_required)
+        with self.assertRaises(LoginRejected) as fifth:
+            record_failed_login(request, 'user@example.com')
+        self.assertEqual(fifth.exception.retry_after, 15 * 60)
+
     def test_identifier_is_case_insensitive_and_not_raw_email(self):
         value = _identifier('User@Example.com')
         self.assertEqual(value, _identifier(' user@example.com '))

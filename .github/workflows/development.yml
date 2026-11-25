@@ -19,9 +19,11 @@ jobs:
           key: ${{ secrets.SSH_KEY_TEST }}
           port: ${{ secrets.SSH_PORT_TEST }}
           script: |
+            set -eu
             cd "${{secrets.TEST_FOLDER}}"
-            git reset --hard
-            git pull origin development
-            test -s core/.env || exit 1
-            sudo env BILLY_AWS_REGION=us-east-1 BILLY_LOG_GROUP=/smartevolution/dev/billy docker compose -f docker-compose.yml -f docker-compose.development.yml --env-file docker.env up --build -d
-            exit
+            # Fetch the reviewed preflight script without replacing the checkout.
+            git fetch origin development
+            script_file=$(mktemp)
+            trap 'rm -f "$script_file"' EXIT
+            git show origin/development:scripts/deploy_compose.sh > "$script_file"
+            sh "$script_file" development docker-compose.development.yml /smartevolution/dev/billy

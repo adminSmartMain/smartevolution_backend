@@ -6,6 +6,7 @@
 **/.env
 **/.env.*
 docker.env
+jwt-paths.env
 **/docker.env
 *.pem
 *.key
