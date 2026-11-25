@@ -3,6 +3,7 @@ from datetime import timedelta
 import environ
 import os
 from celery.schedules import crontab
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -227,11 +228,71 @@ SPECTACULAR_SETTINGS = {
 
 
 
+# Authentication deployment policy. Production refuses weak defaults and
+# incomplete secrets at startup instead of accepting them silently.
+AUTH_SECURITY_ENVIRONMENT = env(
+    'AUTH_SECURITY_ENVIRONMENT', default='development' if DEBUG else 'production',
+).strip().lower()
+AUTH_IS_PRODUCTION = AUTH_SECURITY_ENVIRONMENT in ('production', 'prod')
+AUTH_JWT_ALGORITHM = env('AUTH_JWT_ALGORITHM', default='RS256' if AUTH_IS_PRODUCTION else 'HS256')
+AUTH_JWT_SIGNING_KEY = env('AUTH_JWT_SIGNING_KEY', default='' if AUTH_IS_PRODUCTION else SECRET_KEY)
+AUTH_JWT_VERIFYING_KEY = env('AUTH_JWT_VERIFYING_KEY', default='')
+
+if AUTH_IS_PRODUCTION:
+    if AUTH_JWT_ALGORITHM not in ('RS256', 'ES256'):
+        raise ImproperlyConfigured('Production authentication requires AUTH_JWT_ALGORITHM=RS256 or ES256.')
+    if not AUTH_JWT_SIGNING_KEY or not AUTH_JWT_VERIFYING_KEY:
+        raise ImproperlyConfigured('Production authentication requires asymmetric JWT signing and verification keys.')
+
 # JWT settings
 SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=73000)
+    'BLACKLIST_AFTER_ROTATION': False,
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ALGORITHM': AUTH_JWT_ALGORITHM,
+    'SIGNING_KEY': AUTH_JWT_SIGNING_KEY,
+    'VERIFYING_KEY': AUTH_JWT_VERIFYING_KEY,
+    'ISSUER': env('AUTH_JWT_ISSUER', default='smartevolution'),
+    'AUDIENCE': env('AUTH_JWT_AUDIENCE', default='smartevolution-web'),
+    'USER_ID_CLAIM': 'sub',
 }
+
+# Authentication security state is shared by every API replica. Login fails
+# closed when this store is unavailable rather than silently dropping limits.
+AUTH_REDIS_URL = env('AUTH_REDIS_URL', default='redis://redis:6379/3')
+AUTH_LOGIN_IDENTIFIER_SECRET = env('AUTH_LOGIN_IDENTIFIER_SECRET', default=SECRET_KEY)
+AUTH_LOGIN_IP_LIMIT = env.int('AUTH_LOGIN_IP_LIMIT', default=10)
+AUTH_LOGIN_IP_WINDOW_SECONDS = env.int('AUTH_LOGIN_IP_WINDOW_SECONDS', default=60)
+AUTH_LOGIN_FAILURE_WINDOW_SECONDS = env.int('AUTH_LOGIN_FAILURE_WINDOW_SECONDS', default=15 * 60)
+AUTH_LOGIN_MAX_FAILURES = env.int('AUTH_LOGIN_MAX_FAILURES', default=5)
+AUTH_LOGIN_BACKOFF_FROM_FAILURES = env.int('AUTH_LOGIN_BACKOFF_FROM_FAILURES', default=4)
+AUTH_LOGIN_LOCK_SECONDS = env.int('AUTH_LOGIN_LOCK_SECONDS', default=15 * 60)
+AUTH_CAPTCHA_AFTER_FAILURES = env.int('AUTH_CAPTCHA_AFTER_FAILURES', default=3)
+AUTH_CAPTCHA_ENABLED = env.bool('AUTH_CAPTCHA_ENABLED', default=AUTH_IS_PRODUCTION)
+AUTH_CAPTCHA_MISSING_RETRY_SECONDS = env.int('AUTH_CAPTCHA_MISSING_RETRY_SECONDS', default=60)
+AUTH_TURNSTILE_SECRET_KEY = env('AUTH_TURNSTILE_SECRET_KEY', default='')
+AUTH_TURNSTILE_VERIFY_URL = env('AUTH_TURNSTILE_VERIFY_URL', default='https://challenges.cloudflare.com/turnstile/v0/siteverify')
+AUTH_TURNSTILE_EXPECTED_HOSTNAMES = tuple(
+    item.strip().lower()
+    for item in env('AUTH_TURNSTILE_EXPECTED_HOSTNAMES', default='').split(',')
+    if item.strip()
+)
+AUTH_SECURITY_ALERT_WEBHOOK_URL = env('AUTH_SECURITY_ALERT_WEBHOOK_URL', default='').strip()
+AUTH_TRUSTED_PROXY_COUNT = env.int('AUTH_TRUSTED_PROXY_COUNT', default=0)
+AUTH_ACCESS_TOKEN_SECONDS = env.int('AUTH_ACCESS_TOKEN_SECONDS', default=15 * 60)
+AUTH_REFRESH_TOKEN_SECONDS = env.int('AUTH_REFRESH_TOKEN_SECONDS', default=7 * 24 * 60 * 60)
+AUTH_REFRESH_COOKIE_NAME = env('AUTH_REFRESH_COOKIE_NAME', default='se_refresh')
+AUTH_CSRF_COOKIE_NAME = env('AUTH_CSRF_COOKIE_NAME', default='se_csrf')
+AUTH_CSRF_HEADER_NAME = env('AUTH_CSRF_HEADER_NAME', default='X-CSRF-Token')
+AUTH_REFRESH_COOKIE_PATH = env('AUTH_REFRESH_COOKIE_PATH', default='/api/auth/')
+AUTH_COOKIE_SECURE = env.bool('AUTH_COOKIE_SECURE', default=not DEBUG)
+AUTH_COOKIE_SAMESITE = env('AUTH_COOKIE_SAMESITE', default='Strict')
+
+# Turnstile is an optional production control.  Missing or invalid provider
+# configuration is reported by the authentication service and fails closed
+# only when a challenge is actually required; it must not prevent a healthy
+# API worker from starting.
 
 # --- CONFIGURACIÓN DE COOKIES Y SEGURIDAD HTTP ---
 
@@ -258,13 +319,34 @@ CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOWED_ORIGINS = [
     "https://devapp.smartevolution.com.co", 
     "https://app.smartevolution.com.co",
+    # Local frontend is an intentional development consumer. Keeping these
+    # explicit lets the HttpOnly refresh flow work from localhost even when
+    # Docker runs with DEBUG=False.
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
 ]
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    # Refresh/logout use a session-scoped double-submit CSRF token, whose
+    # explicit header name intentionally differs from Django's form header.
+    'x-csrf-token',
+    'x-requested-with',
+]
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS.copy()
 
 
 
 # Para Docker si estamos en modo DEBUG
 if DEBUG:
-    CORS_ALLOWED_ORIGINS += [
+    CSRF_TRUSTED_ORIGINS += [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
     ]

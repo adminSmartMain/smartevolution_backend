@@ -9,9 +9,15 @@ def ensure_risk_level_schema(apps, schema_editor):
     connection = schema_editor.connection
 
     with connection.cursor() as cursor:
-        tables = set(connection.introspection.table_names(cursor))
+        # MySQL can report table names with a different case depending on the
+        # host filesystem (`levelrisk` vs `levelRisk`). Compare normalized
+        # names so this repair migration remains idempotent in fresh test DBs.
+        tables = {
+            table_name.casefold()
+            for table_name in connection.introspection.table_names(cursor)
+        }
 
-    if LevelRisk._meta.db_table not in tables:
+    if LevelRisk._meta.db_table.casefold() not in tables:
         schema_editor.create_model(LevelRisk)
 
     with connection.cursor() as cursor:

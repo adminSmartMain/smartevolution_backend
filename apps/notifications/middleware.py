@@ -2,40 +2,21 @@ from urllib.parse import parse_qs
 
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
-from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework.exceptions import AuthenticationFailed
 
-from apps.authentication.models import User
+from apps.authentication.jwt import RevocableJWTAuthentication
 
 
 @database_sync_to_async
 def get_user_from_token(raw_token):
     try:
-        validated_token = AccessToken(raw_token)
-
-        user_id = validated_token.get("user_id")
-
-        if not user_id:
-            return AnonymousUser()
-
-        user = User.objects.filter(
-            pk=user_id,
-            is_active=True,
-        ).first()
-
-        if not user:
-            return AnonymousUser()
-
-        token_version = int(
-            validated_token.get("token_version", 0)
-        )
-
-        if token_version != int(user.token_version):
-            return AnonymousUser()
-
-        return user
-
-    except (InvalidToken, TokenError, ValueError, TypeError):
+        # WebSockets are an authenticated surface too.  Reuse the HTTP JWT
+        # validator so they enforce issuer/audience, access-token type,
+        # required claims, token-version and Redis session revocation.
+        authentication = RevocableJWTAuthentication()
+        validated_token = authentication.get_validated_token(raw_token)
+        return authentication.get_user(validated_token)
+    except (AuthenticationFailed, ValueError, TypeError):
         return AnonymousUser()
 
 

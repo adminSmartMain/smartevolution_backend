@@ -60,3 +60,25 @@ class AccessAudit(models.Model):
         db_table = 'access_audit'
         ordering = ['-created_at']
         indexes = [models.Index(fields=['target_type','target_id'], name='idx_audit_target'), models.Index(fields=['created_at'], name='idx_audit_created')]
+
+
+class AuthenticationSecurityAudit(models.Model):
+    """Append-only authentication security events, separate from RBAC audit."""
+    id = models.CharField(max_length=255, primary_key=True, editable=False)
+    actor = models.ForeignKey('authentication.User', null=True, blank=True, on_delete=models.SET_NULL, related_name='security_audits')
+    event = models.CharField(max_length=80)
+    email_attempted = models.CharField(max_length=254, blank=True, default='')
+    identifier_hash = models.CharField(max_length=64, db_index=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=512, blank=True, default='')
+    reason = models.CharField(max_length=120)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'authentication_security_audit'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['event', 'created_at'], name='idx_security_event_at'),
+            models.Index(fields=['ip_address', 'created_at'], name='idx_security_ip_at'),
+        ]
