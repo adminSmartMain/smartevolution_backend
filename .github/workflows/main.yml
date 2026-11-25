@@ -19,9 +19,29 @@ jobs:
           key: ${{ secrets.SSH_KEY_PROD }}
           port: ${{ secrets.SSH_PORT_PROD }}
           script: |
+            set -eu
             cd "${{secrets.PROD_FOLDER}}"
-            git reset --hard
-            git pull origin main
-            echo "${{ secrets.DOT_ENV_PROD }}" > core/.env
-            sudo env BILLY_AWS_REGION=us-east-1 BILLY_LOG_GROUP=/smartevolution/prod/billy docker compose --env-file docker.env up --build -d
+            test -s core/.env
+            test -s docker.env
+            test -s docker.production.env
+            if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+              echo "El repositorio contiene cambios locales rastreados; despliegue cancelado."
+              exit 1
+            fi
+            git fetch origin main
+            if ! git diff --quiet HEAD origin/main -- docker.env; then
+              echo "docker.env cambia en main; revise la configuración antes del despliegue."
+              exit 1
+            fi
+            git reset --hard origin/main
+            sudo env BILLY_AWS_REGION=us-east-1 BILLY_LOG_GROUP=/smartevolution/prod/billy docker compose \
+              --env-file docker.env \
+              -f docker-compose.yml \
+              -f docker-compose.production.yml \
+              config --quiet
+            sudo env BILLY_AWS_REGION=us-east-1 BILLY_LOG_GROUP=/smartevolution/prod/billy docker compose \
+              --env-file docker.env \
+              -f docker-compose.yml \
+              -f docker-compose.production.yml \
+              up --build -d
             exit
