@@ -17,7 +17,7 @@ from apps.base.utils.index import gen_uuid
 from apps.base.utils.getContentInfo import get_content_info
 from apps.base.utils.uploadBase64File import BucketS3
 from apps.authentication.access import get_access_profile, permission_required, user_has_permission
-from apps.authentication.models import User, Role, UserRole, Permission, RolePermission, AccessAudit
+from apps.authentication.models import User, Role, UserRole, Permission, RolePermission, AccessAudit, AuthenticationSecurityAudit
 from apps.client.api.models.client.index import Client, ClientAccess
 import secrets
 
@@ -169,10 +169,23 @@ class AccessAuditSerializer(serializers.ModelSerializer):
     actor_email=serializers.CharField(source='actor.email',read_only=True)
     class Meta: model=AccessAudit; fields=('id','actor_email','action','target_type','target_id','details','ip_address','created_at')
 
+
+class AuthenticationSecurityAuditSerializer(serializers.ModelSerializer):
+    actor_email = serializers.CharField(source='actor.email', read_only=True)
+    class Meta:
+        model = AuthenticationSecurityAudit
+        fields = ('id', 'actor_email', 'event', 'email_attempted', 'identifier_hash', 'ip_address', 'user_agent', 'reason', 'metadata', 'created_at')
+
 class MeAV(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
-        return Response({'error':False,'data':get_access_profile(request.user)})
+        profile = get_access_profile(request.user)
+        profile.update({
+            'id': str(request.user.pk),
+            'name': f'{request.user.first_name} {request.user.last_name}'.strip(),
+            'is_superuser': request.user.is_superuser,
+        })
+        return Response({'error':False,'data':profile})
 
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -544,3 +557,12 @@ class AccessAuditAV(APIView):
     def get(self,request):
         rows=AccessAudit.objects.select_related('actor').all()[:500]
         return Response({'error':False,'data':AccessAuditSerializer(rows,many=True).data})
+
+
+class AuthenticationSecurityAuditAV(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @permission_required('audit.view')
+    def get(self, request):
+        rows = AuthenticationSecurityAudit.objects.select_related('actor').all()[:500]
+        return Response({'error': False, 'data': AuthenticationSecurityAuditSerializer(rows, many=True).data})

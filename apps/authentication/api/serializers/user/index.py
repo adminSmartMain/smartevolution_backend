@@ -146,6 +146,7 @@ class UpdateUserSerializer(serializers.ModelSerializer):
                 raise HttpException(400, 'La contraseña actual no es correcta')
 
             instance.set_password(validated_data['new_password'])
+            instance.token_version += 1
             instance.updated_at      = timezone.now()
             instance.user_updated_at = self.context['request'].user
             instance.save()
@@ -181,5 +182,8 @@ class UpdatePasswordSerializer(serializers.Serializer):
     def create(self, validated_data):
         user = validated_data['user']
         user.set_password(validated_data['new_password'])
-        user.save(update_fields=['password'])
+        # A recovery link is a security boundary: every existing access and
+        # refresh token becomes invalid immediately after the password change.
+        user.token_version += 1
+        user.save(update_fields=['password', 'token_version'])
         return user

@@ -236,12 +236,10 @@ class DashboardAV(BaseAV):
             if ultima_operacion and ultima_operacion.created_at:
                 # Formatear la fecha en español
                 fecha_formateada = ultima_operacion.created_at.strftime('%d/%m/%Y %H:%M:%S')
-                logger.info(f"📅 Última actualización encontrada: {fecha_formateada}")
                 return fecha_formateada
             else:
                 # Si no hay operaciones, usar la fecha actual
                 fecha_actual = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-                logger.info(f"📅 No hay operaciones, usando fecha actual: {fecha_actual}")
                 return fecha_actual
                 
         except Exception as e:
@@ -431,7 +429,6 @@ class DashboardAV(BaseAV):
                 'saldo_disponible': saldo_disponible
             }
             
-            logger.info(f"📈 Métricas de período calculadas: {result}")
             return result
             
         except Exception as e:
@@ -443,15 +440,10 @@ class DashboardAV(BaseAV):
         Calcula tendencias comparando período actual vs anterior usando created_at
         """
         try:
-            logger.info(f"🔄 Calculando tendencias para período: {periodo}")
-            
             # Obtener configuración de comparación
             comparison_config = self._get_comparison_period(periodo, filters)
             if not comparison_config:
-                logger.info(f"❌ No hay comparación configurada para el período: {periodo}")
                 return {}
-            
-            logger.info(f"📅 Comparación configurada: {comparison_config['description']}")
             
             # Calcular métricas para período anterior
             previous_data = self._calculate_period_metrics(
@@ -461,16 +453,11 @@ class DashboardAV(BaseAV):
             
             # Si no hay datos del período anterior, no calcular tendencias
             if not previous_data:
-                logger.info("❌ No se pudieron calcular métricas del período anterior")
                 return {}
                 
             # Verificar si hay datos suficientes
             if all(v == 0 for v in previous_data.values()):
-                logger.info("❌ Todos los valores del período anterior son cero")
                 return {}
-            
-            logger.info(f"📊 Datos período anterior: {previous_data}")
-            logger.info(f"📊 Datos período actual: {current_data}")
             
             trends = {}
             trend_metrics = ['totalOperaciones', 'cantidad_facturas', 'saldo_disponible', 'tasa_descuento_promedio']
@@ -479,13 +466,9 @@ class DashboardAV(BaseAV):
                 current_value = current_data.get(metric_key, 0)
                 previous_value = previous_data.get(metric_key, 0)
                 
-                logger.info(f"📐 Comparando {metric_key}: Actual={current_value}, Anterior={previous_value}")
-                
                 # Solo calcular si hay datos suficientes en ambos períodos
                 if previous_value > 0 and current_value > 0:
                     percentage_change = ((current_value - previous_value) / previous_value) * 100
-                    
-                    logger.info(f"📊 Cambio porcentual para {metric_key}: {percentage_change}%")
                     
                     # Solo mostrar cambios significativos (> 0.5%)
                     if abs(percentage_change) >= 0.5:
@@ -496,13 +479,6 @@ class DashboardAV(BaseAV):
                             'current_value': current_value,
                             'previous_value': previous_value
                         }
-                        logger.info(f"✅ Tendencia significativa encontrada para {metric_key}: {percentage_change}%")
-                    else:
-                        logger.info(f"ℹ️  Cambio no significativo para {metric_key}: {percentage_change}%")
-                else:
-                    logger.info(f"❌ Datos insuficientes para calcular tendencia en {metric_key}")
-            
-            logger.info(f"🎯 Tendencias finales calculadas: {len(trends)} métricas")
             return trends
             
         except Exception as e:
