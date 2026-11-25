@@ -1,0 +1,32 @@
+services:
+  web:
+    volumes:
+      - ./core/.env:/app/core/.env:ro
+    entrypoint:
+      - /bin/sh
+      - -c
+    command:
+      - exec daphne -b 0.0.0.0 -p 8000 core.asgi:application
+    restart: unless-stopped
+    ports: !override
+      - "127.0.0.1:8000:8000"
+
+  worker-billy:
+    volumes:
+      - ./core/.env:/app/core/.env:ro
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  worker-notifications:
+    volumes:
+      - ./core/.env:/app/core/.env:ro
+    restart: unless-stopped
+
+  beat-billy:
+    volumes:
+      - ./core/.env:/app/core/.env:ro
+    restart: unless-stopped
