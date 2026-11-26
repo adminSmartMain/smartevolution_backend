@@ -36,8 +36,13 @@ compose build web
 compose run --rm --no-deps -T --entrypoint python web manage.py check
 compose run --rm --no-deps -T --entrypoint python web manage.py shell -c \
   'from scripts.check_auth_preflight import check; check()'
-# Never apply migrations implicitly: require the operator to review and apply
-# pending migrations with a backup before any running service is recreated.
+# Development uses the newly built image and its configured database to apply
+# migrations before recreating services. Stop deployment if migration fails.
+if [ "$branch" = development ]; then
+  compose run --rm --no-deps -T --entrypoint python web manage.py migrate --plan
+  compose run --rm --no-deps -T --entrypoint python web manage.py migrate --noinput
+fi
+
 compose run --rm --no-deps -T --entrypoint python web manage.py migrate --check || {
   echo 'Database check failed or migrations are pending; review before deployment.'
   exit 1
